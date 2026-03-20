@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
@@ -23,4 +24,57 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Configuraciones exclusivas para impresión (Tiquetera / Recibo) */
+@media print {
+  /* Ocultar TODO por defecto */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Hacer visible únicamente el recibo */
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+
+  /* Posicionar el recibo con un margen de seguridad a la izquierda para XP-58 */
+  #printable-receipt {
+    position: absolute;
+    left: 3mm; /* Empujar a la derecha para evitar el corte físico del borde izquierdo */
+    top: 0;
+    width: 52mm; /* Reducir ancho lógico para compensar el margen */
+    margin: 0;
+    padding: 0 !important;
+  }
+
+  /* Quitar los márgenes nativos del navegador para que no imprima fecha ni URL en los bordes */
+  @page {
+    margin: 0;
+  }
+}
+
+/* --- PRO UX CLEANUP --- */
+/* Ocultar indicadores de desarrollo de Next.js y alertas de error que distraen al usuario final */
+#nextjs-portal,
+.nextjs-static-indicator-container,
+[data-nextjs-toast],
+[data-nextjs-dialog-overlay],
+[data-nextjs-dialog],
+[class^="nextjs-"],
+[id^="nextjs-"],
+#next-progress,
+.static-indicator,
+nextjs-portal,
+div[class*="fixed"][class*="bottom-"][class*="left-"],
+div[class*="fixed"][class*="bottom-"][class*="right-"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
 }

@@ -1,0 +1,443 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Truck, Receipt, Eye, Trash2, Calendar, User, FileText, CheckCircle2, Clock } from 'lucide-react';
+
+interface Supplier {
+  id: string;
+  name: string;
+  taxId: string;
+  address: string;
+  phone: string;
+  email: string;
+}
+
+interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unitNetValue: number;
+  taxRate: number; // Ej: 19
+}
+
+interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  date: string;
+  totalAmount: number;
+  totalTax: number;
+  isPaid: boolean;
+  supplier: Supplier;
+}
+
+export default function SuppliersPage() {
+  const [activeTab, setActiveTab] = useState<'suppliers' | 'invoices'>('suppliers');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Modales
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  // Form Proveedor
+  const [supName, setSupName] = useState('');
+  const [supTaxId, setSupTaxId] = useState('');
+  const [supPhone, setSupPhone] = useState('');
+  const [supEmail, setSupEmail] = useState('');
+  const [supAddress, setSupAddress] = useState('');
+
+  // Form Factura
+  const [invNumber, setInvNumber] = useState('');
+  const [invDate, setInvDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
+  const [invItems, setInvItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unitNetValue: 0, taxRate: 19 }]);
+
+  useEffect(() => {
+    fetchData();
+  }, [activeTab]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const endpoint = activeTab === 'suppliers' ? 'suppliers' : 'suppliers/invoices';
+      const res = await fetch(`http://localhost:3001/${endpoint}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (activeTab === 'suppliers') setSuppliers(data);
+        else setInvoices(data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateSupplier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('http://localhost:3001/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: supName, taxId: supTaxId, phone: supPhone, email: supEmail, address: supAddress })
+      });
+      if (res.ok) {
+        setIsSupplierModalOpen(false);
+        setSupName(''); setSupTaxId(''); setSupPhone(''); setSupEmail(''); setSupAddress('');
+        fetchData();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleAddLineItem = () => {
+    setInvItems([...invItems, { description: '', quantity: 1, unitNetValue: 0, taxRate: 19 }]);
+  };
+
+  const handleRemoveLineItem = (index: number) => {
+    setInvItems(invItems.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
+    const newItems = [...invItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setInvItems(newItems);
+  };
+
+  const calculateInvoiceTotals = () => {
+    let net = 0;
+    let tax = 0;
+    invItems.forEach(item => {
+      const itemNet = item.quantity * item.unitNetValue;
+      const itemTax = itemNet * (item.taxRate / 100);
+      net += itemNet;
+      tax += itemTax;
+    });
+    return { net, tax, total: net + tax };
+  };
+
+  const handleCreateInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const totals = calculateInvoiceTotals();
+    const payload = {
+      invoiceNumber: invNumber,
+      date: invDate,
+      supplierId: selectedSupplierId,
+      totalNet: totals.net,
+      totalTax: totals.tax,
+      totalAmount: totals.total,
+      items: invItems.map(item => ({
+        ...item,
+        totalNetValue: item.quantity * item.unitNetValue,
+        taxAmount: (item.quantity * item.unitNetValue) * (item.taxRate / 100),
+        totalItemAmount: (item.quantity * item.unitNetValue) * (1 + item.taxRate / 100)
+      }))
+    };
+
+    try {
+      const token = localStorage.getItem('tenant_token');
+      const res = await fetch('http://localhost:3001/suppliers/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setIsInvoiceModalOpen(false);
+        setInvNumber(''); setInvItems([{ description: '', quantity: 1, unitNetValue: 0, taxRate: 19 }]);
+        fetchData();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            Proveedores y Compras
+          </h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Gestiona tus socios comerciales y registra facturas de entrada de mercancía.
+          </p>
+        </div>
+        
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <button 
+            onClick={() => setActiveTab('suppliers')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'suppliers' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Proveedores
+          </button>
+          <button 
+            onClick={() => setActiveTab('invoices')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'invoices' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Facturas
+          </button>
+        </div>
+      </div>
+
+      {/* Acciones Rápidas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <button 
+          onClick={() => setIsSupplierModalOpen(true)}
+          className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-blue-500 transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600">
+              <Truck className="w-6 h-6" />
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-slate-900 dark:text-white">Nuevo Proveedor</p>
+              <p className="text-xs text-slate-500">Registra un nuevo socio comercial</p>
+            </div>
+          </div>
+          <Plus className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+        </button>
+
+        <button 
+          onClick={() => setIsInvoiceModalOpen(true)}
+          className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600">
+              <Receipt className="w-6 h-6" />
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-slate-900 dark:text-white">Registrar Factura</p>
+              <p className="text-xs text-slate-500">Ingresa una factura de compra detallada</p>
+            </div>
+          </div>
+          <Plus className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+        </button>
+      </div>
+
+      {/* Tabla de Datos */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+            <thead className="bg-slate-50 dark:bg-slate-800/50">
+              {activeTab === 'suppliers' ? (
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre / NIT</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Contacto</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Dirección</th>
+                  <th className="relative px-6 py-4"></th>
+                </tr>
+              ) : (
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Factura #</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
+                  <th className="relative px-6 py-4"></th>
+                </tr>
+              )}
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              {loading ? (
+                <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">Cargando datos...</td></tr>
+              ) : activeTab === 'suppliers' ? (
+                suppliers.map(s => (
+                  <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 dark:text-white">{s.name}</span>
+                        <span className="text-xs text-slate-500">NIT: {s.taxId || 'N/A'}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col text-sm">
+                        <span className="text-slate-700 dark:text-slate-300">{s.phone}</span>
+                        <span className="text-slate-500 text-xs">{s.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{s.address}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="p-2 text-slate-400 hover:text-blue-600"><Eye className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                invoices.map(inv => (
+                  <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-4 font-mono text-sm font-bold text-blue-600">{inv.invoiceNumber}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(inv.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">{inv.supplier?.name}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-emerald-600">${Math.round(inv.totalAmount).toLocaleString()}</td>
+                    <td className="px-6 py-4">
+                      {inv.isPaid ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> Pagado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                          <Clock className="w-3 h-3 mr-1" /> Pendiente
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="p-2 text-slate-400 hover:text-blue-600"><Eye className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Modal Proveedor */}
+      {isSupplierModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Truck className="text-blue-600" /> Nuevo Proveedor
+              </h3>
+            </div>
+            <form onSubmit={handleCreateSupplier} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Nombre de la Empresa *</label>
+                  <input required className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supName} onChange={e => setSupName(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">NIT / Tax ID</label>
+                  <input className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supTaxId} onChange={e => setSupTaxId(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Teléfono</label>
+                  <input className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supPhone} onChange={e => setSupPhone(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Email</label>
+                  <input type="email" className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supEmail} onChange={e => setSupEmail(e.target.value)} />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase">Dirección</label>
+                  <input className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supAddress} onChange={e => setSupAddress(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setIsSupplierModalOpen(false)} className="px-6 py-3 font-bold text-slate-500">Cancelar</button>
+                <button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all">Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Factura */}
+      {isInvoiceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-4xl my-8 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Receipt className="text-emerald-600" /> Registrar Factura de Compra
+              </h3>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Total Factura</p>
+                <p className="text-2xl font-black text-emerald-600">${Math.round(calculateInvoiceTotals().total).toLocaleString()}</p>
+              </div>
+            </div>
+            
+            <form onSubmit={handleCreateInvoice} className="p-6 grid grid-cols-3 gap-6">
+              {/* Cabecera de Factura */}
+              <div className="col-span-3 grid grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Nº Factura</label>
+                  <input required placeholder="Ej: FV-001" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-900 border-none outline-none focus:ring-2 focus:ring-emerald-500" value={invNumber} onChange={e => setInvNumber(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Fecha</label>
+                  <input type="date" required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-900 border-none outline-none focus:ring-2 focus:ring-emerald-500" value={invDate} onChange={e => setInvDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Proveedor</label>
+                  <select required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-900 border-none outline-none focus:ring-2 focus:ring-emerald-500" value={selectedSupplierId} onChange={e => setSelectedSupplierId(e.target.value)}>
+                    <option value="">Seleccionar...</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Detalle de Productos */}
+              <div className="col-span-3">
+                <div className="flex justify-between items-center mb-4 px-2">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Detalle de Productos</h4>
+                  <button type="button" onClick={handleAddLineItem} className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg transition-colors">
+                    <Plus className="w-4 h-4" /> Añadir Línea
+                  </button>
+                </div>
+                
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {invItems.map((item, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-3 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800 items-end animate-in slide-in-from-right-3 duration-200">
+                      <div className="col-span-5">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descripción del Producto</label>
+                        <input required placeholder="Ej: Arroz Diana 1kg x24" className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cant.</label>
+                        <input type="number" step="0.01" required className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value))} />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">V. Neto Unid.</label>
+                        <input type="number" required className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.unitNetValue} onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value))} />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">IVA %</label>
+                        <select className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.taxRate} onChange={e => updateItem(idx, 'taxRate', parseFloat(e.target.value))}>
+                          <option value="0">0%</option>
+                          <option value="5">5%</option>
+                          <option value="19">19%</option>
+                        </select>
+                      </div>
+                      <div className="col-span-1 flex justify-center">
+                        <button type="button" onClick={() => handleRemoveLineItem(idx)} className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resumen Final en el Modal */}
+              <div className="col-span-3 flex justify-end">
+                <div className="w-full max-w-xs space-y-2 bg-slate-50 dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500 font-bold">Subtotal Neto:</span>
+                    <span className="text-slate-900 dark:text-white font-black">${Math.round(calculateInvoiceTotals().net).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500 font-bold">Impuestos (IVA):</span>
+                    <span className="text-slate-900 dark:text-white font-black">${Math.round(calculateInvoiceTotals().tax).toLocaleString()}</span>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-600 flex justify-between">
+                    <span className="text-slate-900 dark:text-white font-extrabold text-lg uppercase">TOTAL:</span>
+                    <span className="text-emerald-600 font-black text-xl">${Math.round(calculateInvoiceTotals().total).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-3 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="px-8 py-3 font-bold text-slate-500">Cancelar</button>
+                <button type="submit" className="px-12 py-3 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-500 shadow-xl shadow-emerald-500/20 transition-all uppercase tracking-widest">Registrar Gasto</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

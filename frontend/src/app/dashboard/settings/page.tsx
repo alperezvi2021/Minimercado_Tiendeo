@@ -1,0 +1,410 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { Store, Users, User, Settings as SettingsIcon, Save, Key, Printer, Phone, Eye, EyeOff, MapPin } from 'lucide-react';
+
+export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState('business');
+  const [userName, setUserName] = useState('');
+  const [userRole, setUserRole] = useState('');
+  const [storeName, setStoreName] = useState('TIENDA LAS MARGARITAS');
+  const [storePhone, setStorePhone] = useState('+573207095554');
+  const [storeLocation, setStoreLocation] = useState('Don Matías - Antioquia');
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Users management state
+  const [users, setUsers] = useState<any[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'CASHIER' });
+
+  useEffect(() => {
+    const savedName = localStorage.getItem('user_name');
+    const savedRole = localStorage.getItem('user_role');
+    const savedStoreName = localStorage.getItem('store_name');
+    const savedStorePhone = localStorage.getItem('store_phone');
+    const savedStoreLocation = localStorage.getItem('store_location');
+    
+    if (savedName) setUserName(savedName);
+    if (savedRole) setUserRole(savedRole);
+    if (savedStoreName) setStoreName(savedStoreName);
+    if (savedStorePhone) setStorePhone(savedStorePhone);
+    if (savedStoreLocation) setStoreLocation(savedStoreLocation);
+    
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('http://localhost:3001/users', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+      }
+    } catch (error) {
+      console.error("Error fetching users", error);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('http://localhost:3001/users', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          passwordHash: newUser.password, // The backend will hash it
+          role: newUser.role
+        })
+      });
+
+      if (res.ok) {
+        setIsCreateModalOpen(false);
+        setNewUser({ name: '', email: '', password: '', role: 'CASHIER' });
+        setShowPassword(false);
+        fetchUsers();
+        alert('Usuario creado correctamente');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo crear el usuario'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión al crear usuario');
+    }
+  };
+
+  const handleSaveBusiness = () => {
+    setIsSaving(true);
+    // Guardar en localStorage localmente para que persista
+    localStorage.setItem('store_name', storeName);
+    localStorage.setItem('store_phone', storePhone);
+    localStorage.setItem('store_location', storeLocation);
+    
+    setTimeout(() => {
+      setIsSaving(false);
+      alert('Configuración del negocio guardada correctamente.');
+    }, 1000);
+  };
+
+  return (
+    <div className="p-4 md:p-8 max-w-5xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-8">
+        
+        {/* Sidebar Mini - Tabs */}
+        <div className="w-full md:w-64 space-y-2">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Configuración</h2>
+          
+          <button 
+            onClick={() => setActiveTab('business')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'business' ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            <Store className="w-5 h-5" />
+            Mi Negocio
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('profile')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'profile' ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            <User className="w-5 h-5" />
+            Mi Perfil
+          </button>
+
+          {(userRole === 'OWNER' || userRole === 'SUPER_ADMIN') && (
+            <button 
+              onClick={() => setActiveTab('users')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400'}`}
+            >
+              <Users className="w-5 h-5" />
+              Empresa / Usuarios
+            </button>
+          )}
+
+          <button 
+            onClick={() => setActiveTab('ticket')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'ticket' ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            <Printer className="w-5 h-5" />
+            Formato Ticket
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 border border-gray-100 dark:border-slate-800 shadow-sm">
+          
+          {activeTab === 'business' && (
+            <div className="animate-in fade-in duration-300">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <Store className="w-6 h-6 text-blue-500" />
+                Información del Negocio
+              </h3>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Nombre de la Tienda</label>
+                  <input 
+                    type="text" 
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Teléfono de Contacto</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input 
+                      type="text" 
+                      value={storePhone}
+                      onChange={(e) => setStorePhone(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Ubicación / Ciudad</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input 
+                      type="text" 
+                      value={storeLocation}
+                      onChange={(e) => setStoreLocation(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    onClick={handleSaveBusiness}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all"
+                  >
+                    <Save className="w-5 h-5" />
+                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'profile' && (
+            <div className="animate-in fade-in duration-300">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <User className="w-6 h-6 text-purple-500" />
+                Configuración de Perfil
+              </h3>
+              
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl mb-6">
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
+                    <User className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-gray-900 dark:text-white">{userName}</h4>
+                    <span className="text-xs font-bold uppercase tracking-widest text-blue-500">{userRole === 'OWNER' ? 'Dueño del Negocio' : 'Empleado'}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Cambiar Contraseña</label>
+                  <div className="space-y-3">
+                    <input 
+                      type="password" 
+                      placeholder="Contraseña Actual"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                    <input 
+                      type="password" 
+                      placeholder="Nueva Contraseña"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button className="flex items-center gap-2 bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-6 py-3 rounded-xl font-bold transition-all">
+                    <Key className="w-5 h-5" />
+                    Actualizar Contraseña
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="animate-in fade-in duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Users className="w-6 h-6 text-green-500" />
+                  Gestión de Empleados
+                </h3>
+                <button 
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all"
+                >
+                  + Crear Usuario
+                </button>
+              </div>
+              
+              <div className="overflow-hidden bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800">
+                <table className="w-full text-left">
+                  <thead className="bg-gray-100 dark:bg-slate-800 text-xs font-black uppercase tracking-widest text-gray-500">
+                    <tr>
+                      <th className="px-6 py-4">Usuario</th>
+                      <th className="px-6 py-4">Email</th>
+                      <th className="px-6 py-4">Rol</th>
+                      <th className="px-6 py-4">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-sm">
+                    {users.map((u: any) => (
+                      <tr key={u.id}>
+                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white uppercase">{u.name}</td>
+                        <td className="px-6 py-4 text-gray-500">{u.email}</td>
+                        <td className="px-6 py-4">
+                           <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${u.role === 'OWNER' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                             {u.role}
+                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-[10px] font-black">Activo</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-gray-400 italic">No hay empleados registrados.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Crear Usuario */}
+          {isCreateModalOpen && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-8 shadow-2xl animate-in zoom-in duration-200">
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Nuevo Usuario</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Nombre Completo</label>
+                    <input 
+                      type="text" 
+                      value={newUser.name}
+                      onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                      placeholder="Ej. Juan Pérez"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Email / Usuario</label>
+                    <input 
+                      type="email" 
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                      placeholder="email@ejemplo.com"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Contraseña Temporal</label>
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold pr-12"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Rol del Usuario</label>
+                    <select 
+                      value={newUser.role}
+                      onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    >
+                      <option value="CASHIER">Cajero / Vendedor</option>
+                      <option value="ADMIN">Administrador</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <button 
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleCreateUser}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all"
+                  >
+                    Crear Ahora
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'ticket' && (
+            <div className="animate-in fade-in duration-300">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <Printer className="w-6 h-6 text-orange-500" />
+                Configuración del Ticket POS
+              </h3>
+              
+              <div className="space-y-6">
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 rounded-2xl">
+                   <p className="text-xs text-orange-800 dark:text-orange-300 leading-relaxed font-medium">
+                     Configura aquí el formato que saldrá impreso en tu impresora de 58mm o 80mm. 
+                     Próximamente admitirá personalización completa de fuentes.
+                   </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tamaño de Papel</label>
+                  <select className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold text-sm">
+                    <option>Papel Térmico 58mm (Estándar)</option>
+                    <option>Papel Térmico 80mm (Grande)</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl">
+                   <div>
+                     <p className="text-sm font-bold text-gray-900 dark:text-white">Impresión Automática</p>
+                     <p className="text-[10px] text-gray-500 dark:text-gray-400">¿Imprimir ticket inmediatamente al vender?</p>
+                   </div>
+                   <div className="w-12 h-6 bg-blue-600 rounded-full flex items-center justify-end px-1 cursor-pointer">
+                      <div className="w-4 h-4 bg-white rounded-full"></div>
+                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}

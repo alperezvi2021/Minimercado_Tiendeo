@@ -1,0 +1,704 @@
+'use client';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft } from 'lucide-react';
+
+interface Product {
+  id: string;
+  name: string;
+  barcode: string | null;
+  price: number;
+  stock: number;
+}
+
+interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export default function PosPage() {
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [posState, setPosState] = useState<'billing' | 'payment'>('billing');
+  const [completedSale, setCompletedSale] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState('efectivo');
+  const [customerName, setCustomerName] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [lastCheckoutTime, setLastCheckoutTime] = useState(0); 
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [isOnline, setIsOnline] = useState(true);
+  const [pendingSales, setPendingSales] = useState<any[]>([]);
+  const [userName, setUserName] = useState('Usuario');
+  const [userRole, setUserRole] = useState('CASHIER');
+  
+  // Store info state
+  const [storeName, setStoreName] = useState('TIENDA LAS MARGARITAS');
+  const [storePhone, setStorePhone] = useState('+573207095554');
+  const [storeLocation, setStoreLocation] = useState('Don Matías - Antioquia');
+  
+  // Reference for scanner focus
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    fetchProducts();
+    loadPendingSales();
+    // Auto-focus on mount for rapid scanning
+    searchInputRef.current?.focus();
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncPendingSales();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Identity and Store Info update
+    const savedName = localStorage.getItem('user_name');
+    const savedRole = localStorage.getItem('user_role');
+    const savedStoreName = localStorage.getItem('store_name');
+    const savedStorePhone = localStorage.getItem('store_phone');
+    const savedStoreLocation = localStorage.getItem('store_location');
+    
+    if (savedName) setUserName(savedName);
+    if (savedRole) setUserRole(savedRole);
+    if (savedStoreName) setStoreName(savedStoreName);
+    if (savedStorePhone) setStorePhone(savedStorePhone);
+    if (savedStoreLocation) setStoreLocation(savedStoreLocation);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const loadPendingSales = () => {
+    const saved = localStorage.getItem('pending_sales');
+    if (saved) setPendingSales(JSON.parse(saved));
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('http://localhost:3001/products', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAllProducts(data);
+        localStorage.setItem('cached_products', JSON.stringify(data));
+      } else {
+        loadCachedProducts();
+      }
+    } catch (error) {
+      console.error("Error fetching products", error);
+      loadCachedProducts();
+    }
+  };
+
+  const loadCachedProducts = () => {
+    const cached = localStorage.getItem('cached_products');
+    if (cached) {
+      setAllProducts(JSON.parse(cached));
+    }
+  };
+
+  const addToCart = (product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      if (existing) {
+        return prev.map(item => 
+          item.product.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        );
+      }
+      return [{ product, quantity: 1 }, ...prev];
+    });
+    setSearchTerm(''); // Clear scanner input
+    searchInputRef.current?.focus(); // Regain focus
+  };
+
+  const handleScannerInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => 
+        prev < filteredSuggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : 0);
+    } else if (e.key === 'Enter') {
+      if (selectedSuggestionIndex >= 0 && filteredSuggestions[selectedSuggestionIndex]) {
+        e.preventDefault();
+        addToCart(filteredSuggestions[selectedSuggestionIndex]);
+        setSelectedSuggestionIndex(-1);
+      } else if (searchTerm.trim() !== '') {
+        const exactMatch = allProducts.find(p => p.barcode === searchTerm);
+        if (exactMatch) {
+          addToCart(exactMatch);
+        }
+      } else if (cart.length > 0) {
+        // If input is empty but user presses ENTER, go to checkout!
+        handleCheckout();
+      }
+    }
+  };
+
+  const updateQuantity = (productId: string, change: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.product.id === productId) {
+        const newQty = item.quantity + change;
+        return newQty > 0 ? { ...item, quantity: newQty } : item;
+      }
+      return item;
+    }));
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.product.id !== productId));
+  };
+
+  const calculateTotal = () => {
+    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  };
+
+  const handleCheckout = () => {
+    if (cart.length === 0) return;
+    setPaymentMethod('efectivo'); 
+    setCustomerName('');
+    setPosState('payment');
+    setLastCheckoutTime(Date.now()); // Cooldown start
+    searchInputRef.current?.blur();
+  };
+
+  const processSale = async () => {
+    if (cart.length === 0 || isProcessing) return;
+    setIsProcessing(true);
+    
+    const payload = {
+      totalAmount: calculateTotal(),
+      paymentMethod: paymentMethod,
+      customerName: paymentMethod === 'credito' ? customerName : undefined,
+      items: cart.map(i => ({
+        productId: i.product.id,
+        productName: i.product.name,
+        quantity: i.quantity,
+        unitPrice: i.product.price,
+        subtotal: i.product.price * i.quantity
+      }))
+    };
+
+    if (!navigator.onLine) {
+      queueOfflineSale(payload);
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch('http://localhost:3001/sales', {
+        method: 'POST',
+        headers: { 
+           'Content-Type': 'application/json',
+           Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload)
+      });
+      if(res.ok) {
+        const savedSale = await res.json();
+        setCompletedSale({ ...savedSale, items: [...cart] });
+        setCart([]);
+        setPosState('billing');
+        fetchProducts();
+      } else {
+        const err = await res.json();
+        alert('Error al procesar la venta: ' + (err.message || 'Error desconocido'));
+      }
+    } catch (e) { 
+      console.error(e);
+      queueOfflineSale(payload);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const queueOfflineSale = (payload: any) => {
+    const offlineId = 'off-' + Date.now();
+    const saleToStore = { ...payload, id: offlineId, createdAt: new Date().toISOString(), offline: true };
+    const newPending = [...pendingSales, saleToStore];
+    setPendingSales(newPending);
+    localStorage.setItem('pending_sales', JSON.stringify(newPending));
+    
+    // UI Feedback
+    setCompletedSale({ ...saleToStore, items: [...cart] });
+    setCart([]);
+    setPosState('billing');
+    setIsProcessing(false);
+  };
+
+  const syncPendingSales = async () => {
+    const saved = localStorage.getItem('pending_sales');
+    if (!saved) return;
+    const items = JSON.parse(saved);
+    if (items.length === 0) return;
+
+    const token = localStorage.getItem('access_token');
+    const remaining: any[] = [];
+
+    for (const sale of items) {
+      try {
+        const res = await fetch('http://localhost:3001/sales', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify(sale)
+        });
+        if (!res.ok) {
+          remaining.push(sale);
+        }
+      } catch (err) {
+        remaining.push(sale);
+      }
+    }
+
+    setPendingSales(remaining);
+    localStorage.setItem('pending_sales', JSON.stringify(remaining));
+    if (remaining.length === 0) {
+      console.log("Ventas offline sincronizadas con éxito.");
+      fetchProducts();
+    }
+  };
+
+  const handlePrintAndReset = () => {
+    window.print();
+    setCompletedSale(null);
+    setTimeout(() => searchInputRef.current?.focus(), 100);
+  };
+
+  // Autocaptura global para usar TODO con 'ENTER'
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Evitar conflictos si el usuario está en un input pero NO es el de búsqueda o el de nombre de cliente
+      if (document.activeElement?.tagName === 'INPUT' && 
+          document.activeElement !== searchInputRef.current && 
+          !(posState === 'payment' && paymentMethod === 'credito')) {
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        if (completedSale) {
+          e.preventDefault();
+          handlePrintAndReset();
+        } else if (posState === 'payment' && !isProcessing) {
+          // No procesar si acaba de entrar en modo pago (cooldown 500ms)
+          if (Date.now() - lastCheckoutTime < 500) return; 
+          e.preventDefault();
+          processSale();
+        }
+      } else if (e.key === 'Escape') {
+        if (completedSale) {
+          setCompletedSale(null);
+          setTimeout(() => searchInputRef.current?.focus(), 100);
+        } else if (posState === 'payment') {
+          setPosState('billing');
+          setTimeout(() => searchInputRef.current?.focus(), 100);
+        }
+      } else if (posState === 'payment') {
+        // Atajos en modo de pago
+        if (e.key === '1' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') setPaymentMethod('efectivo');
+        if (e.key === '2' || e.key === 'ArrowRight' || e.key === 'ArrowDown') setPaymentMethod('credito');
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [completedSale, posState, isProcessing, cart, paymentMethod]);
+
+
+  // Sugerencias visuales si tipean en vez de escanear
+  const filteredSuggestions = searchTerm.length > 1 
+    ? allProducts.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (p.barcode && p.barcode.includes(searchTerm))
+      )
+    : [];
+
+  return (
+    <div className="flex h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden bg-gray-50 dark:bg-[#0f172a] transition-colors rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
+      
+      {/* Lado Izquierdo: Productos y Escáner (65%) */}
+      <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Caja Registradora</h2>
+            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{storeName} • {storeLocation}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {pendingSales.length > 0 && (
+              <div className="flex items-center text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full animate-pulse">
+                <CloudSync className="w-4 h-4 mr-1.5" />
+                {pendingSales.length} {pendingSales.length === 1 ? 'venta pendiente' : 'ventas pendientes'}
+              </div>
+            )}
+            <div className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              isOnline 
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-bounce'
+            }`}>
+              {isOnline ? <Wifi className="w-4 h-4 mr-1.5" /> : <WifiOff className="w-4 h-4 mr-1.5" />}
+              {isOnline ? 'Online' : 'Trabajando Offline'}
+            </div>
+          </div>
+        </div>
+        
+        {/* Barra Búsqueda / Escáner */}
+        <div className="relative mb-6">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="block w-full rounded-2xl border-0 py-4 pl-12 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 dark:bg-slate-900 dark:text-white dark:ring-slate-800 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-lg sm:leading-6 transition-all"
+            placeholder="Escanea el código de barras o busca por nombre..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleScannerInput}
+            autoFocus
+          />
+          {searchTerm && (
+            <div className="absolute right-4 top-4 text-xs font-semibold text-gray-400 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded">ENTER para agregar</div>
+          )}
+        </div>
+
+        {/* Resultados Sugeridos (Solo se muestran si escriben manual y no escaner instantáneo) */}
+        {searchTerm.length > 1 && (
+          <div className="flex-1 overflow-y-auto mb-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 p-2">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3 pt-2">Resultados de búsqueda</h3>
+            {filteredSuggestions.length === 0 ? (
+              <p className="p-4 text-sm text-gray-500 dark:text-gray-400">No se encontraron productos.</p>
+            ) : (
+              <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {filteredSuggestions.map((product, index) => (
+                  <li 
+                    key={product.id} 
+                    onClick={() => addToCart(product)}
+                    className={`flex justify-between items-center p-3 rounded-xl cursor-pointer border transition-colors ${
+                      selectedSuggestionIndex === index 
+                        ? 'bg-blue-600 text-white border-blue-500 shadow-md ring-2 ring-blue-500/20 scale-[1.02]' 
+                        : 'bg-white dark:bg-slate-900 border-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-100 dark:hover:border-blue-800/50'
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <p className={`text-sm font-bold truncate ${selectedSuggestionIndex === index ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{product.name}</p>
+                      <p className={`text-xs mt-0.5 truncate ${selectedSuggestionIndex === index ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>{product.barcode || 'Sin Código'}</p>
+                    </div>
+                    <p className={`text-sm font-semibold whitespace-nowrap ml-2 ${selectedSuggestionIndex === index ? 'text-white' : 'text-green-600 dark:text-green-400'}`}>
+                      ${Math.round(product.price).toLocaleString('es-CO')}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Botones de Categorías Rápidas (Placeholder) */}
+        {!searchTerm && (
+            <div className="flex-1 overflow-y-auto bg-gray-100/50 dark:bg-slate-800/30 rounded-2xl border border-gray-200 border-dashed dark:border-slate-800 p-8 flex flex-col items-center justify-center text-center">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-full shadow-sm mb-4">
+                <Tag className="h-8 w-8 text-blue-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">¡Bienvenido, {userName}!</h3>
+              <p className="text-sm text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest mt-1">
+                Perfil: {userRole === 'OWNER' ? 'Dueño / Administrador' : 'Vendedor / Cajero'}
+              </p>
+              <div className="mt-4 px-4 py-2 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-gray-200 dark:border-slate-700">
+                <p className="text-sm font-black text-gray-700 dark:text-gray-300">{storeName}</p>
+                <p className="text-xs font-semibold text-gray-500">{storeLocation}</p>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 max-w-sm">
+                El teclado es tu mejor amigo. Escanea un producto, o si la barra está vacía, oprime <strong>ENTER</strong> para ir a cobrar directamente.
+              </p>
+            </div>
+         )}
+      </div>
+
+      {/* Lado Derecho: Carrito de Compras (35%) */}
+      <div className="w-full md:w-[400px] lg:w-[450px] bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 flex flex-col shadow-xl z-10 transition-colors">
+        {/* Cabecera dinámica del Sidebar */}
+        <div className={`p-5 border-b border-gray-200 dark:border-slate-800 transition-colors ${posState === 'payment' ? 'bg-blue-600 dark:bg-blue-600' : 'bg-gray-50/50 dark:bg-slate-800/50'}`}>
+          <div className="flex justify-between items-center">
+            <h2 className={`text-lg font-bold flex items-center ${posState === 'payment' ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              {posState === 'billing' ? 'Carrito de Compras' : 'PASO 2: SELECCIONE PAGO'}
+            </h2>
+            <span className={`${posState === 'payment' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'} text-xs font-semibold px-2.5 py-0.5 rounded-full`}>
+              {cart.reduce((acc, item) => acc + item.quantity, 0)} Items
+            </span>
+          </div>
+        </div>
+        
+        {/* Lista de Items O Vista de Pago */}
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-[#0f172a]">
+          {posState === 'billing' ? (
+            cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 space-y-4">
+                <ShoppingCart className="w-12 h-12 opacity-20" />
+                <p className="text-sm font-medium">El carrito está vacío</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {cart.map((item) => (
+                  <div key={item.product.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 flex justify-between items-center transition-colors">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate" title={item.product.name}>
+                        {item.product.name}
+                      </h4>
+                      <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-0.5">
+                        ${Math.round(item.product.price).toLocaleString('es-CO')}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center bg-gray-100 dark:bg-slate-900 rounded-lg p-0.5 border border-gray-200 dark:border-slate-700">
+                        <button onClick={() => updateQuantity(item.product.id, -1)} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="w-8 text-center text-sm font-bold text-gray-900 dark:text-white">
+                          {item.quantity}
+                        </span>
+                        <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <button onClick={() => removeFromCart(item.product.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            /* Vista de Selección de Pago */
+            <div className="h-full flex flex-col items-center justify-start py-8 p-2 animate-in slide-in-from-right-4 duration-300">
+              <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-3xl flex items-center justify-center mb-4 shadow-inner">
+                <Banknote className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-[0.2em] mb-2">Paso Final</p>
+              <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 text-center">¿Cómo paga el cliente?</h3>
+              
+              <div className="grid grid-cols-1 gap-4 w-full px-4 mb-2">
+                <button 
+                  onClick={() => setPaymentMethod('efectivo')}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                      e.preventDefault();
+                      setPaymentMethod('credito');
+                    }
+                  }}
+                  className={`flex items-center gap-4 p-5 border-2 rounded-3xl font-black transition-all outline-none focus:ring-4 focus:ring-blue-500/40 ${paymentMethod === 'efectivo' ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:border-blue-500 dark:text-blue-400 ring-4 ring-blue-500/10' : 'border-gray-200 text-gray-500 dark:border-slate-800 dark:text-gray-400'}`}
+                >
+                  <div className={`p-3 rounded-2xl ${paymentMethod === 'efectivo' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800'}`}>
+                    <Banknote className="w-6 h-6" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm uppercase tracking-widest">Efectivo</p>
+                    <p className="text-[10px] font-bold opacity-60">TAB PARA SIGUIENTE</p>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => setPaymentMethod('credito')}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                      e.preventDefault();
+                      setPaymentMethod('efectivo');
+                    }
+                  }}
+                  className={`flex items-center gap-4 p-5 border-2 rounded-3xl font-black transition-all outline-none focus:ring-4 focus:ring-orange-500/40 ${paymentMethod === 'credito' ? 'border-orange-600 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:border-orange-500 dark:text-orange-400 ring-4 ring-orange-500/10' : 'border-gray-200 text-gray-500 dark:border-slate-800 dark:text-gray-400'}`}
+                >
+                  <div className={`p-3 rounded-2xl ${paymentMethod === 'credito' ? 'bg-orange-600 text-white' : 'bg-gray-100 dark:bg-slate-800'}`}>
+                    <ArrowRightLeft className="w-6 h-6" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm uppercase tracking-widest">A Crédito</p>
+                    <p className="text-[10px] font-bold opacity-60">TAB PARA NOMBRE</p>
+                  </div>
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-col items-center gap-1 opacity-50">
+                <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <span className="bg-gray-200 dark:bg-slate-800 px-1 py-0.5 rounded">↑ ↓</span> Flechas para elegir
+                </p>
+                <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <span className="bg-gray-200 dark:bg-slate-800 px-1 py-0.5 rounded text-[8px]">ESC</span> para volver al carrito
+                </p>
+              </div>
+
+              {paymentMethod === 'credito' && (
+                <div className="w-full px-4 mt-6 animate-in fade-in zoom-in-95 duration-200">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block ml-2">¿Quién debe el dinero?</label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Escribe el nombre aquí..."
+                    className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
+                    autoFocus
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'ArrowUp' && customerName === '') {
+                         e.preventDefault();
+                         setPaymentMethod('efectivo');
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              <p className="mt-auto pt-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center px-4">
+                La venta se registrará en contabilidad al dar confirmar
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Resumen de Pago */}
+        <div className="p-5 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-lg font-bold text-gray-900 dark:text-white">Total</span>
+            <span className="text-3xl font-black text-blue-600 dark:text-blue-400">
+              ${Math.round(calculateTotal()).toLocaleString('es-CO')}
+            </span>
+          </div>
+          
+          <div className="flex gap-2">
+            <button 
+              disabled={cart.length === 0 || isProcessing}
+              tabIndex={0}
+              onClick={posState === 'billing' ? handleCheckout : processSale}
+              className={`flex-1 ${posState === 'payment' ? 'bg-green-600 hover:bg-green-500 outline-none focus:ring-4 focus:ring-green-500/40' : 'bg-blue-600 hover:bg-blue-500'} disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed text-white rounded-2xl py-4 font-black text-lg shadow-lg transition-all active:scale-[0.98] flex justify-center items-center`}
+            >
+              {isProcessing ? (
+                <div className="flex items-center">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                   Procesando...
+                </div>
+              ) : (
+                <>
+                  <Banknote className="w-6 h-6 mr-2" />
+                  {posState === 'billing' ? 'Cobrar Total (Enter)' : 'Confirmar Venta (Enter)'}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Ticket / Recibo */}
+      {completedSale && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Cabecera de Estado Explicativa */}
+            <div className="bg-green-600 text-white p-4 text-center">
+              <h3 className="text-lg font-black uppercase tracking-wider">¡Venta Completada!</h3>
+              <p className="text-xs opacity-90 font-bold">Registrada con éxito en contabilidad</p>
+            </div>
+
+            {/* Contenido del Ticket - Emulación estricta 58mm POS */}
+            <pre 
+              id="printable-receipt" 
+              className="p-1 bg-white text-black font-mono text-[10px] font-bold leading-tight whitespace-pre max-w-[58mm] mx-auto overflow-hidden text-left print:p-0 print:m-0 print:w-[58mm]"
+              style={{ color: '#000000', fontWeight: 900, WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+            >
+{(() => {
+  const lineLength = 24; // Valor equilibrado para evitar cortes en ambos lados
+  const divider = '-'.repeat(lineLength);
+  
+  const centerText = (text: string) => {
+    if (text.length >= lineLength) return text.substring(0, lineLength);
+    const leftPad = Math.floor((lineLength - text.length) / 2);
+    return ' '.repeat(leftPad) + text;
+  };
+  
+  const formatLine = (left: string, right: string) => {
+    const spaceNeeded = lineLength - left.length - right.length;
+    if (spaceNeeded > 0) {
+      return left + ' '.repeat(spaceNeeded) + right;
+    } else {
+      const truncatedLeft = left.substring(0, lineLength - right.length - 1);
+      return truncatedLeft + ' ' + right;
+    }
+  };
+
+  const lines = [
+    centerText(storeName.toUpperCase()),
+    centerText(`TEL: ${storePhone}`),
+    centerText(storeLocation),
+    '',
+    divider,
+    centerText('DOCUMENTO POS'),
+    centerText(`No: POS-${completedSale.id ? completedSale.id.toString().substring(0,6).toUpperCase() : '000123'}`),
+    divider,
+    formatLine('Fecha:', new Date(completedSale.createdAt).toLocaleDateString('es-CO')),
+    formatLine('Hora:', new Date(completedSale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })),
+    ''
+  ];
+
+  completedSale.items.forEach((item: any) => {
+    const name = item.productName || item.product.name;
+    const priceRound = Math.round((item.unitPrice || item.product.price) * item.quantity).toLocaleString('es-CO');
+    const leftInfo = `${name.substring(0, 11)} x${item.quantity}`;
+    lines.push(formatLine(leftInfo, priceRound));
+  });
+
+  lines.push('');
+  lines.push(divider);
+  lines.push(formatLine('Subtotal', Math.round(completedSale.totalAmount).toLocaleString('es-CO')));
+  lines.push(formatLine('IVA (0%)', '0'));
+  lines.push(formatLine('TOTAL', Math.round(completedSale.totalAmount).toLocaleString('es-CO')));
+  lines.push(divider);
+  lines.push('');
+  lines.push(`Pago: ${completedSale.paymentMethod}`);
+  lines.push('');
+  lines.push(divider);
+  lines.push(centerText('Gracias por su compra'));
+  lines.push('');
+  
+  return lines.join('\n');
+})()}
+            </pre>
+            
+            {/* Botones de Acción */}
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3 print:hidden">
+              <button 
+                onClick={() => {
+                  setCompletedSale(null);
+                  setTimeout(() => searchInputRef.current?.focus(), 100);
+                }} 
+                className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+              >
+                Cerrar (Esc)
+              </button>
+              <button 
+                onClick={handlePrintAndReset} 
+                className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors"
+                autoFocus
+              >
+                🖨️ Imprimir (Enter)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
