@@ -2,12 +2,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ShoppingBag, Store, User, Mail, Lock, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, Store, User, Mail, Lock, ArrowRight, Loader2, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     storeName: '',
     userName: '',
@@ -20,28 +21,42 @@ export default function RegisterPage() {
     setLoading(true);
     
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/auth/register`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      console.log('Fetching registration from:', apiUrl);
+      const res = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
+      const contentType = res.headers.get('content-type');
       if (res.ok) {
-        const data = await res.json();
-        // Guardar sesión y redirigir
-        localStorage.setItem('tenant_token', data.access_token);
-        localStorage.setItem('user_role', data.user.role);
-        localStorage.setItem('user_name', data.user.name);
-        setStep(3); // Paso de éxito
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000);
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          // Guardar sesión y redirigir
+          localStorage.setItem('tenant_token', data.access_token);
+          localStorage.setItem('user_role', data.user.role);
+          localStorage.setItem('user_name', data.user.name);
+          setStep(3); // Paso de éxito
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 2000);
+        } else {
+           throw new Error('Respuesta del servidor no es JSON');
+        }
       } else {
-        const err = await res.json();
-        alert(`Error: ${err.message || 'No se pudo registrar el negocio'}`);
+        if (contentType && contentType.includes('application/json')) {
+          const err = await res.json();
+          alert(`Error: ${err.message || 'No se pudo registrar el negocio'}`);
+        } else {
+          const textErr = await res.text();
+          console.error('Server HTML Error:', textErr);
+          alert(`Error del Servidor: Código ${res.status}. Posible caída del Backend.`);
+        }
       }
-    } catch (error) {
-      alert('Error de conexión al registrar el negocio');
+    } catch (error: any) {
+      console.error(error);
+      alert('Error de conexión: ' + (error.message || 'Fallo desconocido'));
     } finally {
       setLoading(false);
     }
@@ -144,16 +159,23 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Contraseña</label>
-                  <div className="relative">
+                  <div className="relative flex items-center">
                     <Lock className="absolute left-4 top-4 w-5 h-5 text-gray-400" />
                     <input 
-                      type="password" 
+                      type={showPassword ? "text" : "password"}
                       placeholder="********"
                       value={formData.password}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-slate-800 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-bold text-gray-900 dark:text-white"
+                      className="w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-slate-800 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-bold text-gray-900 dark:text-white"
                       required
                     />
+                    <button 
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
                   </div>
                 </div>
 
