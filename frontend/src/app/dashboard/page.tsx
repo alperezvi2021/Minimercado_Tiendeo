@@ -82,7 +82,7 @@ export default function PosPage() {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/products', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -198,7 +198,7 @@ export default function PosPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/sales', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
         method: 'POST',
         headers: { 
            'Content-Type': 'application/json',
@@ -249,7 +249,7 @@ export default function PosPage() {
 
     for (const sale of items) {
       try {
-        const res = await fetch('http://localhost:3001/sales', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

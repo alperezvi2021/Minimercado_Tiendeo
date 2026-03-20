@@ -55,7 +55,7 @@ export default function InventoryPage() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/categories', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -70,7 +70,7 @@ export default function InventoryPage() {
   const fetchProducts = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/products', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -128,7 +128,7 @@ export default function InventoryPage() {
         categoryId: categoryId || null,
       };
 
-      const url = editingId ? `http://localhost:3001/products/${editingId}` : 'http://localhost:3001/products';
+      const url = editingId ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/${editingId}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`;
       const method = editingId ? 'PATCH' : 'POST';
 
       const res = await fetch(url, {
@@ -172,7 +172,7 @@ export default function InventoryPage() {
     if (window.confirm(`¿Estás seguro de que deseas eliminar permanentemente "${productName}"?`)) {
       try {
         const token = localStorage.getItem('access_token');
-        const res = await fetch(`http://localhost:3001/products/${id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -204,7 +204,7 @@ export default function InventoryPage() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/categories', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ export default function InventoryPage() {
     if (window.confirm(`¿Seguro que quieres borrar la categoría "${catName}"? Los productos asociados quedarán "Sin Categoría".`)) {
       try {
         const token = localStorage.getItem('access_token');
-        const res = await fetch(`http://localhost:3001/categories/${id}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         });

@@ -33,7 +33,7 @@ export default function ReportsPage() {
   const fetchSales = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/sales', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {

@@ -41,7 +41,7 @@ export default function ClosurePage() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch('http://localhost:3001/sales/closure/status', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/closure/status`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -55,7 +55,7 @@ export default function ClosurePage() {
 
   const fetchSales = async () => {
     try {
-      const response = await fetch('http://localhost:3001/sales/closure/sales', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/closure/sales`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -81,7 +81,7 @@ export default function ClosurePage() {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/sales/mark-credit', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/mark-credit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ export default function ClosurePage() {
 
     setClosing(true);
     try {
-      const response = await fetch('http://localhost:3001/sales/closure/close', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/closure/close`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`

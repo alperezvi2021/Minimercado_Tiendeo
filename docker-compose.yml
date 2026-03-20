@@ -43,6 +43,46 @@ services:
     networks:
       - tiendeo-network
 
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tiendeo-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/tiendeo?schema=public
+      - JWT_SECRET=supersalariosecreto99
+      - PORT=3001
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - db
+      - redis
+      - minio
+    networks:
+      - tiendeo-network
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    container_name: tiendeo-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - tiendeo-network
+
 volumes:
   pgdata:
   redisdata:

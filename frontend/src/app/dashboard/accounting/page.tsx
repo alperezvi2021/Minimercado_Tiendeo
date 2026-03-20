@@ -27,7 +27,7 @@ export default function AccountingPage() {
   const fetchSummary = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/accounting/summary', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/accounting/summary`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {

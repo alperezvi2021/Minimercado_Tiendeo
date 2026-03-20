@@ -13,6 +13,7 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   /* config options here */
   transpilePackages: ["@ducanh2912/next-pwa"],
   // @ts-ignore

@@ -28,8 +28,8 @@ export default function SuperAdminPage() {
     try {
       const token = localStorage.getItem('access_token');
       const [tenantsRes, usersRes] = await Promise.all([
-        fetch('http://localhost:3001/admin/tenants', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:3001/admin/users', { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/tenants`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/users`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       if (tenantsRes.ok) setTenants(await tenantsRes.json());
@@ -45,7 +45,7 @@ export default function SuperAdminPage() {
     if (!newPassword) return;
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`http://localhost:3001/admin/users/${selectedUser.id}/reset-password`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/users/${selectedUser.id}/reset-password`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

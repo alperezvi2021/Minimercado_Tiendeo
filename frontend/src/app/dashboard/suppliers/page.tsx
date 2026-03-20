@@ -61,7 +61,7 @@ export default function SuppliersPage() {
     try {
       const token = localStorage.getItem('access_token');
       const endpoint = activeTab === 'suppliers' ? 'suppliers' : 'suppliers/invoices';
-      const res = await fetch(`http://localhost:3001/${endpoint}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -80,7 +80,7 @@ export default function SuppliersPage() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch('http://localhost:3001/suppliers', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: supName, taxId: supTaxId, phone: supPhone, email: supEmail, address: supAddress })
@@ -141,7 +141,7 @@ export default function SuppliersPage() {
 
     try {
       const token = localStorage.getItem('tenant_token');
-      const res = await fetch('http://localhost:3001/suppliers/invoices', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/invoices`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload)
