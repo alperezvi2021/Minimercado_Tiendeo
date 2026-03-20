@@ -8,8 +8,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
       POSTGRES_DB: tiendeo
-    ports:
-      - "5432:5432"
+    # Se eliminan los 'ports' para no chocar con el Postgres de Chatwoot (5432)
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
@@ -19,8 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: tiendeo-redis
-    ports:
-      - "6379:6379"
+    # Se eliminan los 'ports' para no chocar con el Redis de Chatwoot (6379)
     volumes:
       - redisdata:/data
     restart: unless-stopped
@@ -50,7 +48,7 @@ services:
     container_name: tiendeo-backend
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3051:3001"
     environment:
       - DATABASE_URL=postgresql://postgres:password123@db:5432/tiendeo?schema=public
       - JWT_SECRET=supersalariosecreto99
@@ -73,11 +71,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://tiendeopos.grupodksoluciones.com/api}
     container_name: tiendeo-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3050:3000"
+
     depends_on:
       - backend
     networks:
