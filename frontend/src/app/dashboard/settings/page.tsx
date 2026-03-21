@@ -15,8 +15,9 @@ export default function SettingsPage() {
     ticketAutoPrint: false,
     ticketHeaderMessage: '',
     ticketFooterMessage: '',
-    location: 'Don Matías - Antioquia',
-    phone: '+573207095554'
+    location: '',
+    phone: '',
+    address: ''
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -54,6 +55,9 @@ export default function SettingsPage() {
           ticketAutoPrint: data.ticketAutoPrint || false,
           ticketHeaderMessage: data.ticketHeaderMessage || '',
           ticketFooterMessage: data.ticketFooterMessage || '',
+          location: data.location || '',
+          phone: data.phone || '',
+          address: data.address || '',
         });
       }
     } catch (error) {
@@ -125,6 +129,9 @@ export default function SettingsPage() {
           ticketAutoPrint: tenantData.ticketAutoPrint,
           ticketHeaderMessage: tenantData.ticketHeaderMessage,
           ticketFooterMessage: tenantData.ticketFooterMessage,
+          location: tenantData.location,
+          phone: tenantData.phone,
+          address: tenantData.address,
         })
       });
 
@@ -238,6 +245,20 @@ export default function SettingsPage() {
                       type="text" 
                       value={tenantData.location}
                       onChange={(e) => setTenantData({...tenantData, location: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Dirección Local</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Ej. Calle 10 # 5-20"
+                      value={tenantData.address}
+                      onChange={(e) => setTenantData({...tenantData, address: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
                     />
                   </div>

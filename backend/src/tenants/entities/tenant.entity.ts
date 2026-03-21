@@ -27,6 +27,15 @@ export class Tenant {
   @Column({ nullable: true })
   ticketFooterMessage: string;
 
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  location: string;
+
   @OneToMany(() => User, (user) => user.tenant)
   users: User[];
 

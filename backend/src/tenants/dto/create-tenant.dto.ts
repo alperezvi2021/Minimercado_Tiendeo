@@ -5,4 +5,7 @@ export class CreateTenantDto {
   ticketAutoPrint?: boolean;
   ticketHeaderMessage?: string;
   ticketFooterMessage?: string;
+  address?: string;
+  phone?: string;
+  location?: string;
 }
