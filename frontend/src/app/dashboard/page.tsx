@@ -31,10 +31,17 @@ export default function PosPage() {
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
   
-  // Store info state
-  const [storeName, setStoreName] = useState('TIENDA LAS MARGARITAS');
-  const [storePhone, setStorePhone] = useState('+573207095554');
-  const [storeLocation, setStoreLocation] = useState('Don Matías - Antioquia');
+  // Store info state (Dynamic from DB)
+  const [tenantData, setTenantData] = useState({
+    name: 'TIENDA LAS MARGARITAS',
+    phone: '+573207095554',
+    location: 'Don Matías - Antioquia',
+    rutNit: '',
+    ticketPaperSize: '58mm',
+    ticketAutoPrint: false,
+    ticketHeaderMessage: '',
+    ticketFooterMessage: ''
+  });
   
   // Reference for scanner focus
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +49,7 @@ export default function PosPage() {
   useEffect(() => {
     setIsOnline(navigator.onLine);
     fetchProducts();
+    fetchTenantData();
     loadPendingSales();
     // Auto-focus on mount for rapid scanning
     searchInputRef.current?.focus();
@@ -55,24 +63,41 @@ export default function PosPage() {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Identity and Store Info update
+    // Identity update
     const savedName = localStorage.getItem('user_name');
     const savedRole = localStorage.getItem('user_role');
-    const savedStoreName = localStorage.getItem('store_name');
-    const savedStorePhone = localStorage.getItem('store_phone');
-    const savedStoreLocation = localStorage.getItem('store_location');
-    
     if (savedName) setUserName(savedName);
     if (savedRole) setUserRole(savedRole);
-    if (savedStoreName) setStoreName(savedStoreName);
-    if (savedStorePhone) setStorePhone(savedStorePhone);
-    if (savedStoreLocation) setStoreLocation(savedStoreLocation);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const fetchTenantData = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/tenants/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTenantData({
+          name: data.name,
+          phone: data.phone || '+573207095554',
+          location: data.location || 'Don Matías - Antioquia',
+          rutNit: data.rutNit || '',
+          ticketPaperSize: data.ticketPaperSize || '58mm',
+          ticketAutoPrint: data.ticketAutoPrint || false,
+          ticketHeaderMessage: data.ticketHeaderMessage || '',
+          ticketFooterMessage: data.ticketFooterMessage || '',
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching tenant data", error);
+    }
+  };
 
   const loadPendingSales = () => {
     const saved = localStorage.getItem('pending_sales');
@@ -208,10 +233,20 @@ export default function PosPage() {
       });
       if(res.ok) {
         const savedSale = await res.json();
-        setCompletedSale({ ...savedSale, items: [...cart] });
+        const saleWithItems = { ...savedSale, items: [...cart] };
+        setCompletedSale(saleWithItems);
         setCart([]);
         setPosState('billing');
         fetchProducts();
+
+        // Auto-print logic
+        if (tenantData.ticketAutoPrint) {
+          setTimeout(() => {
+            window.print();
+            setCompletedSale(null);
+            setTimeout(() => searchInputRef.current?.focus(), 100);
+          }, 500);
+        }
       } else {
         const err = await res.json();
         alert('Error al procesar la venta: ' + (err.message || 'Error desconocido'));
@@ -232,10 +267,20 @@ export default function PosPage() {
     localStorage.setItem('pending_sales', JSON.stringify(newPending));
     
     // UI Feedback
-    setCompletedSale({ ...saleToStore, items: [...cart] });
+    const saleWithItems = { ...saleToStore, items: [...cart] };
+    setCompletedSale(saleWithItems);
     setCart([]);
     setPosState('billing');
     setIsProcessing(false);
+
+    // Auto-print logic for offline
+    if (tenantData.ticketAutoPrint) {
+      setTimeout(() => {
+        window.print();
+        setCompletedSale(null);
+        setTimeout(() => searchInputRef.current?.focus(), 100);
+      }, 500);
+    }
   };
 
   const syncPendingSales = async () => {
@@ -334,7 +379,7 @@ export default function PosPage() {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Caja Registradora</h2>
-            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{storeName} • {storeLocation}</p>
+            <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{tenantData.name} • {tenantData.location}</p>
           </div>
           <div className="flex items-center gap-3">
             {pendingSales.length > 0 && (
@@ -417,8 +462,8 @@ export default function PosPage() {
                 Perfil: {userRole === 'OWNER' ? 'Dueño / Administrador' : 'Vendedor / Cajero'}
               </p>
               <div className="mt-4 px-4 py-2 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-gray-200 dark:border-slate-700">
-                <p className="text-sm font-black text-gray-700 dark:text-gray-300">{storeName}</p>
-                <p className="text-xs font-semibold text-gray-500">{storeLocation}</p>
+                <p className="text-sm font-black text-gray-700 dark:text-gray-300">{tenantData.name}</p>
+                <p className="text-xs font-semibold text-gray-500">{tenantData.location}</p>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 max-w-sm">
                 El teclado es tu mejor amigo. Escanea un producto, o si la barra está vacía, oprime <strong>ENTER</strong> para ir a cobrar directamente.
@@ -613,17 +658,30 @@ export default function PosPage() {
               <p className="text-xs opacity-90 font-bold">Registrada con éxito en contabilidad</p>
             </div>
 
-            {/* Contenido del Ticket - Emulación estricta 58mm POS */}
-            <pre 
-              id="printable-receipt" 
-              className="p-1 bg-white text-black font-mono text-[10px] font-bold leading-tight whitespace-pre max-w-[58mm] mx-auto overflow-hidden text-left print:p-0 print:m-0 print:w-[58mm]"
-              style={{ color: '#000000', fontWeight: 900, WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+            {/* Contenido del Ticket - Emulación dinámica POS */}
+            <div 
+              className="bg-white p-1 overflow-hidden"
+              style={{ width: tenantData.ticketPaperSize === '80mm' ? '80mm' : '58mm', margin: '0 auto' }}
             >
+              <pre 
+                id="printable-receipt" 
+                className={`bg-white text-black font-mono font-bold leading-tight whitespace-pre text-left print:p-0 print:m-0`}
+                style={{ 
+                  fontSize: tenantData.ticketPaperSize === '80mm' ? '12px' : '10px',
+                  width: '100%',
+                  color: '#000000', 
+                  fontWeight: 900, 
+                  WebkitPrintColorAdjust: 'exact', 
+                  printColorAdjust: 'exact' 
+                }}
+              >
 {(() => {
-  const lineLength = 24; // Valor equilibrado para evitar cortes en ambos lados
+  const is80mm = tenantData.ticketPaperSize === '80mm';
+  const lineLength = is80mm ? 32 : 24;
   const divider = '-'.repeat(lineLength);
   
   const centerText = (text: string) => {
+    if (!text) return '';
     if (text.length >= lineLength) return text.substring(0, lineLength);
     const leftPad = Math.floor((lineLength - text.length) / 2);
     return ' '.repeat(leftPad) + text;
@@ -640,23 +698,31 @@ export default function PosPage() {
   };
 
   const lines = [
-    centerText(storeName.toUpperCase()),
-    centerText(`TEL: ${storePhone}`),
-    centerText(storeLocation),
-    '',
-    divider,
-    centerText('DOCUMENTO POS'),
-    centerText(`No: POS-${completedSale.id ? completedSale.id.toString().substring(0,6).toUpperCase() : '000123'}`),
-    divider,
-    formatLine('Fecha:', new Date(completedSale.createdAt).toLocaleDateString('es-CO')),
-    formatLine('Hora:', new Date(completedSale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })),
+    centerText(tenantData.name.toUpperCase()),
+    tenantData.rutNit ? centerText(`NIT: ${tenantData.rutNit}`) : '',
+    centerText(`TEL: ${tenantData.phone}`),
+    tenantData.location ? centerText(tenantData.location) : '',
     ''
   ];
+
+  if (tenantData.ticketHeaderMessage) {
+    const headerMsg = tenantData.ticketHeaderMessage.split('\n');
+    headerMsg.forEach(m => lines.push(centerText(m)));
+    lines.push('');
+  }
+
+  lines.push(divider);
+  lines.push(centerText('DOCUMENTO POS'));
+  lines.push(centerText(`No: POS-${completedSale.id ? completedSale.id.toString().substring(0,6).toUpperCase() : '000123'}`));
+  lines.push(divider);
+  lines.push(formatLine('Fecha:', new Date(completedSale.createdAt).toLocaleDateString('es-CO')));
+  lines.push(formatLine('Hora:', new Date(completedSale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })));
+  lines.push('');
 
   completedSale.items.forEach((item: any) => {
     const name = item.productName || item.product.name;
     const priceRound = Math.round((item.unitPrice || item.product.price) * item.quantity).toLocaleString('es-CO');
-    const leftInfo = `${name.substring(0, 11)} x${item.quantity}`;
+    const leftInfo = `${name.substring(0, is80mm ? 16 : 11)} x${item.quantity}`;
     lines.push(formatLine(leftInfo, priceRound));
   });
 
@@ -667,15 +733,23 @@ export default function PosPage() {
   lines.push(formatLine('TOTAL', Math.round(completedSale.totalAmount).toLocaleString('es-CO')));
   lines.push(divider);
   lines.push('');
-  lines.push(`Pago: ${completedSale.paymentMethod}`);
-  lines.push('');
-  lines.push(divider);
-  lines.push(centerText('Gracias por su compra'));
+  lines.push(`Pago: ${completedSale.paymentMethod.toUpperCase()}`);
+  
+  if (tenantData.ticketFooterMessage) {
+    lines.push('');
+    lines.push(divider);
+    const footerMsg = tenantData.ticketFooterMessage.split('\n');
+    footerMsg.forEach(m => lines.push(centerText(m)));
+  } else {
+    lines.push(divider);
+    lines.push(centerText('Gracias por su compra'));
+  }
   lines.push('');
   
-  return lines.join('\n');
+  return lines.filter(l => l !== null).join('\n');
 })()}
-            </pre>
+              </pre>
+            </div>
             
             {/* Botones de Acción */}
             <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3 print:hidden">

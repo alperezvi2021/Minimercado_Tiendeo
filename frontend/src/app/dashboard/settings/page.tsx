@@ -6,9 +6,19 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('business');
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
-  const [storeName, setStoreName] = useState('TIENDA LAS MARGARITAS');
-  const [storePhone, setStorePhone] = useState('+573207095554');
-  const [storeLocation, setStoreLocation] = useState('Don Matías - Antioquia');
+  
+  // Business State (from DB)
+  const [tenantData, setTenantData] = useState({
+    name: 'TIENDA LAS MARGARITAS',
+    rutNit: '',
+    ticketPaperSize: '58mm',
+    ticketAutoPrint: false,
+    ticketHeaderMessage: '',
+    ticketFooterMessage: '',
+    location: 'Don Matías - Antioquia',
+    phone: '+573207095554'
+  });
+
   const [isSaving, setIsSaving] = useState(false);
   
   // Users management state
@@ -20,18 +30,36 @@ export default function SettingsPage() {
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
     const savedRole = localStorage.getItem('user_role');
-    const savedStoreName = localStorage.getItem('store_name');
-    const savedStorePhone = localStorage.getItem('store_phone');
-    const savedStoreLocation = localStorage.getItem('store_location');
     
     if (savedName) setUserName(savedName);
     if (savedRole) setUserRole(savedRole);
-    if (savedStoreName) setStoreName(savedStoreName);
-    if (savedStorePhone) setStorePhone(savedStorePhone);
-    if (savedStoreLocation) setStoreLocation(savedStoreLocation);
     
+    fetchTenant();
     fetchUsers();
   }, []);
+
+  const fetchTenant = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/tenants/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTenantData({
+          ...tenantData,
+          name: data.name,
+          rutNit: data.rutNit || '',
+          ticketPaperSize: data.ticketPaperSize || '58mm',
+          ticketAutoPrint: data.ticketAutoPrint || false,
+          ticketHeaderMessage: data.ticketHeaderMessage || '',
+          ticketFooterMessage: data.ticketFooterMessage || '',
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching tenant", error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -80,17 +108,38 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveBusiness = () => {
+  const handleSaveBusiness = async () => {
     setIsSaving(true);
-    // Guardar en localStorage localmente para que persista
-    localStorage.setItem('store_name', storeName);
-    localStorage.setItem('store_phone', storePhone);
-    localStorage.setItem('store_location', storeLocation);
-    
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/tenants/me`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          name: tenantData.name,
+          rutNit: tenantData.rutNit,
+          ticketPaperSize: tenantData.ticketPaperSize,
+          ticketAutoPrint: tenantData.ticketAutoPrint,
+          ticketHeaderMessage: tenantData.ticketHeaderMessage,
+          ticketFooterMessage: tenantData.ticketFooterMessage,
+        })
+      });
+
+      if (res.ok) {
+        alert('Configuración guardada correctamente.');
+        // Update local storage for immediate UI reflected in header if needed
+        localStorage.setItem('store_name', tenantData.name);
+      } else {
+        alert('Error al guardar la configuración.');
+      }
+    } catch (error) {
+      alert('Error de conexión al guardar.');
+    } finally {
       setIsSaving(false);
-      alert('Configuración del negocio guardada correctamente.');
-    }, 1000);
+    }
   };
 
   return (
@@ -151,9 +200,20 @@ export default function SettingsPage() {
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Nombre de la Tienda</label>
                   <input 
                     type="text" 
-                    value={storeName}
-                    onChange={(e) => setStoreName(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
+                    value={tenantData.name}
+                    onChange={(e) => setTenantData({...tenantData, name: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">NIT / RUT</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ej. 901.234.567-1"
+                    value={tenantData.rutNit}
+                    onChange={(e) => setTenantData({...tenantData, rutNit: e.target.value})}
+                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
                   />
                 </div>
                 
@@ -163,9 +223,9 @@ export default function SettingsPage() {
                     <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                     <input 
                       type="text" 
-                      value={storePhone}
-                      onChange={(e) => setStorePhone(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
+                      value={tenantData.phone}
+                      onChange={(e) => setTenantData({...tenantData, phone: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
                     />
                   </div>
                 </div>
@@ -176,8 +236,8 @@ export default function SettingsPage() {
                     <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                     <input 
                       type="text" 
-                      value={storeLocation}
-                      onChange={(e) => setStoreLocation(e.target.value)}
+                      value={tenantData.location}
+                      onChange={(e) => setTenantData({...tenantData, location: e.target.value})}
                       className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
                     />
                   </div>
@@ -377,27 +437,65 @@ export default function SettingsPage() {
               <div className="space-y-6">
                 <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800/50 rounded-2xl">
                    <p className="text-xs text-orange-800 dark:text-orange-300 leading-relaxed font-medium">
-                     Configura aquí el formato que saldrá impreso en tu impresora de 58mm o 80mm. 
-                     Próximamente admitirá personalización completa de fuentes.
+                     Configura aquí el formato que saldrá impreso. Los cambios se aplicarán instantáneamente en la próxima venta.
                    </p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tamaño de Papel</label>
-                  <select className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold text-sm">
-                    <option>Papel Térmico 58mm (Estándar)</option>
-                    <option>Papel Térmico 80mm (Grande)</option>
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tamaño de Papel</label>
+                    <select 
+                      value={tenantData.ticketPaperSize}
+                      onChange={(e) => setTenantData({...tenantData, ticketPaperSize: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold text-sm"
+                    >
+                      <option value="58mm">Papel Térmico 58mm (Estándar)</option>
+                      <option value="80mm">Papel Térmico 80mm (Grande)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl border border-transparent hover:border-blue-500/20 transition-all">
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">Impresión Automática</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">¿Imprimir ticket después de cobrar?</p>
+                    </div>
+                    <button 
+                      onClick={() => setTenantData({...tenantData, ticketAutoPrint: !tenantData.ticketAutoPrint})}
+                      className={`w-12 h-6 rounded-full flex items-center transition-all ${tenantData.ticketAutoPrint ? 'bg-blue-600 justify-end px-1' : 'bg-gray-300 dark:bg-slate-700 justify-start px-1'}`}
+                    >
+                        <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-2xl">
-                   <div>
-                     <p className="text-sm font-bold text-gray-900 dark:text-white">Impresión Automática</p>
-                     <p className="text-[10px] text-gray-500 dark:text-gray-400">¿Imprimir ticket inmediatamente al vender?</p>
-                   </div>
-                   <div className="w-12 h-6 bg-blue-600 rounded-full flex items-center justify-end px-1 cursor-pointer">
-                      <div className="w-4 h-4 bg-white rounded-full"></div>
-                   </div>
+                <div>
+                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mensaje Superior (Encabezado)</label>
+                   <textarea 
+                     placeholder="Ej: Régimen Simplificado - Gracias por preferirnos"
+                     value={tenantData.ticketHeaderMessage}
+                     onChange={(e) => setTenantData({...tenantData, ticketHeaderMessage: e.target.value})}
+                     className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold min-h-[80px]"
+                   />
+                </div>
+
+                <div>
+                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Mensaje Inferior (Pie de Página)</label>
+                   <textarea 
+                     placeholder="Ej: No se aceptan devoluciones después de 24h"
+                     value={tenantData.ticketFooterMessage}
+                     onChange={(e) => setTenantData({...tenantData, ticketFooterMessage: e.target.value})}
+                     className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold min-h-[80px]"
+                   />
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    onClick={handleSaveBusiness}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all w-full md:w-auto"
+                  >
+                    <Save className="w-5 h-5" />
+                    {isSaving ? 'Guardando...' : 'Guardar Formato de Ticket'}
+                  </button>
                 </div>
               </div>
             </div>

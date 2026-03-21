@@ -15,6 +15,18 @@ export class Tenant {
   @Column({ default: 'FREE' })
   activePlan: string;
 
+  @Column({ default: '58mm' })
+  ticketPaperSize: string; // '58mm' o '80mm'
+
+  @Column({ default: false })
+  ticketAutoPrint: boolean;
+
+  @Column({ nullable: true })
+  ticketHeaderMessage: string;
+
+  @Column({ nullable: true })
+  ticketFooterMessage: string;
+
   @OneToMany(() => User, (user) => user.tenant)
   users: User[];
 
