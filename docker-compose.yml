@@ -51,6 +51,11 @@ services:
       - "3051:3001"
     environment:
       - DATABASE_URL=postgresql://postgres:password123@db:5432/tiendeo?schema=public
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password123
+      - DB_NAME=tiendeo
       - JWT_SECRET=supersalariosecreto99
       - PORT=3001
       - MINIO_ENDPOINT=minio
