@@ -12,12 +12,15 @@ import { CategoriesModule } from './categories/categories.module';
 import { AdminModule } from './admin/admin.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { AccountingModule } from './accounting/accounting.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BackupsModule } from './backups/backups.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -41,6 +44,7 @@ import { AccountingModule } from './accounting/accounting.module';
     AdminModule,
     SuppliersModule,
     AccountingModule,
+    BackupsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

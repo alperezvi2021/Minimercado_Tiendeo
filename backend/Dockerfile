@@ -12,6 +12,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /usr/src/app
 
+# Install postgresql-client for pg_dump
+RUN apk add --no-cache postgresql-client
+
 COPY package*.json ./
 RUN npm ci --only=production
 
