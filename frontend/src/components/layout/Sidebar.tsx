@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck } from 'lucide-react';
+import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const navItems = [
