@@ -1,3 +1,6 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft } from 'lucide-react';
 import BackupsManager from '@/components/admin/BackupsManager';
 
@@ -69,8 +72,8 @@ export default function SuperAdminPage() {
     router.push('/login');
   };
 
-  const filteredTenants = tenants.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredUsers = users.filter(u => u.email.toLowerCase().includes(searchQuery.toLowerCase()) || u.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredTenants = tenants.filter((t: any) => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredUsers = users.filter((u: any) => u.email.toLowerCase().includes(searchQuery.toLowerCase()) || u.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="min-h-screen bg-[#050510] text-gray-300 font-sans selection:bg-blue-500/30">
@@ -201,7 +204,7 @@ export default function SuperAdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredTenants.map(t => (
+                {filteredTenants.map((t: any) => (
                   <tr key={t.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-8 py-6 text-xs font-mono text-gray-600 group-hover:text-blue-500 transition-colors">{t.id}</td>
                     <td className="px-8 py-6 font-black text-white text-lg">{t.name}</td>
@@ -210,7 +213,7 @@ export default function SuperAdminPage() {
                     </td>
                     <td className="px-8 py-6 text-sm font-medium text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
                     <td className="px-8 py-6">
-                      <button className="text-gray-600 hover:text-white transition-colors">
+                      <button className="text-gray-600 hover:text-white transition-colors" title="Ver detalles del negocio">
                         <ExternalLink className="w-5 h-5" />
                       </button>
                     </td>
@@ -231,7 +234,7 @@ export default function SuperAdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredUsers.map(u => (
+                {filteredUsers.map((u: any) => (
                   <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-8 py-6 font-black text-white text-lg">{u.name}</td>
                     <td className="px-8 py-6 text-sm font-medium text-blue-400">{u.email}</td>
