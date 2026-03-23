@@ -33,6 +33,7 @@ export default function CreditsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const fetchCredits = async () => {
     try {
@@ -77,6 +78,30 @@ export default function CreditsPage() {
       alert('Error de conexión');
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const handleSync = async () => {
+    if (!confirm('¿Deseas sincronizar las ventas antiguas con el módulo de créditos? Esto buscará ventas de crédito que no aparezcan aquí.')) return;
+    setIsSyncing(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/sync-credits`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const result = await res.json();
+        alert(`Sincronización completada.\nNuevos créditos: ${result.created}\nNombres actualizados: ${result.updated}`);
+        fetchCredits();
+      } else {
+        alert('Error al sincronizar');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -170,6 +195,15 @@ export default function CreditsPage() {
           >
             <Download className="w-4 h-4 text-emerald-500" />
             Excel
+          </button>
+          <button 
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white px-4 py-2.5 rounded-xl font-bold shadow-lg shadow-orange-900/20 transition-all active:scale-95 disabled:opacity-50"
+            title="Sincronizar créditos de ventas antiguas"
+          >
+            <ArrowRightLeft className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Sincronizando...' : 'Sincronizar Datos'}
           </button>
         </div>
       </div>

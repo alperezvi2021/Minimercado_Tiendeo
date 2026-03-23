@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   ClipboardCheck, 
   CircleDollarSign, 
@@ -32,6 +33,7 @@ interface ClosureStatus {
 }
 
 export default function ClosurePage() {
+  const router = useRouter();
   const [status, setStatus] = useState<ClosureStatus | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,9 +88,8 @@ export default function ClosurePage() {
       });
 
       if (response.ok) {
-        alert('Pago registrado con éxito');
-        fetchStatus();
-        fetchSales();
+        alert('Pago registrado con éxito. Te redirigiremos al módulo de créditos para verificar.');
+        router.push('/dashboard/credits');
       }
     } catch (error) {
       console.error('Error paying credit:', error);
