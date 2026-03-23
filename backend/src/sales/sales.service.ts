@@ -154,4 +154,34 @@ export class SalesService {
     if (!sale) throw new NotFoundException('Venta no encontrada');
     return sale;
   }
+
+  async findAllPendingCredits(tenantId: string): Promise<CreditSale[]> {
+    return this.creditSalesRepository.find({
+      where: { tenantId, status: 'PENDING' },
+      relations: ['sale'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async payCreditSale(tenantId: string, creditId: string): Promise<CreditSale> {
+    const creditSale = await this.creditSalesRepository.findOne({
+      where: { id: creditId, tenantId },
+      relations: ['sale'],
+    });
+
+    if (!creditSale) throw new NotFoundException('Crédito no encontrado');
+    if (creditSale.status === 'PAID') throw new BadRequestException('Este crédito ya ha sido pagado');
+
+    creditSale.status = 'PAID';
+    creditSale.paidAt = new Date();
+    
+    // También actualizamos el método de pago de la venta original para que aparezca en el flujo de caja
+    // aunque mantengamos el registro de que nació como crédito.
+    if (creditSale.sale) {
+      creditSale.sale.paymentMethod = 'efectivo';
+      await this.salesRepository.save(creditSale.sale);
+    }
+
+    return this.creditSalesRepository.save(creditSale);
+  }
 }
