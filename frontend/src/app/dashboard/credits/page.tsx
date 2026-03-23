@@ -10,19 +10,23 @@ import {
   Loader2,
   AlertCircle,
   FileText,
-  Download
+  Download,
+  History,
+  ArrowDownCircle
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { utils, writeFile } from 'xlsx';
+import AbonoModal from '@/components/customers/AbonoModal';
 
 interface CreditSale {
   id: string;
   customerName: string;
   amount: number;
+  remainingAmount: number;
   status: string;
   createdAt: string;
-  sale: {
+  sale?: {
     id: string;
     totalAmount: number;
   }
@@ -34,6 +38,8 @@ export default function CreditsPage() {
   const [filter, setFilter] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedCredit, setSelectedCredit] = useState<CreditSale | null>(null);
+  const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
 
   const fetchCredits = async () => {
     try {
@@ -147,7 +153,7 @@ export default function CreditsPage() {
     c.customerName.toLowerCase().includes(filter.toLowerCase())
   );
 
-  const totalOwed = filteredCredits.reduce((sum, c) => sum + Number(c.amount), 0);
+  const totalOwed = filteredCredits.reduce((sum, c) => sum + Number(c.remainingAmount || c.amount), 0);
 
   if (loading) {
     return (
@@ -232,9 +238,10 @@ export default function CreditsPage() {
               <tr className="border-b border-slate-800/50">
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente</th>
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Fecha Deuda</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Monto</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Monto Original</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Saldo Pendiente</th>
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acción</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
@@ -255,28 +262,42 @@ export default function CreditsPage() {
                     </div>
                   </td>
                   <td className="px-8 py-4">
-                    <span className="text-lg font-black text-white">${Math.round(credit.amount).toLocaleString('es-CO')}</span>
+                    <span className="text-sm font-bold text-slate-400">${Math.round(credit.amount).toLocaleString('es-CO')}</span>
                   </td>
                   <td className="px-8 py-4">
-                    <span className="bg-orange-900/40 text-orange-400 text-[10px] font-black uppercase px-2.5 py-1 rounded-full border border-orange-500/20">
-                      Pendiente
+                    <span className="text-xl font-black text-rose-500 shadow-rose-900/10">${Math.round(credit.remainingAmount || credit.amount).toLocaleString('es-CO')}</span>
+                  </td>
+                  <td className="px-8 py-4">
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${
+                      credit.status === 'PARTIAL' 
+                      ? 'bg-blue-900/40 text-blue-400 border-blue-500/20' 
+                      : 'bg-orange-900/40 text-orange-400 border-orange-500/20'
+                    }`}>
+                      {credit.status === 'PARTIAL' ? 'Abonado' : 'Pendiente'}
                     </span>
                   </td>
                   <td className="px-8 py-4 text-right">
-                    <button
-                      onClick={() => handlePay(credit.id)}
-                      disabled={processingId === credit.id}
-                      className="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-xl font-bold text-sm flex items-center gap-2 ml-auto shadow-lg shadow-green-900/20 transition-all active:scale-95 disabled:opacity-50"
-                    >
-                      {processingId === credit.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Banknote className="w-4 h-4" />
-                          Marcar Pago
-                        </>
-                      )}
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => { setSelectedCredit(credit); setIsAbonoModalOpen(true); }}
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+                      >
+                        <ArrowDownCircle className="w-4 h-4" />
+                        Abonar
+                      </button>
+                      <button
+                        onClick={() => handlePay(credit.id)}
+                        disabled={processingId === credit.id}
+                        className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-green-900/20 transition-all active:scale-95 disabled:opacity-50"
+                        title="Marcar como pagado totalmente"
+                      >
+                        {processingId === credit.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Banknote className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -307,6 +328,12 @@ export default function CreditsPage() {
           </p>
         </div>
       </div>
+      <AbonoModal 
+        isOpen={isAbonoModalOpen}
+        onClose={() => setIsAbonoModalOpen(false)}
+        onSave={fetchCredits}
+        credit={selectedCredit}
+      />
     </div>
   );
 }

@@ -89,6 +89,20 @@ export class SalesController {
     return this.salesService.syncCredits(tenantId);
   }
 
+  @Post('credits/:id/partial-payment')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  registerPartialPayment(@Request() req, @Param('id') id: string, @Body() body: { amount: number; notes?: string }) {
+    const tenantId = req.user.tenantId;
+    return this.salesService.registerPartialPayment(tenantId, id, body.amount, body.notes);
+  }
+
+  @Get('credits/:id/history')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  getCreditHistory(@Request() req, @Param('id') id: string) {
+    const tenantId = req.user.tenantId;
+    return this.salesService.getCreditHistory(tenantId, id);
+  }
+
   @Get(':id')
   @Roles(Role.ADMIN, Role.OWNER)
   findOne(@Request() req, @Param('id') id: string) {

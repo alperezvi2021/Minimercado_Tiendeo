@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Sale } from './entities/sale.entity';
 import { CreditSale } from './entities/credit-sale.entity';
+import { CreditPayment } from './entities/credit-payment.entity';
 import { CashClosure } from './entities/cash-closure.entity';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { ProductsService } from '../products/products.service';
@@ -14,6 +15,8 @@ export class SalesService {
     private salesRepository: Repository<Sale>,
     @InjectRepository(CreditSale)
     private creditSalesRepository: Repository<CreditSale>,
+    @InjectRepository(CreditPayment)
+    private creditPaymentsRepository: Repository<CreditPayment>,
     @InjectRepository(CashClosure)
     private cashClosureRepository: Repository<CashClosure>,
     private productsService: ProductsService,
@@ -70,7 +73,9 @@ export class SalesService {
           tenantId,
           saleId: savedSale.id,
           customerName: createSaleDto.customerName || 'Cliente Genérico',
+          customerId: createSaleDto.customerId, // Link to customer if provided
           amount: savedSale.totalAmount,
+          remainingAmount: savedSale.totalAmount, // Initially full amount
           status: 'PENDING',
         });
         await transactionalEntityManager.save<CreditSale>(creditSale);
@@ -189,16 +194,81 @@ export class SalesService {
     if (creditSale.status === 'PAID') throw new BadRequestException('Este crédito ya ha sido pagado');
 
     creditSale.status = 'PAID';
+    creditSale.remainingAmount = 0;
     creditSale.paidAt = new Date();
     
-    // También actualizamos el método de pago de la venta original para que aparezca en el flujo de caja
-    // aunque mantengamos el registro de que nació como crédito.
+    // Si queremos que el pago completo también se registre como un abono histórico:
+    const payment = this.creditPaymentsRepository.create({
+      tenantId,
+      creditSaleId: creditSale.id,
+      amount: creditSale.amount, // En este caso es el total si se paga de una
+      paymentDate: new Date(),
+      paymentMethod: 'efectivo',
+      notes: 'Pago total directo',
+    });
+    await this.creditPaymentsRepository.save(payment);
+
     if (creditSale.sale) {
       creditSale.sale.paymentMethod = 'efectivo';
       await this.salesRepository.save(creditSale.sale);
     }
 
     return this.creditSalesRepository.save(creditSale);
+  }
+
+  async registerPartialPayment(tenantId: string, creditId: string, amount: number, notes?: string): Promise<CreditPayment> {
+    const creditSale = await this.creditSalesRepository.findOne({
+      where: { id: creditId, tenantId },
+      relations: ['sale'],
+    });
+
+    if (!creditSale) throw new NotFoundException('Crédito no encontrado');
+    if (creditSale.status === 'PAID') throw new BadRequestException('Este crédito ya está pagado');
+    
+    const remaining = Number(creditSale.remainingAmount);
+    if (amount > remaining) throw new BadRequestException('El abono no puede ser mayor a la deuda pendiente');
+
+    const payment = this.creditPaymentsRepository.create({
+      tenantId,
+      creditSaleId: creditId,
+      amount,
+      paymentDate: new Date(),
+      paymentMethod: 'efectivo',
+      notes,
+    });
+
+    await this.creditPaymentsRepository.save(payment);
+
+    // Actualizar saldo de la deuda
+    creditSale.remainingAmount = remaining - amount;
+    if (creditSale.remainingAmount <= 0) {
+      creditSale.status = 'PAID';
+      creditSale.paidAt = new Date();
+      // Si se completa el pago, la venta original puede marcarse como efectivo para el reporte diario
+      if (creditSale.sale) {
+        creditSale.sale.paymentMethod = 'efectivo';
+        await this.salesRepository.save(creditSale.sale);
+      }
+    } else {
+      creditSale.status = 'PARTIAL';
+    }
+
+    await this.creditSalesRepository.save(creditSale);
+    return payment;
+  }
+
+  async getCreditHistory(tenantId: string, creditId: string): Promise<any> {
+    const credit = await this.creditSalesRepository.findOne({
+      where: { id: creditId, tenantId },
+      relations: ['sale', 'sale.items', 'customer'],
+    });
+    
+    const payments = await this.creditPaymentsRepository.find({
+      where: { creditSaleId: creditId, tenantId },
+      order: { paymentDate: 'DESC' },
+    });
+
+    return { credit, payments };
   }
 
   async paySale(tenantId: string, saleId: string): Promise<void> {

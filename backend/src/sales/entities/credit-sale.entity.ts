@@ -16,13 +16,23 @@ export class CreditSale {
   @JoinColumn({ name: 'sale_id' })
   sale: Sale;
 
-  @Column({ name: 'customer_name' })
+  @Column({ name: 'customer_name', nullable: true })
   customerName: string;
+
+  @Column({ name: 'customer_id', nullable: true })
+  customerId: string;
+
+  @ManyToOne('Customer', 'creditSales', { nullable: true })
+  @JoinColumn({ name: 'customer_id' })
+  customer: any;
 
   @Column('decimal', { precision: 10, scale: 2 })
   amount: number;
 
-  @Column({ default: 'PENDING' }) // PENDING, PAID
+  @Column('decimal', { name: 'remaining_amount', precision: 10, scale: 2, default: 0 })
+  remainingAmount: number;
+
+  @Column({ default: 'PENDING' }) // PENDING, PARTIAL, PAID
   status: string;
 
   @CreateDateColumn({ name: 'created_at' })

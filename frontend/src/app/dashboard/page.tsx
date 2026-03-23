@@ -31,6 +31,8 @@ export default function PosPage() {
   const [pendingSales, setPendingSales] = useState<any[]>([]);
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   
   // Store info state (Dynamic from DB)
   const [tenantData, setTenantData] = useState({
@@ -51,6 +53,7 @@ export default function PosPage() {
     setIsOnline(navigator.onLine);
     fetchProducts();
     fetchTenantData();
+    fetchCustomers();
     loadPendingSales();
     // Auto-focus on mount for rapid scanning
     searchInputRef.current?.focus();
@@ -131,6 +134,21 @@ export default function PosPage() {
     }
   };
 
+  const fetchCustomers = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCustomers(data);
+      }
+    } catch (error) {
+      console.error("Error fetching customers", error);
+    }
+  };
+
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
@@ -159,15 +177,17 @@ export default function PosPage() {
     } else if (e.key === 'Enter') {
       if (selectedSuggestionIndex >= 0 && filteredSuggestions[selectedSuggestionIndex]) {
         e.preventDefault();
+        e.stopPropagation();
         addToCart(filteredSuggestions[selectedSuggestionIndex]);
         setSelectedSuggestionIndex(-1);
       } else if (searchTerm.trim() !== '') {
-        const exactMatch = allProducts.find(p => p.barcode === searchTerm);
-        if (exactMatch) {
-          addToCart(exactMatch);
-        }
+        e.preventDefault();
+        e.stopPropagation();
+        const found = allProducts.find(p => p.barcode === searchTerm || p.name.toLowerCase() === searchTerm.toLowerCase());
+        if (found) addToCart(found);
       } else if (cart.length > 0) {
-        // If input is empty but user presses ENTER, go to checkout!
+        e.preventDefault();
+        e.stopPropagation();
         handleCheckout();
       }
     }
@@ -207,7 +227,8 @@ export default function PosPage() {
     const payload = {
       totalAmount: calculateTotal(),
       paymentMethod: paymentMethod,
-      customerName: paymentMethod === 'credito' ? customerName : undefined,
+      customerName: paymentMethod === 'credito' ? (customerName || customers.find(c => c.id === selectedCustomerId)?.name) : undefined,
+      customerId: (paymentMethod === 'credito' && selectedCustomerId) ? selectedCustomerId : undefined,
       items: cart.map(i => ({
         productId: i.product.id,
         productName: i.product.name,
@@ -340,8 +361,8 @@ export default function PosPage() {
           e.preventDefault();
           handlePrintAndReset();
         } else if (posState === 'payment' && !isProcessing) {
-          // No procesar si acaba de entrar en modo pago (cooldown 500ms)
-          if (Date.now() - lastCheckoutTime < 500) return; 
+          // No procesar si acaba de entrar en modo pago (cooldown 800ms para evitar doble enter)
+          if (Date.now() - lastCheckoutTime < 800) return; 
           e.preventDefault();
           processSale();
         }
@@ -611,15 +632,40 @@ export default function PosPage() {
               </div>
 
               {paymentMethod === 'credito' && (
-                <div className="w-full px-4 mt-6 animate-in fade-in zoom-in-95 duration-200">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block ml-2">¿Quién debe el dinero?</label>
+                <div className="w-full px-4 mt-6 animate-in fade-in zoom-in-95 duration-200 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block ml-2">¿Quién debe el dinero?</label>
+                    <select
+                      className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-4 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
+                      value={selectedCustomerId}
+                      onChange={(e) => {
+                        setSelectedCustomerId(e.target.value);
+                        if (e.target.value) setCustomerName(''); 
+                      }}
+                      tabIndex={0}
+                    >
+                      <option value="">-- Seleccionar de la lista --</option>
+                      {customers.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${Math.round(c.totalDebt).toLocaleString()})` : ''}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="relative flex items-center gap-2">
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                    <span className="text-[10px] font-black text-slate-400 uppercase">O escribe uno nuevo</span>
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                  </div>
+
                   <input
                     type="text"
                     value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      if (e.target.value) setSelectedCustomerId('');
+                    }}
                     placeholder="Escribe el nombre aquí..."
                     className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
-                    autoFocus
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === 'ArrowUp' && customerName === '') {
