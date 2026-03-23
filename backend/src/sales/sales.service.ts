@@ -218,4 +218,38 @@ export class SalesService {
       }
     }
   }
+
+  async syncCredits(tenantId: string): Promise<any> {
+    const sales = await this.salesRepository.find({
+      where: { tenantId, paymentMethod: 'credito' }
+    });
+
+    let created = 0;
+    let updated = 0;
+
+    for (const sale of sales) {
+      const existing = await this.creditSalesRepository.findOne({
+        where: { saleId: sale.id, tenantId }
+      });
+
+      if (!existing) {
+        const credit = this.creditSalesRepository.create({
+          tenantId,
+          saleId: sale.id,
+          customerName: sale.customerName || 'Cliente Recuperado',
+          amount: sale.totalAmount,
+          status: 'PENDING',
+          createdAt: sale.createdAt
+        });
+        await this.creditSalesRepository.save(credit);
+        created++;
+      } else if (sale.customerName && (existing.customerName === 'Cliente Genérico' || !existing.customerName)) {
+        existing.customerName = sale.customerName;
+        await this.creditSalesRepository.save(existing);
+        updated++;
+      }
+    }
+
+    return { created, updated, totalAnalyzed: sales.length };
+  }
 }

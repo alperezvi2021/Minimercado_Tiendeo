@@ -82,6 +82,13 @@ export class SalesController {
     return this.salesService.findAll(tenantId);
   }
 
+  @Post('sync-credits')
+  @Roles(Role.ADMIN, Role.OWNER, Role.SUPER_ADMIN)
+  syncCredits(@Request() req) {
+    const tenantId = req.user.tenantId;
+    return this.salesService.syncCredits(tenantId);
+  }
+
   @Get(':id')
   @Roles(Role.ADMIN, Role.OWNER)
   findOne(@Request() req, @Param('id') id: string) {
