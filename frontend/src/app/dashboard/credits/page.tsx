@@ -153,7 +153,10 @@ export default function CreditsPage() {
     c.customerName.toLowerCase().includes(filter.toLowerCase())
   );
 
-  const totalOwed = filteredCredits.reduce((sum, c) => sum + Number(c.remainingAmount || c.amount), 0);
+  const totalOwed = filteredCredits.reduce((sum, c) => {
+    const val = Number(c.remainingAmount);
+    return sum + (val > 0 ? val : Number(c.amount));
+  }, 0);
 
   if (loading) {
     return (
@@ -178,7 +181,7 @@ export default function CreditsPage() {
         <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-3xl shadow-xl flex items-center gap-4">
           <div>
             <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Total por Cobrar</p>
-            <p className="text-3xl font-black text-orange-500">${Math.round(totalOwed).toLocaleString('es-CO')}</p>
+            <p className="text-3xl font-black text-orange-500">${Math.round(totalOwed).toLocaleString()}</p>
           </div>
           <div className="h-10 w-px bg-slate-800 mx-2" />
           <div className="text-center">
@@ -265,7 +268,7 @@ export default function CreditsPage() {
                     <span className="text-sm font-bold text-slate-400">${Math.round(credit.amount).toLocaleString('es-CO')}</span>
                   </td>
                   <td className="px-8 py-4">
-                    <span className="text-xl font-black text-rose-500 shadow-rose-900/10">${Math.round(credit.remainingAmount || credit.amount).toLocaleString('es-CO')}</span>
+                    <span className="text-xl font-black text-rose-500 shadow-rose-900/10">${Math.round(Number(credit.remainingAmount) || Number(credit.amount)).toLocaleString()}</span>
                   </td>
                   <td className="px-8 py-4">
                     <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${

@@ -7,6 +7,7 @@ import { CreditPayment } from './entities/credit-payment.entity';
 import { CashClosure } from './entities/cash-closure.entity';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { ProductsService } from '../products/products.service';
+import { Customer } from '../customers/entities/customer.entity';
 
 @Injectable()
 export class SalesService {
@@ -19,6 +20,8 @@ export class SalesService {
     private creditPaymentsRepository: Repository<CreditPayment>,
     @InjectRepository(CashClosure)
     private cashClosureRepository: Repository<CashClosure>,
+    @InjectRepository(Customer)
+    private customerRepository: Repository<Customer>,
     private productsService: ProductsService,
     private dataSource: DataSource,
   ) {}
@@ -311,32 +314,61 @@ export class SalesService {
       where: { tenantId, paymentMethod: 'credito' }
     });
 
-    let created = 0;
-    let updated = 0;
+    let creditCreated = 0;
+    let customerCreated = 0;
+    let linked = 0;
 
     for (const sale of sales) {
-      const existing = await this.creditSalesRepository.findOne({
+      // 1. Asegurar que exista el CreditSale
+      let creditSale = await this.creditSalesRepository.findOne({
         where: { saleId: sale.id, tenantId }
       });
 
-      if (!existing) {
-        const credit = this.creditSalesRepository.create({
+      if (!creditSale) {
+        creditSale = this.creditSalesRepository.create({
           tenantId,
           saleId: sale.id,
           customerName: sale.customerName || 'Cliente Recuperado',
           amount: sale.totalAmount,
+          remainingAmount: sale.totalAmount,
           status: 'PENDING',
           createdAt: sale.createdAt
         });
-        await this.creditSalesRepository.save(credit);
-        created++;
-      } else if (sale.customerName && (existing.customerName === 'Cliente Genérico' || !existing.customerName)) {
-        existing.customerName = sale.customerName;
-        await this.creditSalesRepository.save(existing);
-        updated++;
+        await this.creditSalesRepository.save(creditSale);
+        creditCreated++;
+      }
+
+      // 2. Sincronizar con Entidad Customer
+      if (creditSale.customerName && !creditSale.customerId) {
+        // Buscar cliente por nombre (insensible a mayúsculas/minúsculas)
+        let customer = await this.customerRepository.createQueryBuilder('customer')
+          .where('LOWER(customer.name) = LOWER(:name)', { name: creditSale.customerName })
+          .andWhere('customer.tenantId = :tenantId', { tenantId })
+          .getOne();
+
+        if (!customer) {
+          const newCustomer = this.customerRepository.create({
+            tenantId,
+            name: creditSale.customerName,
+          });
+          customer = await this.customerRepository.save(newCustomer);
+          customerCreated++;
+        }
+
+        // Vincular
+        if (customer) {
+          creditSale.customerId = customer.id;
+          await this.creditSalesRepository.save(creditSale);
+          linked++;
+        }
       }
     }
 
-    return { created, updated, totalAnalyzed: sales.length };
+    return { 
+      creditCreated, 
+      customerCreated, 
+      linked,
+      totalSales: sales.length 
+    };
   }
 }
