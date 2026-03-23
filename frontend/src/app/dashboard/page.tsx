@@ -23,6 +23,7 @@ export default function PosPage() {
   const [completedSale, setCompletedSale] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [customerName, setCustomerName] = useState('');
+  const [activeTab, setActiveTab] = useState<'products' | 'cart'>('products');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastCheckoutTime, setLastCheckoutTime] = useState(0); 
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
@@ -374,8 +375,29 @@ export default function PosPage() {
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden bg-gray-50 dark:bg-[#0f172a] transition-colors rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">
       
+      {/* Mobile Tabs Switcher */}
+      <div className="md:hidden flex border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-20">
+        <button 
+          onClick={() => setActiveTab('products')}
+          className={`flex-1 py-4 text-sm font-black transition-all ${activeTab === 'products' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-slate-500'}`}
+        >
+          PRODUCTOS
+        </button>
+        <button 
+          onClick={() => setActiveTab('cart')}
+          className={`flex-1 py-4 text-sm font-black transition-all relative ${activeTab === 'cart' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/30' : 'text-slate-500'}`}
+        >
+          CARRITO
+          {cart.length > 0 && (
+            <span className="absolute top-3 right-8 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center animate-bounce">
+              {cart.length}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Lado Izquierdo: Productos y Escáner (65%) */}
-      <div className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden">
+      <div className={`flex-1 flex flex-col p-4 md:p-6 overflow-hidden ${activeTab !== 'products' ? 'hidden md:flex' : 'flex'}`}>
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Caja Registradora</h2>
@@ -473,7 +495,7 @@ export default function PosPage() {
       </div>
 
       {/* Lado Derecho: Carrito de Compras (35%) */}
-      <div className="w-full md:w-[400px] lg:w-[450px] bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 flex flex-col shadow-xl z-10 transition-colors">
+      <div className={`w-full md:w-[400px] lg:w-[450px] bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 flex flex-col shadow-xl z-10 transition-all ${activeTab !== 'cart' ? 'hidden md:flex' : 'flex'}`}>
         {/* Cabecera dinámica del Sidebar */}
         <div className={`p-5 border-b border-gray-200 dark:border-slate-800 transition-colors ${posState === 'payment' ? 'bg-blue-600 dark:bg-blue-600' : 'bg-gray-50/50 dark:bg-slate-800/50'}`}>
           <div className="flex justify-between items-center">
@@ -647,6 +669,22 @@ export default function PosPage() {
           </div>
         </div>
       </div>
+
+      {/* Floating Mobile Bottom Bar for Quick Checkout */}
+      {cart.length > 0 && activeTab === 'products' && posState === 'billing' && (
+        <div className="md:hidden fixed bottom-4 left-4 right-4 bg-blue-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between z-30 animate-in slide-in-from-bottom-4 duration-300">
+          <div>
+            <p className="text-[10px] font-black opacity-70 uppercase">Total Carrito</p>
+            <p className="text-xl font-black">${Math.round(calculateTotal()).toLocaleString('es-CO')}</p>
+          </div>
+          <button 
+            onClick={() => setActiveTab('cart')}
+            className="bg-white text-blue-600 px-6 py-2 rounded-xl font-black text-sm active:scale-95 transition-transform"
+          >
+            Pagar Ahora
+          </button>
+        </div>
+      )}
 
       {/* Modal de Ticket / Recibo */}
       {completedSale && (

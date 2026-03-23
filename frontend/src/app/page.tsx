@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { ShoppingBag, Zap, Shield, BarChart3, Users, ChevronRight, Store, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Zap, Shield, BarChart3, Users, ChevronRight, Store, ArrowRight, MessageCircle, Menu, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 transition-colors duration-300 overflow-x-hidden selection:bg-blue-500/30">
       {/* Dynamic Background Elements */}
@@ -30,6 +32,29 @@ export default function LandingPage() {
               Iniciar Sesión
             </Link>
             <Link href="/register" className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all">
+              Crear mi Negocio
+            </Link>
+          </div>
+
+          <button 
+            className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
+          </button>
+        </div>
+
+        {/* Mobile Menu Drawer */}
+        <div className={`
+          fixed inset-0 top-20 z-40 bg-[#020617] md:hidden transition-all duration-300 ease-in-out
+          ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
+        `}>
+          <div className="flex flex-col p-6 gap-6 text-center">
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Funcionalidades</a>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Precios</a>
+            <div className="h-px bg-white/5 my-2" />
+            <Link href="/login" className="text-2xl font-bold text-white">Iniciar Sesión</Link>
+            <Link href="/register" className="px-8 py-4 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl">
               Crear mi Negocio
             </Link>
           </div>
@@ -166,6 +191,24 @@ export default function LandingPage() {
           © 2026 Tiendeo POS. Desarrollado con ❤️ para emprendedores.
         </p>
       </footer>
+      
+      {/* WhatsApp Floating Button */}
+      <a 
+        href="https://wa.me/573004516713" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="fixed bottom-8 right-8 z-[100] group flex items-center gap-3"
+      >
+        <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-20 group-hover:opacity-40 animate-pulse transition-opacity"></div>
+        <div className="relative bg-emerald-500 text-white p-4 rounded-2xl shadow-2xl shadow-emerald-500/20 hover:bg-emerald-400 hover:scale-110 active:scale-95 transition-all duration-300">
+          <MessageCircle className="w-8 h-8 fill-current" />
+        </div>
+        <div className="opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none">
+          <div className="bg-white text-slate-900 px-4 py-2 rounded-xl text-sm font-black shadow-xl whitespace-nowrap">
+            ¿Necesitas ayuda? <span className="text-emerald-500">¡Escríbenos!</span>
+          </div>
+        </div>
+      </a>
     </div>
   );
 }

@@ -14,7 +14,7 @@ const navItems = [
   { name: 'Contabilidad', href: '/dashboard/accounting', icon: Receipt, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState('CASHIER');
   const [userName, setUserName] = useState('Usuario');
@@ -29,7 +29,10 @@ export default function Sidebar() {
   const filteredItems = navItems.filter(item => item.roles.includes(userRole));
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex shadow-xl z-20">
+    <aside className={`
+      fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-64 md:flex md:shadow-xl
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+    `}>
       <div className="h-16 flex items-center justify-center border-b border-slate-800 px-6 bg-slate-950">
         <h1 className="text-xl font-bold tracking-tight text-white">
           Tiendeo<span className="text-blue-500">POS</span>

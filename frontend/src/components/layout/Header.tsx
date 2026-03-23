@@ -1,10 +1,10 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Search, Bell, LogOut, Sun, Moon, User } from 'lucide-react';
+import { Search, Bell, LogOut, Sun, Moon, User, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-export default function Header() {
+export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [userName, setUserName] = useState('Usuario');
@@ -18,7 +18,7 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('tenant_token');
+    localStorage.removeItem('access_token');
     localStorage.removeItem('user_role');
     localStorage.removeItem('user_name');
     router.push('/login');
@@ -28,14 +28,21 @@ export default function Header() {
     switch (role) {
       case 'OWNER': return 'Dueño';
       case 'ADMIN': return 'Administrador';
+      case 'SUPER_ADMIN': return 'Super Admin';
       default: return 'Cajero';
     }
   };
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-6 z-10 hidden md:flex transition-colors duration-200">
-      <div className="flex-1">
-        <div className="relative w-96">
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-6 z-10 transition-colors duration-200">
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={onMenuClick}
+          className="md:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        <div className="relative hidden lg:block w-72 xl:w-96">
           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
             <Search className="w-5 h-5" />
           </span>
