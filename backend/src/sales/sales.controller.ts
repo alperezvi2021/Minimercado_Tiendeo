@@ -33,6 +33,13 @@ export class SalesController {
   performClosure(@Request() req) {
     const tenantId = req.user.tenantId;
     const userId = req.user.userId;
+    // The provided code snippet for accounting logic was malformed and placed incorrectly.
+    // Assuming the intent was to add accounting logic to the closure process,
+    // this would typically involve fetching sales/invoices and then calculating.
+    // For now, I'm restoring the original `performClosure` method body.
+    // If you intended to add specific accounting calculations here, please provide
+    // the full, correct context including where `sales`, `cashAndCardSales`, etc.,
+    // would be obtained.
     return this.salesService.performClosure(tenantId, userId);
   }
 
@@ -64,14 +71,18 @@ export class SalesController {
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   payCredit(@Request() req, @Param('id') id: string) {
     const tenantId = req.user.tenantId;
-    return this.salesService.payCreditSale(tenantId, id);
+    const userId = req.user.userId;
+    const userName = req.user.name || 'Cajero';
+    return this.salesService.payCreditSale(tenantId, id, userId, userName);
   }
 
   @Post(':id/pay-from-closure')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   async payFromClosure(@Request() req, @Param('id') id: string) {
     const tenantId = req.user.tenantId;
-    await this.salesService.paySale(tenantId, id);
+    const userId = req.user.userId;
+    const userName = req.user.name || 'Cajero';
+    await this.salesService.paySale(tenantId, id, userId, userName);
     return { success: true };
   }
 
@@ -93,7 +104,9 @@ export class SalesController {
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   registerPartialPayment(@Request() req, @Param('id') id: string, @Body() body: { amount: number; notes?: string }) {
     const tenantId = req.user.tenantId;
-    return this.salesService.registerPartialPayment(tenantId, id, body.amount, body.notes);
+    const userId = req.user.userId;
+    const userName = req.user.name || 'Cajero';
+    return this.salesService.registerPartialPayment(tenantId, id, body.amount, userId, userName, body.notes);
   }
 
   @Get('credits/:id/history')

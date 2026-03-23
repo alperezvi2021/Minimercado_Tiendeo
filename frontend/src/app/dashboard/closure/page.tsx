@@ -29,6 +29,7 @@ interface ClosureStatus {
   };
   totalCash: number;
   totalCredit: number;
+  totalPayments?: number;
   salesCount: number;
 }
 
@@ -193,24 +194,24 @@ export default function ClosurePage() {
 
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
           <div className="flex items-center gap-3 mb-4">
-            <div className="bg-orange-500/10 p-2 rounded-xl">
-              <ArrowRightLeft className="w-5 h-5 text-orange-400" />
+            <div className="bg-indigo-500/10 p-2 rounded-xl">
+              <Banknote className="w-5 h-5 text-indigo-400" />
             </div>
-            <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">A Crédito</span>
+            <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">Abonos Recibidos</span>
           </div>
-          <p className="text-2xl font-black text-white">${Number(status.totalCredit).toLocaleString()}</p>
-          <p className="text-xs text-slate-500 mt-2">Cuentas por cobrar generadas</p>
+          <p className="text-2xl font-black text-white">${Number(status.totalPayments || 0).toLocaleString()}</p>
+          <p className="text-xs text-slate-500 mt-2">Cobros de deudas antiguas</p>
         </div>
 
         <div className="bg-blue-600 p-6 rounded-3xl shadow-xl border border-blue-500/50">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-white/20 p-2 rounded-xl">
-              <Search className="w-5 h-5 text-white" />
+              <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
-            <span className="text-blue-100 font-bold text-sm uppercase tracking-wider">Total Ventas</span>
+            <span className="text-blue-100 font-bold text-sm uppercase tracking-wider">Total Recaudado</span>
           </div>
-          <p className="text-2xl font-black text-white">${(Number(status.totalCash) + Number(status.totalCredit)).toLocaleString()}</p>
-          <p className="text-xs text-blue-100 mt-2">{status.salesCount} transacciones realizadas</p>
+          <p className="text-2xl font-black text-white">${(Number(status.totalCash) + Number(status.totalPayments || 0)).toLocaleString()}</p>
+          <p className="text-xs text-blue-100 mt-2">Dinero real que debe haber en caja</p>
         </div>
       </div>
 

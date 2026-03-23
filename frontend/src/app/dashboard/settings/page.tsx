@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Store, Users, User, Settings as SettingsIcon, Save, Key, Printer, Phone, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Store, Users, User, Settings as SettingsIcon, Save, Key, Printer, Phone, Eye, EyeOff, MapPin, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('business');
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
@@ -264,13 +266,20 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="pt-4">
+                <div className="pt-4 flex gap-3">
                   <button 
                     onClick={handleSaveBusiness}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all"
                   >
                     <Save className="w-5 h-5" />
                     {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                  <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                    Cancelar
                   </button>
                 </div>
               </div>
@@ -509,13 +518,20 @@ export default function SettingsPage() {
                    />
                 </div>
 
-                <div className="pt-4">
+                <div className="pt-4 flex flex-col md:flex-row gap-3">
                   <button 
                     onClick={handleSaveBusiness}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all w-full md:w-auto"
+                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all w-full md:w-auto"
                   >
                     <Save className="w-5 h-5" />
                     {isSaving ? 'Guardando...' : 'Guardar Formato de Ticket'}
+                  </button>
+                  <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-all w-full md:w-auto"
+                  >
+                    <X className="w-5 h-5" />
+                    Cancelar
                   </button>
                 </div>
               </div>

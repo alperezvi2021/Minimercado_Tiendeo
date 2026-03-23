@@ -21,8 +21,12 @@ export default function PosPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [posState, setPosState] = useState<'billing' | 'payment'>('billing');
   const [completedSale, setCompletedSale] = useState<any>(null);
-  const [paymentMethod, setPaymentMethod] = useState('efectivo');
+  const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'credito'>('efectivo');
   const [customerName, setCustomerName] = useState('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [customers, setCustomers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'products' | 'cart'>('products');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastCheckoutTime, setLastCheckoutTime] = useState(0); 
@@ -31,9 +35,6 @@ export default function PosPage() {
   const [pendingSales, setPendingSales] = useState<any[]>([]);
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  
   // Store info state (Dynamic from DB)
   const [tenantData, setTenantData] = useState({
     name: 'TIENDA LAS MARGARITAS',
@@ -215,6 +216,9 @@ export default function PosPage() {
     if (cart.length === 0) return;
     setPaymentMethod('efectivo'); 
     setCustomerName('');
+    setNewCustomerPhone('');
+    setIsNewCustomer(false);
+    setSelectedCustomerId('');
     setPosState('payment');
     setLastCheckoutTime(Date.now()); // Cooldown start
     searchInputRef.current?.blur();
@@ -222,13 +226,14 @@ export default function PosPage() {
 
   const processSale = async () => {
     if (cart.length === 0 || isProcessing) return;
-    setIsProcessing(true);
-    
+    let finalCustomerId = selectedCustomerId;
+    let finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
+
     const payload = {
       totalAmount: calculateTotal(),
       paymentMethod: paymentMethod,
-      customerName: paymentMethod === 'credito' ? (customerName || customers.find(c => c.id === selectedCustomerId)?.name) : undefined,
-      customerId: (paymentMethod === 'credito' && selectedCustomerId) ? selectedCustomerId : undefined,
+      customerName: paymentMethod === 'credito' ? finalCustomerName : undefined,
+      customerId: (paymentMethod === 'credito' && finalCustomerId) ? finalCustomerId : undefined,
       items: cart.map(i => ({
         productId: i.product.id,
         productName: i.product.name,
@@ -238,13 +243,31 @@ export default function PosPage() {
       }))
     };
 
-    if (!navigator.onLine) {
-      queueOfflineSale(payload);
-      return;
-    }
-
     try {
       const token = localStorage.getItem('access_token');
+      
+      // Si es un cliente nuevo, lo creamos primero
+      if (paymentMethod === 'credito' && isNewCustomer && customerName) {
+        const custRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({
+            name: customerName,
+            phone: newCustomerPhone,
+            isCreditActive: true
+          })
+        });
+        if (custRes.ok) {
+          const newCust = await custRes.json();
+          // Update payload with real customer info if created
+          payload.customerId = newCust.id;
+          payload.customerName = newCust.name;
+        }
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
         method: 'POST',
         headers: { 
@@ -633,47 +656,70 @@ export default function PosPage() {
 
               {paymentMethod === 'credito' && (
                 <div className="w-full px-4 mt-6 animate-in fade-in zoom-in-95 duration-200 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 block ml-2">¿Quién debe el dinero?</label>
-                    <select
-                      className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-4 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
-                      value={selectedCustomerId}
-                      onChange={(e) => {
-                        setSelectedCustomerId(e.target.value);
-                        if (e.target.value) setCustomerName(''); 
-                      }}
-                      tabIndex={0}
+                  <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-950 rounded-2xl border-2 border-orange-500/10 mb-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">¿Es un cliente nuevo?</span>
+                    <button 
+                      onClick={() => setIsNewCustomer(!isNewCustomer)}
+                      className={`w-10 h-5 rounded-full flex items-center transition-all ${isNewCustomer ? 'bg-orange-600 justify-end px-1' : 'bg-gray-300 dark:bg-slate-800 justify-start px-1'}`}
                     >
-                      <option value="">-- Seleccionar de la lista --</option>
-                      {customers.map(c => (
-                        <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${Math.round(c.totalDebt).toLocaleString()})` : ''}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="relative flex items-center gap-2">
-                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase">O escribe uno nuevo</span>
-                    <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
+                    </button>
                   </div>
 
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => {
-                      setCustomerName(e.target.value);
-                      if (e.target.value) setSelectedCustomerId('');
-                    }}
-                    placeholder="Escribe el nombre aquí..."
-                    className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'ArrowUp' && customerName === '') {
-                         e.preventDefault();
-                         setPaymentMethod('efectivo');
-                      }
-                    }}
-                  />
+                  {isNewCustomer ? (
+                    <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                      <input
+                        type="text"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Nombre completo del cliente"
+                        className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/50 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={newCustomerPhone}
+                        onChange={(e) => setNewCustomerPhone(e.target.value)}
+                        placeholder="Teléfono (Opcional)"
+                        className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                      <select
+                        className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-4 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
+                        value={selectedCustomerId}
+                        onChange={(e) => setSelectedCustomerId(e.target.value)}
+                      >
+                        <option value="">-- Seleccionar de la lista --</option>
+                        {customers.map(c => (
+                          <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${Math.round(c.totalDebt).toLocaleString()})` : ''}</option>
+                        ))}
+                      </select>
+
+                      <div className="relative flex items-center gap-2">
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                        <span className="text-[10px] font-black text-slate-400 uppercase font-mono">O escribe uno rápido</span>
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={customerName}
+                        onChange={(e) => {
+                          setCustomerName(e.target.value);
+                          if (e.target.value) setSelectedCustomerId('');
+                        }}
+                        placeholder="Escribe el nombre aquí..."
+                        className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'ArrowUp' && customerName === '') {
+                             e.preventDefault();
+                             setPaymentMethod('efectivo');
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

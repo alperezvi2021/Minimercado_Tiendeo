@@ -144,11 +144,13 @@ export class SalesService {
 
     const totalCash = cashSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
     const totalCredit = creditSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
+    const totalPayments = Number(closure.totalCreditPayments || 0);
 
     return {
       closure,
       totalCash,
       totalCredit,
+      totalPayments,
       salesCount: sales.length,
     };
   }
@@ -160,7 +162,8 @@ export class SalesService {
     const closure = status.closure;
     closure.totalCashSales = status.totalCash;
     closure.totalCreditSales = status.totalCredit;
-    closure.totalAmount = status.totalCash + status.totalCredit;
+    closure.totalCreditPayments = status.totalPayments;
+    closure.totalAmount = status.totalCash + status.totalCredit + status.totalPayments;
     closure.closedAt = new Date();
     closure.status = 'CLOSED';
 
@@ -184,7 +187,7 @@ export class SalesService {
     });
   }
 
-  async payCreditSale(tenantId: string, creditId: string): Promise<CreditSale> {
+  async payCreditSale(tenantId: string, creditId: string, userId: string, userName: string): Promise<CreditSale> {
     const creditSale = await this.creditSalesRepository.findOne({
       where: { id: creditId, tenantId },
       relations: ['sale'],
@@ -208,6 +211,11 @@ export class SalesService {
     });
     await this.creditPaymentsRepository.save(payment);
 
+    // Registrar en el cierre de caja actual
+    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+    closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(creditSale.amount);
+    await this.cashClosureRepository.save(closure);
+
     if (creditSale.sale) {
       creditSale.sale.paymentMethod = 'efectivo';
       await this.salesRepository.save(creditSale.sale);
@@ -216,7 +224,7 @@ export class SalesService {
     return this.creditSalesRepository.save(creditSale);
   }
 
-  async registerPartialPayment(tenantId: string, creditId: string, amount: number, notes?: string): Promise<CreditPayment> {
+  async registerPartialPayment(tenantId: string, creditId: string, amount: number, userId: string, userName: string, notes?: string): Promise<CreditPayment> {
     const creditSale = await this.creditSalesRepository.findOne({
       where: { id: creditId, tenantId },
       relations: ['sale'],
@@ -238,6 +246,11 @@ export class SalesService {
     });
 
     await this.creditPaymentsRepository.save(payment);
+
+    // Registrar en el cierre de caja actual
+    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+    closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(amount);
+    await this.cashClosureRepository.save(closure);
 
     // Actualizar saldo de la deuda
     creditSale.remainingAmount = remaining - amount;
@@ -271,20 +284,24 @@ export class SalesService {
     return { credit, payments };
   }
 
-  async paySale(tenantId: string, saleId: string): Promise<void> {
+  async paySale(tenantId: string, saleId: string, userId: string, userName: string): Promise<void> {
     const creditSale = await this.creditSalesRepository.findOne({
       where: { saleId, tenantId },
       relations: ['sale'],
     });
 
     if (creditSale) {
-      await this.payCreditSale(tenantId, creditSale.id);
+      await this.payCreditSale(tenantId, creditSale.id, userId, userName);
     } else {
       // Si no hay registro en creditSales (ej: datos antiguos), buscamos la venta
       const sale = await this.salesRepository.findOne({ where: { id: saleId, tenantId } });
       if (sale && sale.paymentMethod === 'credito') {
           sale.paymentMethod = 'efectivo';
           await this.salesRepository.save(sale);
+          // Registrar en el cierre de caja actual si se actualiza una venta antigua
+          const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+          closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(sale.totalAmount);
+          await this.cashClosureRepository.save(closure);
       }
     }
   }
