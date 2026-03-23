@@ -3,6 +3,7 @@ import { CustomersService } from './customers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/enums/role.enum';
 
 @Controller('customers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -10,7 +11,7 @@ export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Post()
-  @Roles('OWNER', 'ADMIN', 'SUPER_ADMIN')
+  @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
   create(@Request() req, @Body() createCustomerDto: any) {
     return this.customersService.create(req.user.tenantId, createCustomerDto);
   }
@@ -26,13 +27,13 @@ export class CustomersController {
   }
 
   @Patch(':id')
-  @Roles('OWNER', 'ADMIN', 'SUPER_ADMIN')
+  @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
   update(@Request() req, @Param('id') id: string, @Body() updateCustomerDto: any) {
     return this.customersService.update(req.user.tenantId, id, updateCustomerDto);
   }
 
   @Delete(':id')
-  @Roles('OWNER', 'ADMIN', 'SUPER_ADMIN')
+  @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
   remove(@Request() req, @Param('id') id: string) {
     return this.customersService.remove(req.user.tenantId, id);
   }
