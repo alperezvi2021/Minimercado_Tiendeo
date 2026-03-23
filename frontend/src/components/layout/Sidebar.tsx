@@ -12,7 +12,6 @@ const navItems = [
   { name: 'Proveedores', href: '/dashboard/suppliers', icon: Truck, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
   { name: 'Créditos', href: '/dashboard/credits', icon: ArrowRightLeft, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
   { name: 'Contabilidad', href: '/dashboard/accounting', icon: Receipt, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
-  { name: 'Respaldos', href: '/dashboard/admin/backups', icon: Database, roles: ['SUPER_ADMIN'] },
 ];
 
 export default function Sidebar() {

@@ -18,7 +18,7 @@ interface Backup {
   lastModified: string;
 }
 
-export default function BackupsPage() {
+export default function BackupsManager() {
   const [backups, setBackups] = useState<Backup[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -27,9 +27,10 @@ export default function BackupsPage() {
   const fetchBackups = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/backups`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       if (!response.ok) throw new Error('Error al obtener respaldos');
@@ -49,10 +50,11 @@ export default function BackupsPage() {
   const handleCreateBackup = async () => {
     try {
       setCreating(true);
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/backups`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       if (!response.ok) throw new Error('Error al crear respaldo');
@@ -67,9 +69,10 @@ export default function BackupsPage() {
 
   const handleDownload = async (filename: string) => {
     try {
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/backups/${filename}/download`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       const data = await response.json();
@@ -82,10 +85,11 @@ export default function BackupsPage() {
   const handleDelete = async (filename: string) => {
     if (!confirm('¿Está seguro de que desea eliminar este respaldo?')) return;
     try {
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/backups/${filename}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       if (response.ok) {
@@ -105,7 +109,7 @@ export default function BackupsPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-black text-white flex items-center gap-3 tracking-tight">
@@ -125,21 +129,21 @@ export default function BackupsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+        <div className="bg-white/5 border border-white/5 p-6 rounded-3xl shadow-xl">
           <div className="flex items-center gap-3 mb-2">
             <Calendar className="w-5 h-5 text-blue-400" />
             <span className="text-slate-400 font-bold text-sm uppercase">Frecuencia</span>
           </div>
           <p className="text-xl font-bold text-white">Diaria (Medianoche)</p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+        <div className="bg-white/5 border border-white/5 p-6 rounded-3xl shadow-xl">
           <div className="flex items-center gap-3 mb-2">
             <HardDrive className="w-5 h-5 text-purple-400" />
             <span className="text-slate-400 font-bold text-sm uppercase">Destino</span>
           </div>
           <p className="text-xl font-bold text-white">Minio S3 Local</p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
+        <div className="bg-white/5 border border-white/5 p-6 rounded-3xl shadow-xl">
           <div className="flex items-center gap-3 mb-2">
             <FileArchive className="w-5 h-5 text-orange-400" />
             <span className="text-slate-400 font-bold text-sm uppercase">Total Archivos</span>
@@ -148,21 +152,21 @@ export default function BackupsPage() {
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="px-8 py-6 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
+      <div className="bg-white/5 border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
+        <div className="px-8 py-6 border-b border-white/5 bg-white/5 flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">Historial de Respaldos</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b border-slate-800/50">
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Nombre del Archivo</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Tamaño</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+              <tr className="border-b border-white/5 bg-white/5">
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Nombre del Archivo</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Fecha</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500">Tamaño</th>
+                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-500 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/50">
+            <tbody className="divide-y divide-white/5">
               {loading ? (
                 <tr>
                   <td colSpan={4} className="px-8 py-12 text-center text-slate-500">
@@ -178,17 +182,17 @@ export default function BackupsPage() {
                 </tr>
               ) : (
                 backups.map((backup) => (
-                  <tr key={backup.name} className="hover:bg-slate-800/30 transition-colors group">
-                    <td className="px-8 py-4">
+                  <tr key={backup.name} className="hover:bg-white/[0.02] transition-colors group">
+                    <td className="px-8 py-6">
                       <span className="text-sm font-bold text-white">{backup.name}</span>
                     </td>
-                    <td className="px-8 py-4">
+                    <td className="px-8 py-6">
                       <span className="text-sm text-slate-400">{new Date(backup.lastModified).toLocaleString()}</span>
                     </td>
-                    <td className="px-8 py-4">
+                    <td className="px-8 py-6">
                       <span className="text-sm text-slate-400">{formatSize(backup.size)}</span>
                     </td>
-                    <td className="px-8 py-4 text-right flex items-center justify-end gap-2">
+                    <td className="px-8 py-6 text-right flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleDownload(backup.name)}
                         className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-xl transition-all"
@@ -212,14 +216,13 @@ export default function BackupsPage() {
         </div>
       </div>
 
-      <div className="bg-blue-900/20 border border-blue-500/30 p-6 rounded-3xl flex items-start gap-4">
+      <div className="bg-blue-900/20 border border-blue-500/30 p-8 rounded-[40px] flex items-start gap-4 shadow-xl">
         <AlertCircle className="w-6 h-6 text-blue-400 shrink-0 mt-1" />
         <div className="space-y-1">
-          <p className="text-sm font-bold text-blue-100">Información sobre los respaldos</p>
-          <p className="text-xs text-blue-200/70 leading-relaxed">
-            Los respaldos automáticos se realizan todos los días a las 00:00 (hora del servidor). 
-            Los archivos contienen una copia completa de la base de datos (estructura y datos). 
-            Para restaurar un respaldo, contacte con soporte técnico o utilice la terminal de comandos.
+          <p className="text-sm font-bold text-blue-100 uppercase tracking-widest">Información Global</p>
+          <p className="text-sm text-blue-200/70 leading-relaxed font-medium">
+            Este módulo genera una copia completa de la base de datos de **Tiendeo POS**, incluyendo todos los negocios registrados en la red. 
+            Los respaldos automáticos se realizan todos los días a las 00:00 (hora del servidor).
           </p>
         </div>
       </div>

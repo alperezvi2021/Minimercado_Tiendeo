@@ -1,7 +1,5 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus } from 'lucide-react';
+import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft } from 'lucide-react';
+import BackupsManager from '@/components/admin/BackupsManager';
 
 export default function SuperAdminPage() {
   const router = useRouter();
@@ -105,14 +103,22 @@ export default function SuperAdminPage() {
             <Users className="w-5 h-5" />
             Usuarios Globales
           </button>
+
+          <button 
+            onClick={() => setActiveTab('backups')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'backups' ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'hover:bg-white/5 text-gray-400'}`}
+          >
+            <Database className="w-5 h-5" />
+            Respaldos Globales
+          </button>
         </nav>
 
         <button 
-          onClick={logout}
-          className="mt-auto flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-red-400 hover:bg-red-500/10 transition-all border border-red-500/20"
+          onClick={() => router.push('/dashboard')}
+          className="mt-auto flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-blue-400 hover:bg-blue-500/10 transition-all border border-blue-500/20"
         >
-          <LogOut className="w-5 h-5" />
-          Cerrar Plataforma
+          <ArrowLeft className="w-5 h-5" />
+          Volver al Dashboard
         </button>
       </aside>
 
@@ -181,9 +187,10 @@ export default function SuperAdminPage() {
         </div>
 
         {/* Lists Container */}
-        <div className="bg-[#0a0a1a] border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
+        <div className={`${activeTab === 'backups' ? '' : 'bg-[#0a0a1a] border border-white/5 rounded-[40px] overflow-hidden shadow-2xl'}`}>
           {activeTab === 'tenants' ? (
             <table className="w-full text-left">
+              {/* ... table content remains the same ... */}
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
                   <th className="px-8 py-6">ID Negocio</th>
@@ -211,8 +218,9 @@ export default function SuperAdminPage() {
                 ))}
               </tbody>
             </table>
-          ) : (
+          ) : activeTab === 'users' ? (
             <table className="w-full text-left">
+              {/* ... table content remains the same ... */}
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
                   <th className="px-8 py-6">Nombre Usuario</th>
@@ -246,6 +254,10 @@ export default function SuperAdminPage() {
                 ))}
               </tbody>
             </table>
+          ) : (
+            <div className="p-8">
+              <BackupsManager />
+            </div>
           )}
         </div>
       </main>
