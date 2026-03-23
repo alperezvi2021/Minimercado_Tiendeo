@@ -8,8 +8,13 @@ import {
   CheckCircle2, 
   Banknote,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Download
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { utils, writeFile } from 'xlsx';
 
 interface CreditSale {
   id: string;
@@ -75,6 +80,44 @@ export default function CreditsPage() {
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('TIENDEO POS - CUENTAS POR COBRAR', 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
+    
+    const tableData = filteredCredits.map(c => [
+      c.customerName,
+      new Date(c.createdAt).toLocaleDateString(),
+      `$${Math.round(c.amount).toLocaleString()}`,
+      'PENDIENTE'
+    ]);
+    
+    autoTable(doc, {
+      startY: 35,
+      head: [['Cliente', 'Fecha Deuda', 'Monto', 'Estado']],
+      body: tableData,
+      headStyles: { fillColor: [249, 115, 22] } // Orange
+    });
+    
+    doc.save('Cuentas_Por_Cobrar.pdf');
+  };
+
+  const exportToExcel = () => {
+    const data = filteredCredits.map(c => ({
+      Cliente: c.customerName,
+      Fecha: new Date(c.createdAt).toLocaleDateString(),
+      Monto: Number(c.amount),
+      Estado: 'PENDIENTE'
+    }));
+    
+    const ws = utils.json_to_sheet(data);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, 'Créditos');
+    writeFile(wb, 'Cuentas_Por_Cobrar.xlsx');
+  };
+
   const filteredCredits = credits.filter(c => 
     c.customerName.toLowerCase().includes(filter.toLowerCase())
   );
@@ -111,6 +154,23 @@ export default function CreditsPage() {
              <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Clientes</p>
              <p className="text-2xl font-black text-white">{filteredCredits.length}</p>
           </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button 
+            onClick={exportToPDF}
+            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-all active:scale-95"
+          >
+            <FileText className="w-4 h-4 text-rose-500" />
+            PDF
+          </button>
+          <button 
+            onClick={exportToExcel}
+            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-all active:scale-95"
+          >
+            <Download className="w-4 h-4 text-emerald-500" />
+            Excel
+          </button>
         </div>
       </div>
 

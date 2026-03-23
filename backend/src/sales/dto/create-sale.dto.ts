@@ -9,5 +9,6 @@ export class CreateSaleItemDto {
 export class CreateSaleDto {
   totalAmount: number;
   paymentMethod: string;
+  customerName?: string;
   items: CreateSaleItemDto[];
 }

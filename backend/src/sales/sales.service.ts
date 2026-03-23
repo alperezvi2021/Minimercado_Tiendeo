@@ -61,6 +61,18 @@ export class SalesService {
 
     const savedSale = await this.salesRepository.save(sale);
 
+    // Si es crédito, crear la entrada en la tabla de créditos inmediatamente
+    if (createSaleDto.paymentMethod === 'credito') {
+      const creditSale = this.creditSalesRepository.create({
+        tenantId,
+        saleId: savedSale.id,
+        customerName: createSaleDto.customerName || 'Cliente Genérico',
+        amount: savedSale.totalAmount,
+        status: 'PENDING',
+      });
+      await this.creditSalesRepository.save(creditSale);
+    }
+
     // Descontar inventario
     for (const item of createSaleDto.items) {
       await this.productsService.updateStock(tenantId, item.productId, item.quantity);
@@ -183,5 +195,23 @@ export class SalesService {
     }
 
     return this.creditSalesRepository.save(creditSale);
+  }
+
+  async paySale(tenantId: string, saleId: string): Promise<void> {
+    const creditSale = await this.creditSalesRepository.findOne({
+      where: { saleId, tenantId },
+      relations: ['sale'],
+    });
+
+    if (creditSale) {
+      await this.payCreditSale(tenantId, creditSale.id);
+    } else {
+      // Si no hay registro en creditSales (ej: datos antiguos), buscamos la venta
+      const sale = await this.salesRepository.findOne({ where: { id: saleId, tenantId } });
+      if (sale && sale.paymentMethod === 'credito') {
+          sale.paymentMethod = 'efectivo';
+          await this.salesRepository.save(sale);
+      }
+    }
   }
 }

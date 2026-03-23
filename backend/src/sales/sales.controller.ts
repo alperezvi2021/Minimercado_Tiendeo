@@ -67,6 +67,14 @@ export class SalesController {
     return this.salesService.payCreditSale(tenantId, id);
   }
 
+  @Post(':id/pay-from-closure')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  async payFromClosure(@Request() req, @Param('id') id: string) {
+    const tenantId = req.user.tenantId;
+    await this.salesService.paySale(tenantId, id);
+    return { success: true };
+  }
+
   @Get()
   @Roles(Role.ADMIN, Role.OWNER)
   findAll(@Request() req) {

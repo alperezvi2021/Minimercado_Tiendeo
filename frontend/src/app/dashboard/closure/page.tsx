@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import { 
   ClipboardCheck, 
   CircleDollarSign, 
-  UserPlus, 
   CheckCircle2, 
   AlertCircle,
   Clock,
   User as UserIcon,
   Search,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Banknote
 } from 'lucide-react';
 
 interface Sale {
@@ -35,8 +35,6 @@ export default function ClosurePage() {
   const [status, setStatus] = useState<ClosureStatus | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isMarkingCredit, setIsMarkingCredit] = useState<string | null>(null);
-  const [customerName, setCustomerName] = useState('');
   const [closing, setClosing] = useState(false);
 
   const fetchStatus = async () => {
@@ -74,30 +72,26 @@ export default function ClosurePage() {
     fetchSales();
   }, []);
 
-  const handleMarkAsCredit = async (saleId: string) => {
-    if (!customerName.trim()) {
-      alert('Por favor ingrese el nombre del cliente');
+  const handlePayCredit = async (saleId: string) => {
+    if (!confirm('¿Marcar esta venta a crédito como pagada en efectivo?')) {
       return;
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/mark-credit`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/${saleId}/pay-from-closure`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({ saleId, customerName })
+        }
       });
 
       if (response.ok) {
-        setIsMarkingCredit(null);
-        setCustomerName('');
+        alert('Pago registrado con éxito');
         fetchStatus();
         fetchSales();
       }
     } catch (error) {
-      console.error('Error marking as credit:', error);
+      console.error('Error paying credit:', error);
     }
   };
 
@@ -262,20 +256,20 @@ export default function ClosurePage() {
                   <td className="px-8 py-4">
                     {sale.paymentMethod === 'credito' ? (
                       <span className="text-sm font-bold text-white underline decoration-orange-500/50 underline-offset-4">
-                        {sale.customerName}
+                        {sale.customerName || 'Cliente Genérico'}
                       </span>
                     ) : (
                       <span className="text-xs text-slate-600 italic">Pago al contado</span>
                     )}
                   </td>
                   <td className="px-8 py-4 text-right">
-                    {sale.paymentMethod !== 'credito' && (
+                    {sale.paymentMethod === 'credito' && (
                       <button
-                        onClick={() => setIsMarkingCredit(sale.id)}
-                        className="p-2 hover:bg-orange-500/20 text-slate-500 hover:text-orange-400 rounded-xl transition-all"
-                        title="Convertir a Crédito"
+                        onClick={() => handlePayCredit(sale.id)}
+                        className="p-2 hover:bg-green-500/20 text-slate-500 hover:text-green-400 rounded-xl transition-all"
+                        title="Marcar como Pagado"
                       >
-                        <UserPlus className="w-5 h-5" />
+                        <Banknote className="w-5 h-5" />
                       </button>
                     )}
                   </td>
@@ -292,48 +286,6 @@ export default function ClosurePage() {
           </table>
         </div>
       </div>
-
-      {/* Mark as Credit Modal */}
-      {isMarkingCredit && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-8 shadow-2xl animate-in zoom-in duration-300">
-            <h3 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
-              <ArrowRightLeft className="w-6 h-6 text-orange-500" />
-              Convertir a Crédito
-            </h3>
-            <p className="text-slate-400 mb-6 text-sm">
-              Esta venta será marcada como una deuda pendiente. Ingrese el nombre del cliente responsable.
-            </p>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nombre del Cliente</label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Ej: Juan Pérez"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all font-bold"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setIsMarkingCredit(null)}
-                  className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-2xl transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => handleMarkAsCredit(isMarkingCredit)}
-                  className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-2xl shadow-lg shadow-orange-900/20 transition-all active:scale-95"
-                >
-                  Confirmar Deuda
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
