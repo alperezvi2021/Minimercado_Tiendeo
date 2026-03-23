@@ -16,7 +16,7 @@ export class CreditSale {
   @JoinColumn({ name: 'sale_id' })
   sale: Sale;
 
-  @Column()
+  @Column({ name: 'customer_name' })
   customerName: string;
 
   @Column('decimal', { precision: 10, scale: 2 })

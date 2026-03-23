@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Sale } from './entities/sale.entity';
 import { CreditSale } from './entities/credit-sale.entity';
 import { CashClosure } from './entities/cash-closure.entity';
@@ -17,6 +17,7 @@ export class SalesService {
     @InjectRepository(CashClosure)
     private cashClosureRepository: Repository<CashClosure>,
     private productsService: ProductsService,
+    private dataSource: DataSource,
   ) {}
 
   async getOrCreateOpenClosure(tenantId: string, userId: string, userName: string): Promise<CashClosure> {
@@ -44,41 +45,44 @@ export class SalesService {
 
     const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
 
-    const sale = this.salesRepository.create({
-      tenantId,
-      userId,
-      closureId: closure.id,
-      totalAmount: createSaleDto.totalAmount,
-      paymentMethod: createSaleDto.paymentMethod || 'efectivo',
-      items: createSaleDto.items.map(item => ({
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        subtotal: item.subtotal,
-      })),
-    });
-
-    const savedSale = await this.salesRepository.save(sale);
-
-    // Si es crédito, crear la entrada en la tabla de créditos inmediatamente
-    if (createSaleDto.paymentMethod === 'credito') {
-      const creditSale = this.creditSalesRepository.create({
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      const sale = transactionalEntityManager.create(Sale, {
         tenantId,
-        saleId: savedSale.id,
-        customerName: createSaleDto.customerName || 'Cliente Genérico',
-        amount: savedSale.totalAmount,
-        status: 'PENDING',
+        userId,
+        closureId: closure.id,
+        totalAmount: createSaleDto.totalAmount,
+        paymentMethod: createSaleDto.paymentMethod || 'efectivo',
+        customerName: createSaleDto.customerName, // FIX: Save customer name to Sale entity
+        items: createSaleDto.items.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: item.subtotal,
+        })),
       });
-      await this.creditSalesRepository.save(creditSale);
-    }
 
-    // Descontar inventario
-    for (const item of createSaleDto.items) {
-      await this.productsService.updateStock(tenantId, item.productId, item.quantity);
-    }
+      const savedSale = await transactionalEntityManager.save<Sale>(sale);
 
-    return savedSale;
+      // Si es crédito, crear la entrada en la tabla de créditos inmediatamente
+      if (createSaleDto.paymentMethod === 'credito') {
+        const creditSale = transactionalEntityManager.create(CreditSale, {
+          tenantId,
+          saleId: savedSale.id,
+          customerName: createSaleDto.customerName || 'Cliente Genérico',
+          amount: savedSale.totalAmount,
+          status: 'PENDING',
+        });
+        await transactionalEntityManager.save<CreditSale>(creditSale);
+      }
+
+      // Descontar inventario
+      for (const item of createSaleDto.items) {
+        await this.productsService.updateStock(tenantId, item.productId, item.quantity);
+      }
+
+      return savedSale;
+    });
   }
 
   async findAll(tenantId: string): Promise<Sale[]> {
