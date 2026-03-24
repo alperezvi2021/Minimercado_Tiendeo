@@ -84,4 +84,41 @@ export class SuppliersService {
     }
     return this.suppliersRepo.remove(supplier);
   }
+
+  async updateInvoice(tenantId: string, id: string, data: any) {
+    const { items, ...invoiceData } = data;
+    
+    // Verificar existencia
+    const invoice = await this.invoicesRepo.findOne({ where: { id, tenantId } });
+    if (!invoice) throw new NotFoundException('Invoice not found');
+
+    // Actualizar cabecera
+    await this.invoicesRepo.update(id, {
+      ...invoiceData,
+      date: new Date(invoiceData.date),
+    });
+
+    // Sincronizar ítems: Borrar actuales y crear nuevos
+    await this.itemsRepo.delete({ invoiceId: id });
+    
+    if (items && items.length > 0) {
+      const invoiceItems = items.map((item: any) => ({
+        ...item,
+        invoiceId: id,
+        tenantId,
+      }));
+      await this.itemsRepo.save(invoiceItems);
+    }
+
+    return this.findOneInvoice(tenantId, id);
+  }
+
+  async removeInvoice(tenantId: string, id: string) {
+    const invoice = await this.invoicesRepo.findOne({ where: { id, tenantId } });
+    if (!invoice) throw new NotFoundException('Invoice not found');
+    
+    // Primero borrar ítems ( cascade: true en la entidad debería funcionar, pero por seguridad lo hacemos manual)
+    await this.itemsRepo.delete({ invoiceId: id });
+    return this.invoicesRepo.remove(invoice);
+  }
 }

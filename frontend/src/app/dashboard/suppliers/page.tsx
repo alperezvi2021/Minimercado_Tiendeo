@@ -48,10 +48,12 @@ export default function SuppliersPage() {
   const [supAddress, setSupAddress] = useState('');
 
   // Form Factura
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [invNumber, setInvNumber] = useState('');
   const [invDate, setInvDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [invItems, setInvItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unitNetValue: 0, taxRate: 19 }]);
+  const [invDiscount, setInvDiscount] = useState(0);
 
   useEffect(() => {
     fetchData();
@@ -158,7 +160,7 @@ export default function SuppliersPage() {
       net += itemNet;
       tax += itemTax;
     });
-    return { net, tax, total: net + tax };
+    return { net, tax, total: net + tax - invDiscount };
   };
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
@@ -171,6 +173,7 @@ export default function SuppliersPage() {
       totalNet: totals.net,
       totalTax: totals.tax,
       totalAmount: totals.total,
+      discount: invDiscount,
       items: invItems.map(item => ({
         ...item,
         totalNetValue: item.quantity * item.unitNetValue,
@@ -181,16 +184,53 @@ export default function SuppliersPage() {
 
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/invoices`, {
-        method: 'POST',
+      const url = editingInvoice 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/invoices/${editingInvoice.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/invoices`;
+      
+      const res = await fetch(url, {
+        method: editingInvoice ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
       if (res.ok) {
         setIsInvoiceModalOpen(false);
+        setEditingInvoice(null);
         setInvNumber(''); setInvItems([{ description: '', quantity: 1, unitNetValue: 0, taxRate: 19 }]);
+        setInvDiscount(0);
         fetchData();
       }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleEditInvoice = (inv: any) => {
+    setEditingInvoice(inv);
+    setInvNumber(inv.invoiceNumber);
+    setInvDate(new Date(inv.date).toISOString().split('T')[0]);
+    setSelectedSupplierId(inv.supplier?.id || '');
+    setInvDiscount(inv.discount || 0);
+    if (inv.items && inv.items.length > 0) {
+      setInvItems(inv.items.map((i: any) => ({
+        description: i.description,
+        quantity: i.quantity,
+        unitNetValue: i.unitNetValue,
+        taxRate: i.taxRate
+      })));
+    }
+    setIsInvoiceModalOpen(true);
+  };
+
+  const handleDeleteInvoice = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta factura?')) return;
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/invoices/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) fetchData();
     } catch (error) {
       console.error(error);
     }
@@ -334,7 +374,10 @@ export default function SuppliersPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-slate-400 hover:text-blue-600"><Eye className="w-4 h-4" /></button>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => handleEditInvoice(inv)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="Editar"><Edit3 className="w-4 h-4" /></button>
+                        <button onClick={() => handleDeleteInvoice(inv.id)} className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -441,7 +484,7 @@ export default function SuppliersPage() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-4xl my-8 shadow-2xl border border-slate-200 dark:border-slate-800">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Receipt className="text-emerald-600" /> Registrar Factura de Compra
+                <Receipt className="text-emerald-600" /> {editingInvoice ? 'Editar Factura' : 'Registrar Factura de Compra'}
               </h3>
               <div className="text-right">
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Total Factura</p>
@@ -494,12 +537,10 @@ export default function SuppliersPage() {
                         <input type="number" required className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.unitNetValue} onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value))} />
                       </div>
                       <div className="col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">IVA %</label>
-                        <select className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.taxRate} onChange={e => updateItem(idx, 'taxRate', parseFloat(e.target.value))}>
-                          <option value="0">0%</option>
-                          <option value="5">5%</option>
-                          <option value="19">19%</option>
-                        </select>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">V. Total</label>
+                        <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 text-sm font-bold border-none h-[38px] flex items-center">
+                          ${Math.round((item.quantity * item.unitNetValue) * (1 + item.taxRate / 100)).toLocaleString()}
+                        </div>
                       </div>
                       <div className="col-span-1 flex justify-center">
                         <button type="button" onClick={() => handleRemoveLineItem(idx)} className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
@@ -518,6 +559,18 @@ export default function SuppliersPage() {
                     <span className="text-slate-500 font-bold">Subtotal Neto:</span>
                     <span className="text-slate-900 dark:text-white font-black">${Math.round(calculateInvoiceTotals().net).toLocaleString()}</span>
                   </div>
+                  <div className="flex justify-between text-sm text-rose-500">
+                    <span className="font-bold">Desc. por Cambio:</span>
+                    <div className="flex items-center gap-1">
+                      <span>$-</span>
+                      <input 
+                        type="number" 
+                        className="w-20 bg-transparent border-b border-rose-300 outline-none text-right font-black"
+                        value={invDiscount} 
+                        onChange={e => setInvDiscount(parseFloat(e.target.value) || 0)} 
+                      />
+                    </div>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500 font-bold">Impuestos (IVA):</span>
                     <span className="text-slate-900 dark:text-white font-black">${Math.round(calculateInvoiceTotals().tax).toLocaleString()}</span>
@@ -530,8 +583,10 @@ export default function SuppliersPage() {
               </div>
 
               <div className="col-span-3 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <button type="button" onClick={() => setIsInvoiceModalOpen(false)} className="px-8 py-3 font-bold text-slate-500">Cancelar</button>
-                <button type="submit" className="px-12 py-3 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-500 shadow-xl shadow-emerald-500/20 transition-all uppercase tracking-widest">Registrar Gasto</button>
+                <button type="button" onClick={() => { setIsInvoiceModalOpen(false); setEditingInvoice(null); }} className="px-8 py-3 font-bold text-slate-500">Cancelar</button>
+                <button type="submit" className="px-12 py-3 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-500 shadow-xl shadow-emerald-500/20 transition-all uppercase tracking-widest">
+                  {editingInvoice ? 'Actualizar Factura' : 'Registrar Gasto'}
+                </button>
               </div>
             </form>
           </div>

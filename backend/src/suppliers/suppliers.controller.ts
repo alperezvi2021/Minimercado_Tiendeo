@@ -45,4 +45,16 @@ export class SuppliersController {
   remove(@Request() req: any, @Param('id') id: string) {
     return this.suppliersService.removeSupplier(req.user.tenantId, id);
   }
+
+  @Patch('invoices/:id')
+  @Roles(Role.OWNER, Role.ADMIN)
+  updateInvoice(@Param('id') id: string, @Body() data: any, @Request() req: any) {
+    return this.suppliersService.updateInvoice(req.user.tenantId, id, data);
+  }
+
+  @Delete('invoices/:id')
+  @Roles(Role.OWNER, Role.ADMIN)
+  removeInvoice(@Param('id') id: string, @Request() req: any) {
+    return this.suppliersService.removeInvoice(req.user.tenantId, id);
+  }
 }

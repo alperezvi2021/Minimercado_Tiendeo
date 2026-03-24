@@ -32,6 +32,9 @@ export class SupplierInvoice {
   @Column('decimal', { precision: 12, scale: 2, default: 0 })
   totalAmount: number;
 
+  @Column('decimal', { precision: 12, scale: 2, default: 0 })
+  discount: number;
+
   @Column({ default: false })
   isPaid: boolean;
 
