@@ -1,6 +1,7 @@
 import { Controller, Post, Body, UseGuards, Request, Get, Param } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
+import { CreateRefundDto } from './dto/create-refund.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -121,5 +122,14 @@ export class SalesController {
   findOne(@Request() req, @Param('id') id: string) {
     const tenantId = req.user.tenantId;
     return this.salesService.findOne(tenantId, id);
+  }
+
+  @Post('refunds')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  createRefund(@Request() req, @Body() createRefundDto: CreateRefundDto) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.userId;
+    const userName = req.user.name || 'Cajero';
+    return this.salesService.createRefund(tenantId, userId, userName, createRefundDto);
   }
 }

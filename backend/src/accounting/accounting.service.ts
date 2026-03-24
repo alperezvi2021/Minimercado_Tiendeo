@@ -28,12 +28,15 @@ export class AccountingService {
     
     const totalExpenses = invoices.reduce((sum, inv) => sum + Number(inv.totalAmount || 0), 0);
     
+    const refunds = await this.salesService.findAllRefunds(tenantId);
+    const totalRefunds = refunds.reduce((sum, r) => sum + Number(r.totalAmount || 0), 0);
+    
     return {
-      totalRevenue: totalRevenue || 0,
-      totalCashRevenue: finalCashRevenue || 0,
+      totalRevenue: (totalRevenue - totalRefunds) || 0,
+      totalCashRevenue: (finalCashRevenue - totalRefunds) || 0, // Assuming cash refunds for now or adjust based on refund logic
       accountsReceivable: accountsReceivable || 0,
       totalExpenses: totalExpenses || 0,
-      grossProfit: (totalRevenue - totalExpenses) || 0,
+      grossProfit: (totalRevenue - totalRefunds - totalExpenses) || 0,
       salesCount: sales.length,
       purchasesCount: invoices.length,
       paymentsReceived: totalPaymentsReceived,

@@ -9,10 +9,12 @@ import { CreditPayment } from './entities/credit-payment.entity';
 import { CashClosure } from './entities/cash-closure.entity';
 import { ProductsModule } from '../products/products.module';
 import { Customer } from '../customers/entities/customer.entity';
+import { Refund } from './entities/refund.entity';
+import { RefundItem } from './entities/refund-item.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Sale, SaleItem, CreditSale, CreditPayment, CashClosure, Customer]),
+    TypeOrmModule.forFeature([Sale, SaleItem, CreditSale, CreditPayment, CashClosure, Customer, Refund, RefundItem]),
     ProductsModule,
   ],
   controllers: [SalesController],

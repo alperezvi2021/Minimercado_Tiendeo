@@ -8,6 +8,9 @@ import { CashClosure } from './entities/cash-closure.entity';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { ProductsService } from '../products/products.service';
 import { Customer } from '../customers/entities/customer.entity';
+import { Refund } from './entities/refund.entity';
+import { RefundItem } from './entities/refund-item.entity';
+import { CreateRefundDto } from './dto/create-refund.dto';
 
 @Injectable()
 export class SalesService {
@@ -22,6 +25,10 @@ export class SalesService {
     private cashClosureRepository: Repository<CashClosure>,
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
+    @InjectRepository(Refund)
+    private refundRepository: Repository<Refund>,
+    @InjectRepository(RefundItem)
+    private refundItemRepository: Repository<RefundItem>,
     private productsService: ProductsService,
     private dataSource: DataSource,
   ) {}
@@ -395,5 +402,74 @@ export class SalesService {
       linked,
       totalSales: sales.length 
     };
+  }
+
+  async createRefund(tenantId: string, userId: string, userName: string, dto: CreateRefundDto): Promise<Refund> {
+    const sale = await this.salesRepository.findOne({
+      where: { id: dto.saleId, tenantId },
+      relations: ['items'],
+    });
+
+    if (!sale) throw new NotFoundException('Venta original no encontrada');
+
+    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      const refund = transactionalEntityManager.create(Refund, {
+        tenantId,
+        saleId: dto.saleId,
+        userId,
+        totalAmount: dto.totalAmount,
+        reason: dto.reason,
+        items: dto.items.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: item.subtotal,
+          returnsToInventory: item.returnsToInventory ?? true,
+        })),
+      });
+
+      const savedRefund = await transactionalEntityManager.save<Refund>(refund);
+
+      // Ajustar inventario y caja
+      for (const item of dto.items) {
+        if (item.returnsToInventory !== false) {
+          // Usamos valor negativo para SUMAR al stock (0.5 -> -0.5 => stock - (-0.5) = stock + 0.5)
+          await this.productsService.updateStock(tenantId, item.productId, -item.quantity);
+        }
+      }
+
+      // Si la venta original fue en efectivo, restamos del cierre de caja actual
+      if (sale.paymentMethod === 'efectivo') {
+        closure.totalCashSales = Number(closure.totalCashSales) - Number(dto.totalAmount);
+        await transactionalEntityManager.save<CashClosure>(closure);
+      } else if (sale.paymentMethod === 'credito') {
+        // Si fue crédito, buscamos el registro de crédito para ajustar el saldo
+        const creditSale = await transactionalEntityManager.findOne(CreditSale, {
+          where: { saleId: sale.id, tenantId }
+        });
+        if (creditSale) {
+          creditSale.remainingAmount = Number(creditSale.remainingAmount) - Number(dto.totalAmount);
+          if (creditSale.remainingAmount <= 0) {
+            creditSale.remainingAmount = 0;
+            creditSale.status = 'PAID';
+            creditSale.paidAt = new Date();
+          }
+          await transactionalEntityManager.save<CreditSale>(creditSale);
+        }
+      }
+
+      return savedRefund;
+    });
+  }
+
+  async findAllRefunds(tenantId: string): Promise<Refund[]> {
+    return this.refundRepository.find({
+      where: { tenantId },
+      relations: ['items'],
+      order: { createdAt: 'DESC' },
+    });
   }
 }

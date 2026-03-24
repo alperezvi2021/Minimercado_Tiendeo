@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft, Database } from 'lucide-react';
+import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft, Database, RotateCcw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const navItems = [
@@ -12,6 +12,7 @@ const navItems = [
   { name: 'Proveedores', href: '/dashboard/suppliers', icon: Truck, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
   { name: 'Clientes', href: '/dashboard/customers', icon: User, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
   { name: 'Créditos', href: '/dashboard/credits', icon: ArrowRightLeft, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
+  { name: 'Devoluciones', href: '/dashboard/sales/refunds', icon: RotateCcw, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
   { name: 'Contabilidad', href: '/dashboard/accounting', icon: Receipt, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
 ];
 
