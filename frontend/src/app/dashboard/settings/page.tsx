@@ -363,7 +363,21 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
-
+                <div className="pt-4 flex gap-3">
+                  <button 
+                    onClick={handleSaveBusiness}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all"
+                  >
+                    <Save className="w-5 h-5" />
+                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                  <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                    Cancelar
+                  </button>
                 </div>
               </div>
 
