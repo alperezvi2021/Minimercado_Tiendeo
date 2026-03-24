@@ -432,7 +432,7 @@ export default function PosPage() {
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [completedSale, posState, isProcessing, cart, paymentMethod]);
+  }, [completedSale, posState, isProcessing, cart, paymentMethod, cashReceived, lastCheckoutTime, customerName, selectedCustomerId, isNewCustomer]);
 
 
   // Sugerencias visuales si tipean en vez de escanear
