@@ -51,7 +51,7 @@ export class SuppliersService {
   async findInvoices(tenantId: string) {
     return this.invoicesRepo.find({
       where: { tenantId },
-      relations: ['supplier'],
+      relations: ['supplier', 'items'],
       order: { date: 'DESC' },
     });
   }
