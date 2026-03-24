@@ -407,7 +407,10 @@ export default function PosPage() {
         }
       } else if (posState === 'payment') {
         // Atajos en modo de pago
-        if (e.key === '1' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') setPaymentMethod('efectivo');
+        if (e.key === '1' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          setPaymentMethod('efectivo');
+          setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
+        }
         if (e.key === '2' || e.key === 'ArrowRight' || e.key === 'ArrowDown') setPaymentMethod('credito');
       }
     };
@@ -642,6 +645,7 @@ export default function PosPage() {
                     if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
                       e.preventDefault();
                       setPaymentMethod('efectivo');
+                      setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
                     }
                   }}
                   className={`flex items-center gap-4 p-5 border-2 rounded-3xl font-black transition-all outline-none focus:ring-4 focus:ring-orange-500/40 ${paymentMethod === 'credito' ? 'border-orange-600 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:border-orange-500 dark:text-orange-400 ring-4 ring-orange-500/10' : 'border-gray-200 text-gray-500 dark:border-slate-800 dark:text-gray-400'}`}
