@@ -35,6 +35,7 @@ export default function PosPage() {
   const [pendingSales, setPendingSales] = useState<any[]>([]);
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
+  const [cashReceived, setCashReceived] = useState<string>('');
   // Store info state (Dynamic from DB)
   const [tenantData, setTenantData] = useState({
     name: 'TIENDA LAS MARGARITAS',
@@ -220,6 +221,7 @@ export default function PosPage() {
     setIsNewCustomer(false);
     setSelectedCustomerId('');
     setPosState('payment');
+    setCashReceived('');
     setLastCheckoutTime(Date.now()); // Cooldown start
     searchInputRef.current?.blur();
   };
@@ -644,6 +646,45 @@ export default function PosPage() {
                   </div>
                 </button>
               </div>
+
+              {paymentMethod === 'efectivo' && (
+                <div className="w-full px-4 mt-8 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="bg-white dark:bg-slate-950 p-6 rounded-[2.5rem] border-2 border-blue-500/20 shadow-xl space-y-5">
+                    <div className="text-center">
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-3">Calculadora de Cambio</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Efectivo Recibido</label>
+                      <div className="relative">
+                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-300">$</span>
+                        <input
+                          type="number"
+                          value={cashReceived}
+                          onChange={(e) => setCashReceived(e.target.value)}
+                          placeholder="0"
+                          className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-3xl pl-12 pr-6 py-5 text-3xl font-black text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                          autoFocus
+                          onFocus={(e) => e.target.select()}
+                        />
+                      </div>
+                    </div>
+
+                    {Number(cashReceived) > 0 && (
+                      <div className={`p-5 rounded-3xl border-2 transition-all ${Number(cashReceived) >= calculateTotal() ? 'bg-green-50 border-green-500/20 dark:bg-green-900/10' : 'bg-rose-50 border-rose-500/20 dark:bg-rose-900/10'}`}>
+                        <div className="flex justify-between items-center">
+                          <span className={`text-xs font-black uppercase tracking-widest ${Number(cashReceived) >= calculateTotal() ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            {Number(cashReceived) >= calculateTotal() ? 'Cambio a Devolver' : 'Faltante'}
+                          </span>
+                          <span className={`text-2xl font-black ${Number(cashReceived) >= calculateTotal() ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            ${Math.abs(Number(cashReceived) - calculateTotal()).toLocaleString('es-CO')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 flex flex-col items-center gap-1 opacity-50">
                 <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
