@@ -810,7 +810,7 @@ export default function PosPage() {
               disabled={
                 cart.length === 0 || 
                 isProcessing || 
-                (posState === 'payment' && paymentMethod === 'efectivo' && Number(cashReceived) <= 0) ||
+                (posState === 'payment' && paymentMethod === 'efectivo' && Number(cashReceived) < Math.round(calculateTotal())) ||
                 (posState === 'payment' && paymentMethod === 'credito' && !selectedCustomerId && !customerName)
               }
               tabIndex={0}
