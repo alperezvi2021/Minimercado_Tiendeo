@@ -99,8 +99,8 @@ export default function SuppliersPage() {
         fetchData();
         if (!editingSupplier && confirm('¿Deseas registrar una factura para este proveedor ahora?')) {
           const data = await res.json();
-          setSelectedSupplierId(data.id);
-          setIsInvoiceModalOpen(true);
+          handleOpenNewInvoice(); // Reset everything
+          setSelectedSupplierId(data.id); // But set the new supplier
         }
       }
     } catch (error) {
@@ -236,6 +236,16 @@ export default function SuppliersPage() {
     }
   };
 
+  const handleOpenNewInvoice = () => {
+    setEditingInvoice(null);
+    setInvNumber('');
+    setInvDate(new Date().toISOString().split('T')[0]);
+    setSelectedSupplierId('');
+    setInvItems([{ description: '', quantity: 1, unitNetValue: 0, taxRate: 19 }]);
+    setInvDiscount(0);
+    setIsInvoiceModalOpen(true);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -289,7 +299,7 @@ export default function SuppliersPage() {
         </button>
 
         <button 
-          onClick={() => setIsInvoiceModalOpen(true)}
+          onClick={handleOpenNewInvoice}
           className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 transition-all group"
         >
           <div className="flex items-center gap-4">
