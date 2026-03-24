@@ -10,6 +10,9 @@ import { SupplierInvoice } from '../suppliers/entities/supplier-invoice.entity';
 import { InvoiceItem } from '../suppliers/entities/invoice-item.entity';
 import { SaleItem } from '../sales/entities/sale-item.entity';
 
+import { Refund } from '../sales/entities/refund.entity';
+import { RefundItem } from '../sales/entities/refund-item.entity';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -19,7 +22,9 @@ import { SaleItem } from '../sales/entities/sale-item.entity';
       CashClosure,
       SupplierInvoice,
       InvoiceItem,
-      SaleItem
+      SaleItem,
+      Refund,
+      RefundItem
     ])
   ],
   controllers: [MaintenanceController],

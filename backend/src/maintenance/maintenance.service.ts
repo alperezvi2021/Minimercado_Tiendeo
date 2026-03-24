@@ -8,6 +8,8 @@ import { CashClosure } from '../sales/entities/cash-closure.entity';
 import { SupplierInvoice } from '../suppliers/entities/supplier-invoice.entity';
 import { InvoiceItem } from '../suppliers/entities/invoice-item.entity';
 import { SaleItem } from '../sales/entities/sale-item.entity';
+import { Refund } from '../sales/entities/refund.entity';
+import { RefundItem } from '../sales/entities/refund-item.entity';
 
 @Injectable()
 export class MaintenanceService {
@@ -26,6 +28,10 @@ export class MaintenanceService {
     private invoiceItemsRepo: Repository<InvoiceItem>,
     @InjectRepository(SaleItem)
     private saleItemsRepo: Repository<SaleItem>,
+    @InjectRepository(Refund)
+    private refundRepo: Repository<Refund>,
+    @InjectRepository(RefundItem)
+    private refundItemRepo: Repository<RefundItem>,
     private dataSource: DataSource,
   ) {}
 
@@ -44,15 +50,19 @@ export class MaintenanceService {
       await manager.delete(InvoiceItem, { tenantId });
       await manager.delete(SupplierInvoice, { tenantId });
       
-      // 4. Sales and Items
+      // 4. Refunds and Items
+      await manager.delete(RefundItem, { refund: { tenantId } });
+      await manager.delete(Refund, { tenantId });
+
+      // 5. Sales and Items
       // SaleItem has CASCADE DELETE in entity definition, but let's be sure
-      await manager.delete(SaleItem, { sale: { tenantId } }); // Custom partial where might be tricky in TypeORM delete
+      // await manager.delete(SaleItem, { sale: { tenantId } }); // Custom partial where might be tricky in TypeORM delete
       // Better way for SaleItem:
       await manager.query('DELETE FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE tenant_id = $1)', [tenantId]);
       
       await manager.delete(Sale, { tenantId });
       
-      // 5. Cash Closures
+      // 6. Cash Closures
       await manager.delete(CashClosure, { tenantId });
 
       return { 
