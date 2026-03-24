@@ -16,6 +16,17 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
+  async findOne(id: string, tenantId?: string): Promise<User | null> {
+    if (tenantId) {
+      return this.usersRepository.findOne({ where: { id, tenantId } });
+    }
+    return this.usersRepository.findOne({ where: { id } });
+  }
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
+  }
+
   async findAllByTenant(tenantId: string): Promise<User[]> {
     return this.usersRepository.find({ where: { tenantId } });
   }
@@ -26,5 +37,30 @@ export class UsersService {
     }
     const user = this.usersRepository.create(userData);
     return this.usersRepository.save(user);
+  }
+
+  async update(id: string, updateData: Partial<User>, tenantId?: string): Promise<User> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    
+    const user = await this.usersRepository.findOne({ where });
+    if (!user) throw new Error('User not found or access denied');
+    
+    if (updateData.passwordHash && !updateData.passwordHash.startsWith('$2')) {
+      updateData.passwordHash = await bcrypt.hash(updateData.passwordHash, 10);
+    }
+    
+    Object.assign(user, updateData);
+    return this.usersRepository.save(user);
+  }
+
+  async remove(id: string, tenantId?: string): Promise<void> {
+    const where: any = { id };
+    if (tenantId) where.tenantId = tenantId;
+    
+    const user = await this.usersRepository.findOne({ where });
+    if (!user) throw new Error('User not found or access denied');
+    
+    await this.usersRepository.remove(user);
   }
 }

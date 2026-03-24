@@ -15,6 +15,7 @@ interface SaleItem {
 
 interface Sale {
   id: string;
+  invoiceNumber?: string;
   totalAmount: number;
   paymentMethod: string;
   customerName?: string;
@@ -61,6 +62,7 @@ export default function ReportsPage() {
     doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
     
     const tableData = sales.map(sale => [
+      sale.invoiceNumber || 'S/N',
       new Date(sale.createdAt).toLocaleString(),
       sale.paymentMethod + (sale.customerName ? ` (${sale.customerName})` : ''),
       sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
@@ -69,7 +71,7 @@ export default function ReportsPage() {
     
     autoTable(doc, {
       startY: 35,
-      head: [['Fecha', 'Método / Cliente', 'Resumen Productos', 'Total']],
+      head: [['Factura #', 'Fecha', 'Método / Cliente', 'Resumen Productos', 'Total']],
       body: tableData,
       headStyles: { fillColor: [37, 99, 235] }
     });
@@ -79,6 +81,7 @@ export default function ReportsPage() {
 
   const exportToExcel = () => {
     const data = sales.map(sale => ({
+      'Factura #': sale.invoiceNumber || 'S/N',
       Fecha: new Date(sale.createdAt).toLocaleString(),
       Metodo: sale.paymentMethod,
       Cliente: sale.customerName || 'N/A',
@@ -181,6 +184,7 @@ export default function ReportsPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
             <thead className="bg-gray-50 dark:bg-slate-800/50">
               <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Factura #</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha / Hora</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Método / Cliente</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Productos</th>
@@ -190,6 +194,9 @@ export default function ReportsPage() {
             <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-slate-800">
               {sales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-blue-600 dark:text-blue-400">
+                    {sale.invoiceNumber || 'S/N'}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 font-medium">
                     {new Date(sale.createdAt).toLocaleString('es-CO')}
                   </td>

@@ -52,12 +52,30 @@ export class SalesService {
     const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
+      // Logic for invoice number
+      const lastSale = await transactionalEntityManager.findOne(Sale, {
+        where: { tenantId },
+        order: { createdAt: 'DESC' },
+        select: ['invoiceNumber']
+      });
+
+      let nextNumber = 1;
+      if (lastSale && lastSale.invoiceNumber) {
+        const parts = lastSale.invoiceNumber.split('-');
+        if (parts.length > 1) {
+          const lastNum = parseInt(parts[1]);
+          if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+        }
+      }
+      const invoiceNumber = `POS-${nextNumber.toString().padStart(4, '0')}`;
+
       const sale = transactionalEntityManager.create(Sale, {
         tenantId,
         userId,
         closureId: closure.id,
         totalAmount: createSaleDto.totalAmount,
         paymentMethod: createSaleDto.paymentMethod || 'efectivo',
+        invoiceNumber,
         customerName: createSaleDto.customerName, // FIX: Save customer name to Sale entity
         items: createSaleDto.items.map(item => ({
           productId: item.productId,
@@ -187,6 +205,13 @@ export class SalesService {
       where: { tenantId, status: 'PENDING' },
       relations: ['sale'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findAllPayments(tenantId: string): Promise<CreditPayment[]> {
+    return this.creditPaymentsRepository.find({
+      where: { tenantId },
+      order: { paymentDate: 'DESC' },
     });
   }
 

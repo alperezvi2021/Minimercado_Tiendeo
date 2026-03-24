@@ -29,6 +29,7 @@ interface CreditSale {
   sale?: {
     id: string;
     totalAmount: number;
+    invoiceNumber?: string;
   }
 }
 
@@ -119,6 +120,7 @@ export default function CreditsPage() {
     doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
     
     const tableData = filteredCredits.map(c => [
+      c.sale?.invoiceNumber || 'N/A',
       c.customerName,
       new Date(c.createdAt).toLocaleDateString(),
       `$${Math.round(c.amount).toLocaleString()}`,
@@ -127,7 +129,7 @@ export default function CreditsPage() {
     
     autoTable(doc, {
       startY: 35,
-      head: [['Cliente', 'Fecha Deuda', 'Monto', 'Estado']],
+      head: [['Factura #', 'Cliente', 'Fecha Deuda', 'Monto', 'Estado']],
       body: tableData,
       headStyles: { fillColor: [249, 115, 22] } // Orange
     });
@@ -137,6 +139,7 @@ export default function CreditsPage() {
 
   const exportToExcel = () => {
     const data = filteredCredits.map(c => ({
+      'Factura #': c.sale?.invoiceNumber || 'N/A',
       Cliente: c.customerName,
       Fecha: new Date(c.createdAt).toLocaleDateString(),
       Monto: Number(c.amount),
@@ -239,6 +242,7 @@ export default function CreditsPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-800/50">
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Factura #</th>
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente</th>
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Fecha Deuda</th>
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Monto Original</th>
@@ -250,6 +254,11 @@ export default function CreditsPage() {
             <tbody className="divide-y divide-slate-800/50">
               {filteredCredits.map((credit) => (
                 <tr key={credit.id} className="hover:bg-slate-800/30 transition-colors group">
+                  <td className="px-8 py-4">
+                    <span className="text-xs font-black text-blue-500 bg-blue-500/10 px-2 py-1 rounded-lg">
+                      {credit.sale?.invoiceNumber || 'S/N'}
+                    </span>
+                  </td>
                   <td className="px-8 py-4">
                     <div className="flex items-center gap-3">
                       <div className="bg-slate-800 p-2 rounded-xl group-hover:bg-slate-700 transition-colors">

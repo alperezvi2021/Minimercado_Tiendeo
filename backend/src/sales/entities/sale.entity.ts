@@ -12,6 +12,9 @@ export class Sale {
   @Column('decimal', { precision: 10, scale: 2 })
   totalAmount: number;
 
+  @Column({ name: 'invoice_number', nullable: true })
+  invoiceNumber: string;
+
   @Column({ name: 'payment_method', default: 'efectivo' })
   paymentMethod: string; // 'efectivo', 'tarjeta', 'credito'
 

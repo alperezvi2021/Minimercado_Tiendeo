@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Store, Users, User, Settings as SettingsIcon, Save, Key, Printer, Phone, Eye, EyeOff, MapPin, X } from 'lucide-react';
+import { Store, Users, User, Settings as SettingsIcon, Save, Key, Printer, Phone, Eye, EyeOff, MapPin, X, Edit2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
@@ -27,6 +27,8 @@ export default function SettingsPage() {
   // Users management state
   const [users, setUsers] = useState<any[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'CASHIER' });
 
@@ -82,6 +84,65 @@ export default function SettingsPage() {
     }
   };
 
+  const handleEditUser = (user: any) => {
+    setEditingUser({ ...user, password: '' });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const payload: any = {
+        name: editingUser.name,
+        email: editingUser.email,
+        role: editingUser.role
+      };
+      if (editingUser.password) {
+        payload.passwordHash = editingUser.password;
+      }
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${editingUser.id}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setIsEditModalOpen(false);
+        fetchUsers();
+        alert('Usuario actualizado correctamente');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo actualizar el usuario'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión al actualizar usuario');
+    }
+  };
+  
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        fetchUsers();
+        alert('Usuario eliminado');
+      } else {
+        alert('No se pudo eliminar el usuario');
+      }
+    } catch (error) {
+      alert('Error de conexión al eliminar');
+    }
+  };
+
   const handleCreateUser = async () => {
     try {
       const token = localStorage.getItem('access_token');
@@ -94,7 +155,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           name: newUser.name,
           email: newUser.email,
-          passwordHash: newUser.password, // The backend will hash it
+          passwordHash: newUser.password,
           role: newUser.role
         })
       });
@@ -353,6 +414,7 @@ export default function SettingsPage() {
                       <th className="px-6 py-4">Email</th>
                       <th className="px-6 py-4">Rol</th>
                       <th className="px-6 py-4">Estado</th>
+                      <th className="px-6 py-4 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-sm">
@@ -367,6 +429,22 @@ export default function SettingsPage() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-[10px] font-black">Activo</span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => handleEditUser(u)}
+                              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 rounded-lg transition-all"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -538,6 +616,80 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* Modal Editar Usuario */}
+          {isEditModalOpen && editingUser && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl p-8 shadow-2xl animate-in zoom-in duration-200">
+                <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-6">Editar Usuario</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Nombre Completo</label>
+                    <input 
+                      type="text" 
+                      value={editingUser.name}
+                      onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Email / Usuario</label>
+                    <input 
+                      type="email" 
+                      value={editingUser.email}
+                      onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Contraseña (Dejar vacío para no cambiar)</label>
+                    <div className="relative">
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        value={editingUser.password}
+                        onChange={(e) => setEditingUser({...editingUser, password: e.target.value})}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold pr-12"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-gray-500 mb-2">Rol del Usuario</label>
+                    <select 
+                      value={editingUser.role}
+                      onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    >
+                      <option value="CASHIER">Cajero / Vendedor</option>
+                      <option value="ADMIN">Administrador</option>
+                      <option value="OWNER">Dueño del Negocio</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-8">
+                  <button 
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="flex-1 px-6 py-3 rounded-xl font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    onClick={handleUpdateUser}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

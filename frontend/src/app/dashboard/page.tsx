@@ -914,7 +914,7 @@ export default function PosPage() {
 
   lines.push(divider);
   lines.push(centerText('DOCUMENTO POS'));
-  lines.push(centerText(`No: POS-${completedSale.id ? completedSale.id.toString().substring(0,6).toUpperCase() : '000123'}`));
+  lines.push(centerText(`No: ${completedSale.invoiceNumber || 'POS-' + (completedSale.id ? completedSale.id.toString().substring(0,6).toUpperCase() : '000123')}`));
   lines.push(divider);
   lines.push(formatLine('Fecha:', new Date(completedSale.createdAt).toLocaleDateString('es-CO')));
   lines.push(formatLine('Hora:', new Date(completedSale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })));
