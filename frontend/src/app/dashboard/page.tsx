@@ -284,7 +284,9 @@ export default function PosPage() {
         const saleWithItems = { 
           ...savedSale, 
           items: [...cart],
-          customerName: paymentMethod === 'credito' ? finalCustomerName : undefined 
+          customerName: paymentMethod === 'credito' ? finalCustomerName : undefined,
+          receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
+          changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0
         };
         setCompletedSale(saleWithItems);
         setCart([]);
@@ -313,7 +315,14 @@ export default function PosPage() {
 
   const queueOfflineSale = (payload: any) => {
     const offlineId = 'off-' + Date.now();
-    const saleToStore = { ...payload, id: offlineId, createdAt: new Date().toISOString(), offline: true };
+    const saleToStore = { 
+      ...payload, 
+      id: offlineId, 
+      createdAt: new Date().toISOString(), 
+      offline: true,
+      receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
+      changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0
+    };
     const newPending = [...pendingSales, saleToStore];
     setPendingSales(newPending);
     localStorage.setItem('pending_sales', JSON.stringify(newPending));
@@ -937,6 +946,10 @@ export default function PosPage() {
   lines.push(divider);
   lines.push('');
   lines.push(`Pago: ${completedSale.paymentMethod.toUpperCase()}`);
+  if (completedSale.paymentMethod === 'efectivo') {
+    lines.push(formatLine('Recibido:', Math.round(completedSale.receivedAmount || 0).toLocaleString('es-CO')));
+    lines.push(formatLine('Cambio:', Math.round(completedSale.changeAmount || 0).toLocaleString('es-CO')));
+  }
   if (completedSale.paymentMethod === 'credito' && completedSale.customerName) {
     lines.push(centerText(completedSale.customerName.toUpperCase()));
   }
