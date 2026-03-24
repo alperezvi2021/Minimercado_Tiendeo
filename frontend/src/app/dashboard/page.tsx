@@ -411,7 +411,9 @@ export default function PosPage() {
           setTimeout(() => searchInputRef.current?.focus(), 100);
         }
       } else if (posState === 'payment') {
-        // Atajos en modo de pago
+        // Atajos en modo de pago: Solo si NO estamos escribiendo en un input
+        if (document.activeElement?.tagName === 'INPUT') return;
+
         if (e.key === '1' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
           setPaymentMethod('efectivo');
           setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
