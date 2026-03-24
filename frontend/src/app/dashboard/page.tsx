@@ -634,7 +634,7 @@ export default function PosPage() {
                   className={`flex items-center gap-4 p-5 border-2 rounded-3xl font-black transition-all outline-none focus:ring-4 focus:ring-orange-500/40 ${paymentMethod === 'credito' ? 'border-orange-600 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:border-orange-500 dark:text-orange-400 ring-4 ring-orange-500/10' : 'border-gray-200 text-gray-500 dark:border-slate-800 dark:text-gray-400'}`}
                 >
                   <div className={`p-3 rounded-2xl ${paymentMethod === 'credito' ? 'bg-orange-600 text-white shadow-lg' : 'bg-gray-100 dark:bg-slate-800 text-gray-400'}`}>
-                    <ArrowLeftRight className="w-6 h-6" />
+                    <ArrowRightLeft className="w-6 h-6" />
                   </div>
                   <div className="text-left">
                     <p className="text-sm">A CRÉDITO</p>
