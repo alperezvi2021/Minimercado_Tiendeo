@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Supplier } from './entities/supplier.entity';
@@ -80,7 +80,7 @@ export class SuppliersService {
     // Verificar si tiene facturas asociadas
     const invoicesCount = await this.invoicesRepo.count({ where: { supplier: { id } } });
     if (invoicesCount > 0) {
-      throw new Error('No se puede eliminar el proveedor porque tiene facturas registradas.');
+      throw new ConflictException('No se puede eliminar el proveedor porque tiene facturas registradas.');
     }
     return this.suppliersRepo.remove(supplier);
   }
