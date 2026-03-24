@@ -280,7 +280,11 @@ export default function PosPage() {
       });
       if(res.ok) {
         const savedSale = await res.json();
-        const saleWithItems = { ...savedSale, items: [...cart] };
+        const saleWithItems = { 
+          ...savedSale, 
+          items: [...cart],
+          customerName: paymentMethod === 'credito' ? finalCustomerName : undefined 
+        };
         setCompletedSale(saleWithItems);
         setCart([]);
         setPosState('billing');
@@ -665,7 +669,7 @@ export default function PosPage() {
                   <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-3xl border-2 border-blue-500/30">
                     <div className="flex flex-col gap-3">
                       <div className="flex justify-between items-center px-1">
-                        <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">¿Cuánto paga el cliente?</span>
+                        <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">VALOR RECIBIDO</span>
                         {Number(cashReceived) > 0 && (
                           <button 
                             onClick={() => setCashReceived('')}
@@ -935,6 +939,9 @@ export default function PosPage() {
   lines.push(divider);
   lines.push('');
   lines.push(`Pago: ${completedSale.paymentMethod.toUpperCase()}`);
+  if (completedSale.paymentMethod === 'credito' && completedSale.customerName) {
+    lines.push(centerText(completedSale.customerName.toUpperCase()));
+  }
   
   if (tenantData.ticketFooterMessage) {
     lines.push('');
