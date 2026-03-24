@@ -377,7 +377,8 @@ export default function PosPage() {
       // Evitar conflictos si el usuario está en un input pero NO es el de búsqueda o el de nombre de cliente
       if (document.activeElement?.tagName === 'INPUT' && 
           document.activeElement !== searchInputRef.current && 
-          !(posState === 'payment' && paymentMethod === 'credito')) {
+          !(posState === 'payment' && paymentMethod === 'credito') &&
+          document.activeElement?.id !== 'cash-received-input') {
         return;
       }
 
@@ -388,6 +389,11 @@ export default function PosPage() {
         } else if (posState === 'payment' && !isProcessing) {
           // No procesar si acaba de entrar en modo pago (cooldown 800ms para evitar doble enter)
           if (Date.now() - lastCheckoutTime < 800) return; 
+          
+          // Si estamos en el input de efectivo, el primer Enter solo muestra el cambio (ya se muestra en tiempo real)
+          // Pero si queremos ser extra seguros, podemos pedir un segundo Enter.
+          // Por ahora, permitimos Enter pero aseguramos que el usuario sepa que CONFIRMA.
+          
           e.preventDefault();
           processSale();
         }
@@ -607,7 +613,10 @@ export default function PosPage() {
               
               <div className="grid grid-cols-1 gap-4 w-full px-4 mb-2">
                 <button 
-                  onClick={() => setPaymentMethod('efectivo')}
+                  onClick={() => {
+                    setPaymentMethod('efectivo');
+                    setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
+                  }}
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
@@ -648,40 +657,57 @@ export default function PosPage() {
               </div>
 
               {paymentMethod === 'efectivo' && (
-                <div className="w-full px-4 mt-8 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="bg-white dark:bg-slate-950 p-6 rounded-[2.5rem] border-2 border-blue-500/20 shadow-xl space-y-5">
-                    <div className="text-center">
-                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-3">Calculadora de Cambio</p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">Efectivo Recibido</label>
+                <div className="w-full px-4 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-3xl border-2 border-blue-500/30">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex justify-between items-center px-1">
+                        <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">¿Cuánto paga el cliente?</span>
+                        {Number(cashReceived) > 0 && (
+                          <button 
+                            onClick={() => setCashReceived('')}
+                            className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors"
+                          >
+                            LIMPIAR
+                          </button>
+                        )}
+                      </div>
+                      
                       <div className="relative">
-                        <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-black text-slate-300">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-blue-300">$</span>
                         <input
                           type="number"
+                          id="cash-received-input"
                           value={cashReceived}
                           onChange={(e) => setCashReceived(e.target.value)}
                           placeholder="0"
-                          className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-3xl pl-12 pr-6 py-5 text-3xl font-black text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
-                          autoFocus
+                          className="w-full bg-white dark:bg-slate-900 border-none rounded-2xl pl-10 pr-4 py-3 text-2xl font-black text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
                           onFocus={(e) => e.target.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              // If they haven't typed anything, skip the calculator and confirm
+                              if (!cashReceived || Number(cashReceived) === 0) return;
+                              
+                              // If they typed something but less than total, maybe don't submit?
+                              // Actually, standard POS: ENTER submits.
+                              // But we want to let them see the change.
+                              // Let's stop propagation if focusing this input? 
+                              // No, it's better to let them know ENTER confirms.
+                            }
+                          }}
                         />
                       </div>
-                    </div>
 
-                    {Number(cashReceived) > 0 && (
-                      <div className={`p-5 rounded-3xl border-2 transition-all ${Number(cashReceived) >= calculateTotal() ? 'bg-green-50 border-green-500/20 dark:bg-green-900/10' : 'bg-rose-50 border-rose-500/20 dark:bg-rose-900/10'}`}>
-                        <div className="flex justify-between items-center">
-                          <span className={`text-xs font-black uppercase tracking-widest ${Number(cashReceived) >= calculateTotal() ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                            {Number(cashReceived) >= calculateTotal() ? 'Cambio a Devolver' : 'Faltante'}
+                      {Number(cashReceived) > 0 && (
+                        <div className={`mt-1 p-3 rounded-2xl flex justify-between items-center ${Number(cashReceived) >= calculateTotal() ? 'bg-green-600 text-white' : 'bg-rose-600 text-white'}`}>
+                          <span className="text-[10px] font-black uppercase tracking-wider">
+                            {Number(cashReceived) >= calculateTotal() ? 'CAMBIO A DEVOLVER' : 'FALTA DINERO'}
                           </span>
-                          <span className={`text-2xl font-black ${Number(cashReceived) >= calculateTotal() ? 'text-green-600 dark:text-green-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          <span className="text-xl font-black">
                             ${Math.abs(Number(cashReceived) - calculateTotal()).toLocaleString('es-CO')}
                           </span>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
