@@ -14,6 +14,7 @@ import { SuppliersModule } from './suppliers/suppliers.module';
 import { AccountingModule } from './accounting/accounting.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BackupsModule } from './backups/backups.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
 import { CustomersModule } from './customers/customers.module';
 
 @Module({
@@ -46,6 +47,7 @@ import { CustomersModule } from './customers/customers.module';
     SuppliersModule,
     AccountingModule,
     BackupsModule,
+    MaintenanceModule,
     CustomersModule,
   ],
   controllers: [AppController],

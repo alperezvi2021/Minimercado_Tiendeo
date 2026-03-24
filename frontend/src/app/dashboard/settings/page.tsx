@@ -31,6 +31,9 @@ export default function SettingsPage() {
   const [editingUser, setEditingUser] = useState<any>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'CASHIER' });
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
@@ -212,6 +215,40 @@ export default function SettingsPage() {
     }
   };
 
+  const handleResetData = async () => {
+    if (resetConfirmText !== 'REINICIAR_TODO_A_CEROS') {
+      alert('Por favor escriba la frase de confirmación exacta: REINICIAR_TODO_A_CEROS');
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenance/reset-my-data`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ confirmText: resetConfirmText })
+      });
+
+      if (res.ok) {
+        alert('Los datos han sido reiniciados correctamente. El sistema se redirigirá al inicio.');
+        setIsResetModalOpen(false);
+        setResetConfirmText('');
+        router.push('/dashboard');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo reiniciar los datos'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión al reiniciar datos');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row gap-8">
@@ -327,23 +364,33 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 flex gap-3">
-                  <button 
-                    onClick={handleSaveBusiness}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-600/20 transition-all"
-                  >
-                    <Save className="w-5 h-5" />
-                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
-                  <button 
-                    onClick={() => router.push('/dashboard')}
-                    className="flex items-center gap-2 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 px-6 py-3 rounded-xl font-bold transition-all"
-                  >
-                    <X className="w-5 h-5" />
-                    Cancelar
-                  </button>
                 </div>
               </div>
+
+              {userRole === 'OWNER' && (
+                <div className="mt-12 pt-8 border-t border-rose-100 dark:border-rose-900/30">
+                  <h4 className="text-rose-600 dark:text-rose-400 font-black flex items-center gap-2 mb-2">
+                    <Trash2 className="w-5 h-5" />
+                    Zona de Peligro
+                  </h4>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    Estas acciones son permanentes y no se pueden deshacer. Úselas con extrema precaución.
+                  </p>
+                  
+                  <div className="p-6 bg-rose-50 dark:bg-rose-900/10 rounded-2xl border border-rose-100 dark:border-rose-900/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white">Reiniciar a Cero para Producción</p>
+                      <p className="text-xs text-rose-700/70 dark:text-rose-400/70">Borra ventas, créditos, abonos y cierres de caja. Mantiene inventario y usuarios.</p>
+                    </div>
+                    <button 
+                      onClick={() => setIsResetModalOpen(true)}
+                      className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-rose-600/20 whitespace-nowrap"
+                    >
+                      Reiniciar Todo
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -692,6 +739,63 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Modal Confirmación Reset */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-in zoom-in duration-200 border-4 border-rose-500/20 text-center">
+            <div className="w-20 h-20 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 className="w-10 h-10 text-rose-600" />
+            </div>
+            
+            <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-4 italic">¿ESTÁS TOTALMENTE SEGURO?</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-8 font-medium">
+              Esta acción borrará <span className="text-rose-600 font-black">TODAS LAS VENTAS, CRÉDITOS Y REPORTES</span> de {tenantData.name}. 
+              <br/><br/>
+              Tu inventario de productos y tus usuarios se mantendrán, pero todo lo demás volverá a cero. <span className="font-black underline italic">ESTO NO SE PUEDE DESHACER.</span>
+            </p>
+            
+            <div className="space-y-4 max-w-sm mx-auto">
+              <div>
+                <label className="block text-xs font-black uppercase tracking-widest text-rose-600 mb-3">Para confirmar, escriba: REINICIAR_TODO_A_CEROS</label>
+                <input 
+                  type="text" 
+                  value={resetConfirmText}
+                  onChange={(e) => setResetConfirmText(e.target.value)}
+                  placeholder="Escriba la frase de confirmación"
+                  className="w-full bg-rose-50 dark:bg-rose-900/10 border-2 border-rose-200 dark:border-rose-900/30 rounded-2xl px-6 py-4 focus:ring-4 focus:ring-rose-500/20 transition-all font-black text-center text-rose-700 dark:text-rose-400 placeholder:text-rose-300 dark:placeholder:text-rose-800"
+                />
+              </div>
+              
+              <div className="flex flex-col gap-3 pt-4">
+                <button 
+                  onClick={handleResetData}
+                  disabled={isResetting || resetConfirmText !== 'REINICIAR_TODO_A_CEROS'}
+                  className="w-full bg-rose-600 disabled:bg-gray-300 disabled:cursor-not-allowed hover:bg-rose-700 text-white px-8 py-5 rounded-2xl font-black text-lg transition-all shadow-xl shadow-rose-600/30 flex items-center justify-center gap-3"
+                >
+                  {isResetting ? (
+                    'PROCESANDO LIMPIEZA...'
+                  ) : (
+                    <>
+                      <Trash2 className="w-6 h-6" />
+                      SÍ, REINICIAR TODO AHORA
+                    </>
+                  )}
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsResetModalOpen(false);
+                    setResetConfirmText('');
+                  }}
+                  className="w-full py-4 text-gray-500 font-bold hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  MEJOR NO, CANCELAR
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

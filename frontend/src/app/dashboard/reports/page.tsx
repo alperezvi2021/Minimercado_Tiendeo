@@ -125,51 +125,59 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 px-4 py-5 shadow-sm border border-gray-100 dark:border-slate-800 sm:px-6 transition-all hover:shadow-md">
-          <dt>
-            <div className="absolute rounded-xl bg-blue-50 dark:bg-blue-900/30 p-3">
-              <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">Total Hoy</p>
-          </dt>
-          <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
-            <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(totalRevenue)}</p>
-          </dd>
+          <dl>
+            <dt>
+              <div className="absolute rounded-xl bg-blue-50 dark:bg-blue-900/30 p-3">
+                <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">Total Hoy</p>
+            </dt>
+            <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
+              <p className="text-2xl font-black text-gray-900 dark:text-white">{formatCurrency(totalRevenue)}</p>
+            </dd>
+          </dl>
         </div>
 
         <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 px-4 py-5 shadow-sm border border-gray-100 dark:border-slate-800 sm:px-6 transition-all hover:shadow-md">
-          <dt>
-            <div className="absolute rounded-xl bg-orange-50 dark:bg-orange-900/30 p-3">
-              <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-            </div>
-            <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">En Crédito (Deuda)</p>
-          </dt>
-          <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
-            <p className="text-2xl font-black text-orange-600">{formatCurrency(totalCredit)}</p>
-          </dd>
+          <dl>
+            <dt>
+              <div className="absolute rounded-xl bg-orange-50 dark:bg-orange-900/30 p-3">
+                <TrendingUp className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">En Crédito (Deuda)</p>
+            </dt>
+            <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
+              <p className="text-2xl font-black text-orange-600">{formatCurrency(totalCredit)}</p>
+            </dd>
+          </dl>
         </div>
 
         <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 px-4 py-5 shadow-sm border border-gray-100 dark:border-slate-800 sm:px-6 transition-all hover:shadow-md">
-          <dt>
-            <div className="absolute rounded-xl bg-purple-50 dark:bg-purple-900/30 p-3">
-              <Receipt className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">Transacciones</p>
-          </dt>
-          <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
-            <p className="text-2xl font-black text-gray-900 dark:text-white">{sales.length}</p>
-          </dd>
+          <dl>
+            <dt>
+              <div className="absolute rounded-xl bg-purple-50 dark:bg-purple-900/30 p-3">
+                <Receipt className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">Transacciones</p>
+            </dt>
+            <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
+              <p className="text-2xl font-black text-gray-900 dark:text-white">{sales.length}</p>
+            </dd>
+          </dl>
         </div>
 
         <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-slate-900 px-4 py-5 shadow-sm border border-gray-100 dark:border-slate-800 sm:px-6 transition-all hover:shadow-md">
-          <dt>
-            <div className="absolute rounded-xl bg-green-50 dark:bg-green-900/30 p-3">
-              <Tag className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">Unds. Vendidas</p>
-          </dt>
-          <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
-            <p className="text-2xl font-black text-gray-900 dark:text-white">{totalItemsSold}</p>
-          </dd>
+          <dl>
+            <dt>
+              <div className="absolute rounded-xl bg-green-50 dark:bg-green-900/30 p-3">
+                <Tag className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <p className="ml-16 truncate text-sm font-medium text-gray-500 dark:text-gray-400">Unds. Vendidas</p>
+            </dt>
+            <dd className="ml-16 flex items-baseline pb-1 sm:pb-2">
+              <p className="text-2xl font-black text-gray-900 dark:text-white">{totalItemsSold}</p>
+            </dd>
+          </dl>
         </div>
       </div>
 
