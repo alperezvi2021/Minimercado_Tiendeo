@@ -214,9 +214,9 @@ export default function SuppliersPage() {
     if (inv.items && inv.items.length > 0) {
       setInvItems(inv.items.map((i: any) => ({
         description: i.description,
-        quantity: i.quantity,
-        unitNetValue: i.unitNetValue,
-        taxRate: i.taxRate
+        quantity: Number(i.quantity),
+        unitNetValue: Number(i.unitNetValue),
+        taxRate: Number(i.taxRate)
       })));
     }
     setIsInvoiceModalOpen(true);
@@ -501,7 +501,14 @@ export default function SuppliersPage() {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Fecha</label>
-                  <input type="date" required className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={invDate} onChange={e => setInvDate(e.target.value)} />
+                  <input 
+                    type="date" 
+                    required 
+                    className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold appearance-none cursor-pointer" 
+                    value={invDate} 
+                    onChange={e => setInvDate(e.target.value)} 
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                  />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Proveedor</label>
@@ -524,17 +531,40 @@ export default function SuppliersPage() {
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                   {invItems.map((item, idx) => (
                     <div key={idx} className="grid grid-cols-12 gap-3 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800 items-end animate-in slide-in-from-right-3 duration-200">
-                      <div className="col-span-5">
+                      <div className="col-span-4">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descripción del Producto</label>
                         <input required placeholder="Ej: Arroz Diana 1kg x24" className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cant.</label>
-                        <input type="number" step="0.01" required className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value))} />
+                        <input 
+                          type="number" 
+                          step="0.01" 
+                          required 
+                          placeholder="0"
+                          className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" 
+                          value={item.quantity === 0 ? '' : item.quantity} 
+                          onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} 
+                        />
                       </div>
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">V. Neto Unid.</label>
-                        <input type="number" required className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.unitNetValue} onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value))} />
+                        <input 
+                          type="number" 
+                          required 
+                          placeholder="0"
+                          className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" 
+                          value={item.unitNetValue === 0 ? '' : item.unitNetValue} 
+                          onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value) || 0)} 
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">IVA %</label>
+                        <select className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.taxRate} onChange={e => updateItem(idx, 'taxRate', parseFloat(e.target.value))}>
+                          <option value="0">0%</option>
+                          <option value="5">5%</option>
+                          <option value="19">19%</option>
+                        </select>
                       </div>
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">V. Total</label>
@@ -584,7 +614,11 @@ export default function SuppliersPage() {
 
               <div className="col-span-3 flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button type="button" onClick={() => { setIsInvoiceModalOpen(false); setEditingInvoice(null); }} className="px-8 py-3 font-bold text-slate-500">Cancelar</button>
-                <button type="submit" className="px-12 py-3 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-500 shadow-xl shadow-emerald-500/20 transition-all uppercase tracking-widest">
+                <button 
+                  type="submit" 
+                  disabled={!invNumber || !invDate || !selectedSupplierId || invItems.some(i => !i.description)}
+                  className="px-12 py-3 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-500 disabled:bg-slate-300 disabled:cursor-not-allowed shadow-xl shadow-emerald-500/20 transition-all uppercase tracking-widest"
+                >
                   {editingInvoice ? 'Actualizar Factura' : 'Registrar Gasto'}
                 </button>
               </div>
