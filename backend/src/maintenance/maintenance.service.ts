@@ -51,7 +51,7 @@ export class MaintenanceService {
       await manager.delete(SupplierInvoice, { tenantId });
       
       // 4. Refunds and Items
-      await manager.delete(RefundItem, { refund: { tenantId } });
+      await manager.query('DELETE FROM refund_items WHERE refund_id IN (SELECT id FROM refunds WHERE tenant_id = $1)', [tenantId]);
       await manager.delete(Refund, { tenantId });
 
       // 5. Sales and Items
