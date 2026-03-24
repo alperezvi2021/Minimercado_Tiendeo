@@ -224,6 +224,7 @@ export default function PosPage() {
     setCashReceived('');
     setLastCheckoutTime(Date.now()); // Cooldown start
     searchInputRef.current?.blur();
+    setTimeout(() => document.getElementById('cash-received-input')?.focus(), 200);
   };
 
   const processSale = async () => {
@@ -619,34 +620,12 @@ export default function PosPage() {
               <h3 className="text-xl font-black text-gray-900 dark:text-white mb-8 text-center">¿Cómo paga el cliente?</h3>
               
               <div className="grid grid-cols-1 gap-4 w-full px-4 mb-2">
-                <button 
-                  onClick={() => {
-                    setPaymentMethod('efectivo');
-                    setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
-                  }}
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-                      e.preventDefault();
-                      setPaymentMethod('credito');
-                    }
-                  }}
-                  className={`flex items-center gap-4 p-5 border-2 rounded-3xl font-black transition-all outline-none focus:ring-4 focus:ring-blue-500/40 ${paymentMethod === 'efectivo' ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:border-blue-500 dark:text-blue-400 ring-4 ring-blue-500/10' : 'border-gray-200 text-gray-500 dark:border-slate-800 dark:text-gray-400'}`}
-                >
-                  <div className={`p-3 rounded-2xl ${paymentMethod === 'efectivo' ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800'}`}>
-                    <Banknote className="w-6 h-6" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm uppercase tracking-widest">Efectivo</p>
-                    <p className="text-[10px] font-bold opacity-60">TAB PARA SIGUIENTE</p>
-                  </div>
-                </button>
-
+                {/* Opción de Crédito Arriba */}
                 <button 
                   onClick={() => setPaymentMethod('credito')}
                   tabIndex={0}
                   onKeyDown={(e) => {
-                    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
                       e.preventDefault();
                       setPaymentMethod('efectivo');
                       setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
@@ -654,18 +633,42 @@ export default function PosPage() {
                   }}
                   className={`flex items-center gap-4 p-5 border-2 rounded-3xl font-black transition-all outline-none focus:ring-4 focus:ring-orange-500/40 ${paymentMethod === 'credito' ? 'border-orange-600 bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:border-orange-500 dark:text-orange-400 ring-4 ring-orange-500/10' : 'border-gray-200 text-gray-500 dark:border-slate-800 dark:text-gray-400'}`}
                 >
-                  <div className={`p-3 rounded-2xl ${paymentMethod === 'credito' ? 'bg-orange-600 text-white' : 'bg-gray-100 dark:bg-slate-800'}`}>
-                    <ArrowRightLeft className="w-6 h-6" />
+                  <div className={`p-3 rounded-2xl ${paymentMethod === 'credito' ? 'bg-orange-600 text-white shadow-lg' : 'bg-gray-100 dark:bg-slate-800 text-gray-400'}`}>
+                    <ArrowLeftRight className="w-6 h-6" />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm uppercase tracking-widest">A Crédito</p>
+                    <p className="text-sm">A CRÉDITO</p>
                     <p className="text-[10px] font-bold opacity-60">TAB PARA NOMBRE</p>
+                  </div>
+                </button>
+
+                {/* Opción de Efectivo Abajo del Crédito */}
+                <button 
+                  onClick={() => {
+                    setPaymentMethod('efectivo');
+                    setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
+                  }}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                      e.preventDefault();
+                      setPaymentMethod('credito');
+                    }
+                  }}
+                  className={`flex items-center gap-4 p-5 border-2 rounded-3xl font-black transition-all outline-none focus:ring-4 focus:ring-blue-500/40 ${paymentMethod === 'efectivo' ? 'border-blue-600 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:border-blue-500 dark:text-blue-400 ring-4 ring-blue-500/10' : 'border-gray-200 text-gray-500 dark:border-slate-800 dark:text-gray-400'}`}
+                >
+                  <div className={`p-3 rounded-2xl ${paymentMethod === 'efectivo' ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-100 dark:bg-slate-800 text-gray-400'}`}>
+                    <Banknote className="w-6 h-6" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm">EFECTIVO</p>
+                    <p className="text-[10px] font-bold opacity-60">TAB PARA SIGUIENTE</p>
                   </div>
                 </button>
               </div>
 
               {paymentMethod === 'efectivo' && (
-                <div className="w-full px-4 mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="w-full px-4 mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
                   <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-3xl border-2 border-blue-500/30">
                     <div className="flex flex-col gap-3">
                       <div className="flex justify-between items-center px-1">
@@ -690,18 +693,6 @@ export default function PosPage() {
                           placeholder="0"
                           className="w-full bg-white dark:bg-slate-900 border-none rounded-2xl pl-10 pr-4 py-3 text-2xl font-black text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
                           onFocus={(e) => e.target.select()}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              // If they haven't typed anything, skip the calculator and confirm
-                              if (!cashReceived || Number(cashReceived) === 0) return;
-                              
-                              // If they typed something but less than total, maybe don't submit?
-                              // Actually, standard POS: ENTER submits.
-                              // But we want to let them see the change.
-                              // Let's stop propagation if focusing this input? 
-                              // No, it's better to let them know ENTER confirms.
-                            }
-                          }}
                         />
                       </div>
 
@@ -816,7 +807,12 @@ export default function PosPage() {
           
           <div className="flex gap-2">
             <button 
-              disabled={cart.length === 0 || isProcessing}
+              disabled={
+                cart.length === 0 || 
+                isProcessing || 
+                (posState === 'payment' && paymentMethod === 'efectivo' && Number(cashReceived) <= 0) ||
+                (posState === 'payment' && paymentMethod === 'credito' && !selectedCustomerId && !customerName)
+              }
               tabIndex={0}
               onClick={posState === 'billing' ? handleCheckout : processSale}
               className={`flex-1 ${posState === 'payment' ? 'bg-green-600 hover:bg-green-500 outline-none focus:ring-4 focus:ring-green-500/40' : 'bg-blue-600 hover:bg-blue-500'} disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed text-white rounded-2xl py-4 font-black text-lg shadow-lg transition-all active:scale-[0.98] flex justify-center items-center`}
