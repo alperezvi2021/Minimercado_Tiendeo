@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Patch, Param, Delete } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -32,5 +32,17 @@ export class SuppliersController {
   @Roles(Role.OWNER, Role.ADMIN)
   findInvoices(@Request() req: any) {
     return this.suppliersService.findInvoices(req.user.tenantId);
+  }
+
+  @Patch(':id')
+  @Roles(Role.OWNER, Role.ADMIN)
+  update(@Request() req: any, @Param('id') id: string, @Body() data: any) {
+    return this.suppliersService.updateSupplier(req.user.tenantId, id, data);
+  }
+
+  @Delete(':id')
+  @Roles(Role.OWNER, Role.ADMIN)
+  remove(@Request() req: any, @Param('id') id: string) {
+    return this.suppliersService.removeSupplier(req.user.tenantId, id);
   }
 }

@@ -96,7 +96,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                 required
                 type="text"
                 placeholder="Nombre Completo"
-                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
+                className="w-full bg-white text-black border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
@@ -108,7 +108,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                 <input
                   type="text"
                   placeholder="ID / Cédula / NIT"
-                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
+                  className="w-full bg-white text-black border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
                   value={formData.idNumber}
                   onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
                 />
@@ -118,7 +118,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                 <input
                   type="tel"
                   placeholder="Teléfono"
-                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
+                  className="w-full bg-white text-black border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
@@ -130,7 +130,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
               <input
                 type="email"
                 placeholder="Correo Electrónico (Opcional)"
-                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
+                className="w-full bg-white text-black border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
@@ -141,7 +141,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
               <textarea
                 placeholder="Dirección Física"
                 rows={2}
-                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-3.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold resize-none"
+                className="w-full bg-white text-black border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold resize-none"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />

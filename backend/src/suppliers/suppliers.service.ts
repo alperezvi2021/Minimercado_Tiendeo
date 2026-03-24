@@ -62,4 +62,26 @@ export class SuppliersService {
       relations: ['supplier', 'items'],
     });
   }
+
+  async findOneSupplier(tenantId: string, id: string) {
+    const supplier = await this.suppliersRepo.findOne({ where: { id, tenantId } });
+    if (!supplier) throw new NotFoundException('Supplier not found');
+    return supplier;
+  }
+
+  async updateSupplier(tenantId: string, id: string, data: any) {
+    await this.findOneSupplier(tenantId, id);
+    await this.suppliersRepo.update(id, data);
+    return this.findOneSupplier(tenantId, id);
+  }
+
+  async removeSupplier(tenantId: string, id: string) {
+    const supplier = await this.findOneSupplier(tenantId, id);
+    // Verificar si tiene facturas asociadas
+    const invoicesCount = await this.invoicesRepo.count({ where: { supplier: { id } } });
+    if (invoicesCount > 0) {
+      throw new Error('No se puede eliminar el proveedor porque tiene facturas registradas.');
+    }
+    return this.suppliersRepo.remove(supplier);
+  }
 }

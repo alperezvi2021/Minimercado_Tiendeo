@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Plus, Search, Truck, Receipt, Eye, Trash2, Calendar, User, FileText, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Search, Truck, Receipt, Eye, Edit3, Trash2, Calendar, User, FileText, CheckCircle2, Clock } from 'lucide-react';
 
 interface Supplier {
   id: string;
@@ -29,7 +29,7 @@ interface Invoice {
 }
 
 export default function SuppliersPage() {
-  const [activeTab, setActiveTab] = useState<'suppliers' | 'invoices'>('suppliers');
+  const [activeTab, setActiveTab] = useState<'suppliers' | 'invoices' | 'report'>('suppliers');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +40,7 @@ export default function SuppliersPage() {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   // Form Proveedor
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [supName, setSupName] = useState('');
   const [supTaxId, setSupTaxId] = useState('');
   const [supPhone, setSupPhone] = useState('');
@@ -80,15 +81,54 @@ export default function SuppliersPage() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers`, {
-        method: 'POST',
+      const url = editingSupplier 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/${editingSupplier.id}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers`;
+      
+      const res = await fetch(url, {
+        method: editingSupplier ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: supName, taxId: supTaxId, phone: supPhone, email: supEmail, address: supAddress })
       });
       if (res.ok) {
         setIsSupplierModalOpen(false);
+        setEditingSupplier(null);
         setSupName(''); setSupTaxId(''); setSupPhone(''); setSupEmail(''); setSupAddress('');
         fetchData();
+        if (!editingSupplier && confirm('¿Deseas registrar una factura para este proveedor ahora?')) {
+          const data = await res.json();
+          setSelectedSupplierId(data.id);
+          setIsInvoiceModalOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleEditSupplier = (s: Supplier) => {
+    setEditingSupplier(s);
+    setSupName(s.name);
+    setSupTaxId(s.taxId || '');
+    setSupPhone(s.phone || '');
+    setSupEmail(s.email || '');
+    setSupAddress(s.address || '');
+    setIsSupplierModalOpen(true);
+  };
+
+  const handleDeleteSupplier = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este proveedor?')) return;
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(err.message || 'No se pudo eliminar el proveedor');
       }
     } catch (error) {
       console.error(error);
@@ -181,6 +221,12 @@ export default function SuppliersPage() {
           >
             Facturas
           </button>
+          <button 
+            onClick={() => setActiveTab('report')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'report' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Informe Proveedor
+          </button>
         </div>
       </div>
 
@@ -262,11 +308,14 @@ export default function SuppliersPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{s.address}</td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-2 text-slate-400 hover:text-blue-600"><Eye className="w-4 h-4" /></button>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => handleEditSupplier(s)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all" title="Editar"><Edit3 className="w-4 h-4" /></button>
+                        <button onClick={() => handleDeleteSupplier(s.id)} className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all" title="Eliminar"><Trash2 className="w-4 h-4" /></button>
+                      </div>
                     </td>
                   </tr>
                 ))
-              ) : (
+              ) : activeTab === 'invoices' ? (
                 invoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 font-mono text-sm font-bold text-blue-600">{inv.invoiceNumber}</td>
@@ -289,6 +338,56 @@ export default function SuppliersPage() {
                     </td>
                   </tr>
                 ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                       <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
+                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Compras Brutas</p>
+                          <p className="text-3xl font-black text-slate-900 dark:text-white">${Math.round(invoices.reduce((s, i) => s + i.totalAmount, 0)).toLocaleString()}</p>
+                       </div>
+                       <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
+                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Impuestos</p>
+                          <p className="text-3xl font-black text-blue-600">${Math.round(invoices.reduce((s, i) => s + i.totalTax, 0)).toLocaleString()}</p>
+                       </div>
+                       <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
+                          <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Facturas Pendientes</p>
+                          <p className="text-3xl font-black text-amber-600">{invoices.filter(i => !i.isPaid).length}</p>
+                       </div>
+                     </div>
+
+                     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-xl">
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                           <h4 className="font-bold text-slate-900 dark:text-white uppercase text-xs tracking-widest">Resumen por Proveedor</h4>
+                        </div>
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="border-b border-slate-100 dark:border-slate-800">
+                              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Socio Comercial</th>
+                              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Facturas</th>
+                              <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-right">Total Compras</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                            {suppliers.map(s => {
+                              const supInvoices = invoices.filter(i => i.supplier?.id === s.id);
+                              const total = supInvoices.reduce((sum, i) => sum + i.totalAmount, 0);
+                              return (
+                                <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                  <td className="px-6 py-4">
+                                    <p className="font-bold text-slate-900 dark:text-white">{s.name}</p>
+                                    <p className="text-[10px] text-slate-500">{s.taxId || 'N/A'}</p>
+                                  </td>
+                                  <td className="px-6 py-4 text-center font-bold text-slate-600 dark:text-slate-400">{supInvoices.length}</td>
+                                  <td className="px-6 py-4 text-right font-black text-emerald-600">${Math.round(total).toLocaleString()}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                     </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -301,35 +400,35 @@ export default function SuppliersPage() {
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Truck className="text-blue-600" /> Nuevo Proveedor
+                <Truck className="text-blue-600" /> {editingSupplier ? 'Editar Proveedor' : 'Nuevo Proveedor'}
               </h3>
             </div>
             <form onSubmit={handleCreateSupplier} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Nombre de la Empresa *</label>
-                  <input required className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supName} onChange={e => setSupName(e.target.value)} />
+                  <input required className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supName} onChange={e => setSupName(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">NIT / Tax ID</label>
-                  <input className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supTaxId} onChange={e => setSupTaxId(e.target.value)} />
+                  <input className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supTaxId} onChange={e => setSupTaxId(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Teléfono</label>
-                  <input className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supPhone} onChange={e => setSupPhone(e.target.value)} />
+                  <input className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supPhone} onChange={e => setSupPhone(e.target.value)} />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Email</label>
-                  <input type="email" className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supEmail} onChange={e => setSupEmail(e.target.value)} />
+                  <input type="email" className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supEmail} onChange={e => setSupEmail(e.target.value)} />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Dirección</label>
-                  <input className="w-full mt-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none outline-none focus:ring-2 focus:ring-blue-500" value={supAddress} onChange={e => setSupAddress(e.target.value)} />
+                  <input className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supAddress} onChange={e => setSupAddress(e.target.value)} />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setIsSupplierModalOpen(false)} className="px-6 py-3 font-bold text-slate-500">Cancelar</button>
-                <button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all">Guardar</button>
+                <button type="button" onClick={() => { setIsSupplierModalOpen(false); setEditingSupplier(null); }} className="px-6 py-3 font-bold text-slate-500">Cancelar</button>
+                <button type="submit" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all uppercase">{editingSupplier ? 'Actualizar' : 'Guardar'}</button>
               </div>
             </form>
           </div>
@@ -355,15 +454,15 @@ export default function SuppliersPage() {
               <div className="col-span-3 grid grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Nº Factura</label>
-                  <input required placeholder="Ej: FV-001" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-900 border-none outline-none focus:ring-2 focus:ring-emerald-500" value={invNumber} onChange={e => setInvNumber(e.target.value)} />
+                  <input required placeholder="Ej: FV-001" className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={invNumber} onChange={e => setInvNumber(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Fecha</label>
-                  <input type="date" required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-900 border-none outline-none focus:ring-2 focus:ring-emerald-500" value={invDate} onChange={e => setInvDate(e.target.value)} />
+                  <input type="date" required className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={invDate} onChange={e => setInvDate(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Proveedor</label>
-                  <select required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-900 border-none outline-none focus:ring-2 focus:ring-emerald-500" value={selectedSupplierId} onChange={e => setSelectedSupplierId(e.target.value)}>
+                  <select required className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={selectedSupplierId} onChange={e => setSelectedSupplierId(e.target.value)}>
                     <option value="">Seleccionar...</option>
                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -384,19 +483,19 @@ export default function SuppliersPage() {
                     <div key={idx} className="grid grid-cols-12 gap-3 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800 items-end animate-in slide-in-from-right-3 duration-200">
                       <div className="col-span-5">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descripción del Producto</label>
-                        <input required placeholder="Ej: Arroz Diana 1kg x24" className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} />
+                        <input required placeholder="Ej: Arroz Diana 1kg x24" className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} />
                       </div>
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cant.</label>
-                        <input type="number" step="0.01" required className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value))} />
+                        <input type="number" step="0.01" required className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.quantity} onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value))} />
                       </div>
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">V. Neto Unid.</label>
-                        <input type="number" required className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.unitNetValue} onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value))} />
+                        <input type="number" required className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.unitNetValue} onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value))} />
                       </div>
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">IVA %</label>
-                        <select className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-900 text-sm border-none outline-none focus:ring-2 focus:ring-blue-500" value={item.taxRate} onChange={e => updateItem(idx, 'taxRate', parseFloat(e.target.value))}>
+                        <select className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.taxRate} onChange={e => updateItem(idx, 'taxRate', parseFloat(e.target.value))}>
                           <option value="0">0%</option>
                           <option value="5">5%</option>
                           <option value="19">19%</option>
