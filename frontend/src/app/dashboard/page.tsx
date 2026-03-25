@@ -388,7 +388,10 @@ export default function PosPage() {
   };
 
   const handlePrintWithChangeModal = () => {
-    if (completedSale?.paymentMethod === 'efectivo' && completedSale?.changeAmount > 0) {
+    // Convertir a número por seguridad y redondear para evitar problemas de coma flotante
+    const change = Math.round(Number(completedSale?.changeAmount || 0));
+
+    if (completedSale?.paymentMethod?.toLowerCase() === 'efectivo' && change > 0) {
       setShowChangeModal(true);
       // Esperar 4 segundos antes de imprimir automáticamente
       setTimeout(() => {
@@ -1009,8 +1012,8 @@ export default function PosPage() {
 
       {/* Modal de Cambio Llamativo */}
       {showChangeModal && completedSale && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-blue-600 dark:bg-blue-700 animate-in fade-in duration-300">
-          <div className="text-center p-8 animate-in zoom-in-95 duration-500">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-blue-600 dark:bg-blue-700">
+          <div className="text-center p-8">
             <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-full mb-8 shadow-2xl animate-bounce">
               <Banknote className="w-16 h-16 text-blue-600" />
             </div>
