@@ -52,6 +52,8 @@ export default function InventoryPage() {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
   const [productSearchTerm, setProductSearchTerm] = useState('');
 
+  // Referencia para input de archivo
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
