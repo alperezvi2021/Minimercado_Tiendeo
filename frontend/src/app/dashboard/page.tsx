@@ -1007,23 +1007,23 @@ export default function PosPage() {
         </div>
       )}
 
-      {/* Modal de Cambio Llamativo */}
+      {/* Modal de Cambio Llamativo - Redimensionado */}
       {showChangeModal && completedSale && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-blue-600 dark:bg-blue-700">
-          <div className="text-center p-8">
-            <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-full mb-8 shadow-2xl animate-bounce">
-              <Banknote className="w-16 h-16 text-blue-600" />
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-blue-600 dark:bg-blue-700 text-center p-10 rounded-[40px] shadow-2xl border-4 border-white/20 max-w-lg w-full mx-4 animate-in zoom-in-95 duration-500">
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full mb-6 shadow-xl animate-bounce">
+              <Banknote className="w-12 h-12 text-blue-600" />
             </div>
-            <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter uppercase">
+            <h2 className="text-3xl font-black text-white mb-4 tracking-tight uppercase">
               ENTREGAR CAMBIO
             </h2>
-            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border-4 border-white/20 shadow-inner">
-              <p className="text-7xl md:text-9xl font-black text-white drop-shadow-2xl">
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border-2 border-white/20 shadow-inner">
+              <p className="text-6xl md:text-8xl font-black text-white drop-shadow-lg">
                 ${Math.round(completedSale.changeAmount).toLocaleString('es-CO')}
               </p>
             </div>
-            <p className="mt-12 text-blue-100 text-xl font-bold animate-pulse flex items-center justify-center gap-3">
-              <div className="w-3 h-3 bg-blue-200 rounded-full animate-ping" />
+            <p className="mt-8 text-blue-100 text-sm font-bold animate-pulse flex items-center justify-center gap-2">
+              <div className="w-2 h-2 bg-blue-200 rounded-full animate-ping" />
               Imprimiendo ticket automáticamente...
             </p>
           </div>
