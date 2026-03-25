@@ -1,3 +1,5 @@
+'use client';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Search, Edit2, Trash2, Barcode, Download, Upload, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
