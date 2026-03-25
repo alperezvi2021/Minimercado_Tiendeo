@@ -294,14 +294,7 @@ export default function PosPage() {
         setPosState('billing');
         fetchProducts();
 
-        // Auto-print logic
-        if (tenantData.ticketAutoPrint) {
-          setTimeout(() => {
-            window.print();
-            setCompletedSale(null);
-            setTimeout(() => searchInputRef.current?.focus(), 100);
-          }, 500);
-        }
+        // Auto-print will be handled by useEffect watching completedSale
       } else {
         const err = await res.json();
         alert('Error al procesar la venta: ' + (err.message || 'Error desconocido'));
@@ -335,14 +328,7 @@ export default function PosPage() {
     setPosState('billing');
     setIsProcessing(false);
 
-    // Auto-print logic for offline
-    if (tenantData.ticketAutoPrint) {
-      setTimeout(() => {
-        window.print();
-        setCompletedSale(null);
-        setTimeout(() => searchInputRef.current?.focus(), 100);
-      }, 500);
-    }
+    // Auto-print will be handled by useEffect watching completedSale
   };
 
   const syncPendingSales = async () => {
@@ -451,6 +437,17 @@ export default function PosPage() {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [completedSale, posState, isProcessing, cart, paymentMethod, cashReceived, lastCheckoutTime, customerName, selectedCustomerId, isNewCustomer]);
 
+
+  // Efecto para auto-impresión supervisada por el modal de cambio
+  useEffect(() => {
+    if (completedSale && tenantData.ticketAutoPrint && !showChangeModal) {
+      // Pequeño delay para que el modal de ticket (el primero) logre renderizar sus datos
+      const timer = setTimeout(() => {
+        handlePrintWithChangeModal();
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [completedSale, tenantData.ticketAutoPrint]);
 
   // Sugerencias visuales si tipean en vez de escanear
   const filteredSuggestions = searchTerm.length > 1 
