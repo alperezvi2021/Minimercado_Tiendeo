@@ -16,6 +16,7 @@ import {
   Settings
 } from 'lucide-react';
 import CustomerModal from '@/components/customers/CustomerModal';
+import CustomerHistoryModal from '@/components/customers/CustomerHistoryModal';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -23,6 +24,7 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   const fetchCustomers = async () => {
     try {
@@ -198,6 +200,13 @@ export default function CustomersPage() {
                         <Settings className="w-5 h-5" />
                       </button>
                       <button 
+                        onClick={() => { setSelectedCustomer(c); setIsHistoryModalOpen(true); }}
+                        className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl transition-all shadow-sm"
+                        title="Ver Historial y Reporte"
+                      >
+                        <History className="w-5 h-5" />
+                      </button>
+                      <button 
                         onClick={() => handleDelete(c.id)}
                         className="p-3 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-rose-600 hover:text-white rounded-xl transition-all shadow-sm"
                         title="Eliminar"
@@ -230,6 +239,13 @@ export default function CustomersPage() {
         onClose={() => setIsModalOpen(false)} 
         onSave={fetchCustomers}
         customer={selectedCustomer}
+      />
+
+      <CustomerHistoryModal 
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        customerId={selectedCustomer?.id}
+        customerName={selectedCustomer?.name}
       />
     </div>
   );

@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Sale } from './sale.entity';
+import { CreditPayment } from './credit-payment.entity';
 
 @Entity('credit_sales')
 export class CreditSale {
@@ -43,4 +44,7 @@ export class CreditSale {
 
   @Column({ name: 'paid_at', nullable: true })
   paidAt: Date;
+
+  @OneToMany(() => CreditPayment, (payment) => payment.creditSale)
+  payments: CreditPayment[];
 }

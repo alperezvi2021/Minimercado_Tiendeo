@@ -187,7 +187,7 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
                     </div>
                   </div>
                   {h.notes && (
-                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400 italic">"{h.notes}"</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-slate-400 italic">&quot;{h.notes}&quot;</p>
                   )}
                 </div>
               ))

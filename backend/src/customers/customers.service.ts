@@ -42,7 +42,12 @@ export class CustomersService {
   async findOne(tenantId: string, id: string) {
     const customer = await this.customersRepository.findOne({
       where: { id, tenantId },
-      relations: ['creditSales', 'creditSales.sale'],
+      relations: ['creditSales', 'creditSales.sale', 'creditSales.payments'],
+      order: {
+        creditSales: {
+          createdAt: 'DESC'
+        }
+      }
     });
     if (!customer) throw new NotFoundException('Customer not found');
     return customer;
