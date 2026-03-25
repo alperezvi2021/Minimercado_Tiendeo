@@ -80,4 +80,12 @@ export class ProductsService {
       await this.productsRepository.save(product);
     }
   }
+
+  async createMany(tenantId: string, productsDto: CreateProductDto[]): Promise<Product[]> {
+    const products = productsDto.map(dto => this.productsRepository.create({
+      ...dto,
+      tenantId,
+    }));
+    return this.productsRepository.save(products);
+  }
 }

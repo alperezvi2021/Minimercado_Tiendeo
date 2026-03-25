@@ -19,6 +19,13 @@ export class ProductsController {
     return this.productsService.create(tenantId, createProductDto);
   }
 
+  @Post('bulk')
+  @Roles(Role.ADMIN, Role.OWNER)
+  createBulk(@Request() req, @Body() productsDto: CreateProductDto[]) {
+    const tenantId = req.user.tenantId;
+    return this.productsService.createMany(tenantId, productsDto);
+  }
+
   @Get()
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   findAll(@Request() req) {

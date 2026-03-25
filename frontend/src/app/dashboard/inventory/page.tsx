@@ -1,6 +1,5 @@
-'use client';
-import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, Barcode } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Barcode, Download, Upload, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface Category {
   id: string;
@@ -42,8 +41,12 @@ export default function InventoryPage() {
   const [lowStockThreshold, setLowStockThreshold] = useState('5');
 
   // Estado para el modal de categorías
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
+
+  // Referencia para input de archivo
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -204,22 +207,32 @@ export default function InventoryPage() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories`, {
-        method: 'POST',
+      const payload = { name: newCategoryName, description: categoryDescription };
+      const url = editingCategory ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories/${editingCategory.id}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories`;
+      const method = editingCategory ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ name: newCategoryName, description: categoryDescription })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         setNewCategoryName('');
         setCategoryDescription('');
+        setEditingCategory(null);
         fetchCategories();
       }
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setNewCategoryName(category.name);
   };
 
   const handleDeleteCategory = async (id: string, catName: string) => {
@@ -240,7 +253,95 @@ export default function InventoryPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
+  const openCreateModalWithCategory = (catId: string) => {
+    openCreateModal();
+    setCategoryId(catId);
+    setIsCategoryModalOpen(false);
+  };
+
+  // --- Funciones de Import/Export ---
+  const handleExport = () => {
+    const dataToExport = products.map((p: Product) => ({
+      'Nombre': p.name,
+      'Código de Barras': p.barcode || 'Manual',
+      'Precio Compra': p.cost || 0,
+      'Utilidad (%)': p.profitMargin || 0,
+      'Precio Venta': p.price,
+      'Stock Actual': p.stock,
+      'Mínimo Stock': p.lowStockThreshold,
+      'Categoría': p.category?.name || 'Sin Categoría'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+    XLSX.writeFile(wb, `Inventario_Tiendeo_${new Date().toLocaleDateString()}.xlsx`);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+        // Mapear datos a CreateProductDto
+        const productsToImport = data.map((row: any) => {
+          // Buscar categoría por nombre
+          const catName = row['Categoría'];
+          const category = categories.find((c: Category) => c.name.toLowerCase() === (catName || '').toString().toLowerCase());
+          
+          return {
+            name: row['Nombre'],
+            barcode: row['Código de Barras'] === 'Manual' ? null : row['Código de Barras']?.toString(),
+            cost: row['Precio Compra'] ? parseFloat(row['Precio Compra']) : null,
+            profitMargin: row['Utilidad (%)'] ? parseFloat(row['Utilidad (%)']) : null,
+            price: row['Precio Venta'] ? parseFloat(row['Precio Venta']) : 0,
+            stock: row['Stock Actual'] ? parseFloat(row['Stock Actual']) : 0,
+            lowStockThreshold: row['Mínimo Stock'] ? parseInt(row['Mínimo Stock']) : 5,
+            categoryId: category?.id || null,
+          };
+        }).filter(p => p.name); // Solo productos con nombre
+
+        if (productsToImport.length > 0) {
+          const token = localStorage.getItem('access_token');
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/bulk`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}` 
+            },
+            body: JSON.stringify(productsToImport)
+          });
+
+          if (res.ok) {
+            alert(`¡Éxito! Se importaron ${productsToImport.length} productos.`);
+            fetchProducts();
+          } else {
+            alert('Hubo un error al realizar la importación masiva.');
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing excel", error);
+        alert('Formato de archivo inválido.');
+      }
+    };
+    reader.readAsBinaryString(file);
+    // Limpiar input
+    e.target.value = '';
+  };
+
+  const filteredProducts = products.filter((p: Product) => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (p.barcode && p.barcode.includes(searchTerm))
   );
@@ -259,7 +360,32 @@ export default function InventoryPage() {
         
         <div className="flex gap-2">
           <button 
+            onClick={handleExport}
+            title="Exportar inventario a Excel"
+            className="inline-flex items-center rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400 shadow-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Exportar
+          </button>
+          <button 
+            onClick={handleImportClick}
+            title="Importar productos desde Excel"
+            className="inline-flex items-center rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2.5 text-sm font-semibold text-blue-600 dark:text-blue-400 shadow-sm hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Importar
+          </button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            title="Seleccionar archivo para importar"
+            className="hidden" 
+            accept=".xlsx, .xls, .csv" 
+            onChange={handleFileImport}
+          />
+          <button 
             onClick={() => setIsCategoryModalOpen(true)}
+            title="Gestionar categorías"
             className="inline-flex items-center rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
           >
             Categorías
@@ -314,7 +440,7 @@ export default function InventoryPage() {
                   <td colSpan={5} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay productos. ¡Agrega el primero!</td>
                 </tr>
               ) : (
-                filteredProducts.map((product) => {
+                filteredProducts.map((product: Product) => {
                   const isLowStock = product.stock <= (product.lowStockThreshold || 5);
                   return (
                     <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -342,10 +468,10 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4">
+                        <button onClick={() => handleEdit(product)} title="Editar producto" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4">
                           <Edit2 className="h-4 w-4" />
                         </button>
-                        <button onClick={() => handleDelete(product.id, product.name)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                        <button onClick={() => handleDelete(product.id, product.name)} title="Eliminar producto" className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>
@@ -374,12 +500,12 @@ export default function InventoryPage() {
               {/* Sección Principal */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Nombre del Producto <span className="text-red-500">*</span></label>
-                  <input required placeholder="Ej: Coca Cola 600ml" type="text" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={name} onChange={e => setName(e.target.value)} />
+                  <label htmlFor="productName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Nombre del Producto <span className="text-red-500">*</span></label>
+                  <input id="productName" required title="Nombre del producto" placeholder="Ej: Coca Cola 600ml" type="text" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Código de Barras</label>
-                  <input type="text" placeholder="Pistolea aquí o deja en blanco" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={barcode} onChange={e => setBarcode(e.target.value)} />
+                  <label htmlFor="barcode" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Código de Barras</label>
+                  <input id="barcode" title="Código de barras" type="text" placeholder="Pistolea aquí o deja en blanco" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={barcode} onChange={e => setBarcode(e.target.value)} />
                 </div>
               </div>
 
@@ -394,7 +520,7 @@ export default function InventoryPage() {
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <span className="text-gray-500 sm:text-sm">$</span>
                       </div>
-                      <input type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-2 pl-7 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={cost} onChange={e => handleCostOrMarginChange(e.target.value, profitMargin)} />
+                      <input id="cost" title="Precio de compra" type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-2 pl-7 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={cost} onChange={e => handleCostOrMarginChange(e.target.value, profitMargin)} />
                     </div>
                   </div>
                   <div>
@@ -403,7 +529,7 @@ export default function InventoryPage() {
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                         <span className="text-gray-500 sm:text-sm">%</span>
                       </div>
-                      <input type="number" step="1" placeholder="30" className="block w-full rounded-lg border-0 py-2 pl-3 pr-7 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={profitMargin} onChange={e => handleCostOrMarginChange(cost, e.target.value)} />
+                      <input id="profitMargin" title="Porcentaje de utilidad" type="number" step="1" placeholder="30" className="block w-full rounded-lg border-0 py-2 pl-3 pr-7 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={profitMargin} onChange={e => handleCostOrMarginChange(cost, e.target.value)} />
                     </div>
                   </div>
                 </div>
@@ -413,7 +539,7 @@ export default function InventoryPage() {
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <span className="text-gray-500 text-lg font-bold">$</span>
                     </div>
-                    <input required type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-3 pl-8 pr-3 text-xl font-bold text-gray-900 bg-white ring-2 ring-inset ring-blue-500 dark:bg-slate-950 dark:text-white dark:ring-blue-500 focus:ring-2 focus:ring-blue-600 sm:leading-6 transition-all" value={price} onChange={e => handlePriceChange(e.target.value)} />
+                    <input id="price" title="Precio de venta final" required type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-3 pl-8 pr-3 text-xl font-bold text-gray-900 bg-white ring-2 ring-inset ring-blue-500 dark:bg-slate-950 dark:text-white dark:ring-blue-500 focus:ring-2 focus:ring-blue-600 sm:leading-6 transition-all" value={price} onChange={e => handlePriceChange(e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -423,25 +549,33 @@ export default function InventoryPage() {
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Categoría</label>
                   <select 
+                    title="Seleccionar categoría"
                     className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all"
                     value={categoryId} 
                     onChange={e => setCategoryId(e.target.value)}
                   >
                     <option value="">Sin Categoría</option>
-                    {categories.map(c => (
+                    {categories.map((c: Category) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Stock Inicial</label>
-                  <input type="number" step="0.01" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={stock} onChange={e => setStock(e.target.value)} />
+                  <label htmlFor="stock" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Stock Inicial</label>
+                  <input id="stock" title="Cantidad en stock inicial" type="number" step="0.01" placeholder="0" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={stock} onChange={e => setStock(e.target.value)} />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Alerta Stock Bajo (Mínimo)</label>
-                <input type="number" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all text-red-600 font-bold" value={lowStockThreshold} onChange={e => setLowStockThreshold(e.target.value)} />
+                <input 
+                  type="number" 
+                  title="Alerta de stock bajo"
+                  placeholder="Ej: 5"
+                  className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all text-red-600 font-bold" 
+                  value={lowStockThreshold} 
+                  onChange={e => setLowStockThreshold(e.target.value)} 
+                />
               </div>
 
               <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
@@ -467,14 +601,24 @@ export default function InventoryPage() {
               <form onSubmit={handleCreateCategory} className="flex gap-2 pb-4 border-b border-gray-100 dark:border-slate-800">
                 <input 
                   required 
+                  title="Nombre de la nueva categoría"
                   placeholder="Nueva categoría..." 
                   className="flex-1 rounded-xl border-0 py-2 px-3 text-sm ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
                   value={newCategoryName}
                   onChange={e => setNewCategoryName(e.target.value)}
                 />
-                <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-4 py-2 text-sm font-bold shadow-sm transition-colors">
-                  Crear
-                </button>
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-4 py-2 text-sm font-bold shadow-sm transition-colors">
+                    {editingCategory ? 'Actualizar' : 'Crear'}
+                  </button>
+                  {editingCategory && (
+                    <button 
+                      type="button" 
+                      onClick={() => { setEditingCategory(null); setNewCategoryName(''); }}
+                      className="bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-xl px-3 py-2 text-xs font-bold transition-all"
+                    >
+                      Cancelar
+                    </button>
+                  )}
               </form>
 
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -483,15 +627,35 @@ export default function InventoryPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">No hay categorías aún.</p>
                   </div>
                 ) : (
-                  categories.map(c => (
+                  categories.map((c: Category) => (
                     <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-slate-700 transition-all">
-                      <span className="text-sm font-semibold dark:text-gray-200">{c.name}</span>
-                      <button 
-                        onClick={() => handleDeleteCategory(c.id, c.name)} 
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold dark:text-gray-200">{c.name}</span>
+                        {editingCategory?.id === c.id && <span className="text-[10px] text-blue-500 font-bold uppercase">Editando...</span>}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => openCreateModalWithCategory(c.id)}
+                          title="Añadir producto a esta categoría"
+                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEditCategory(c)}
+                          title="Editar nombre de categoría"
+                          className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCategory(c.id, c.name)} 
+                          title="Eliminar categoría"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
