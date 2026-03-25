@@ -36,6 +36,7 @@ export default function PosPage() {
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
   const [cashReceived, setCashReceived] = useState<string>('');
+  const [showChangeModal, setShowChangeModal] = useState(false);
   // Store info state (Dynamic from DB)
   const [tenantData, setTenantData] = useState({
     name: 'TIENDA LAS MARGARITAS',
@@ -382,7 +383,20 @@ export default function PosPage() {
   const handlePrintAndReset = () => {
     window.print();
     setCompletedSale(null);
+    setShowChangeModal(false);
     setTimeout(() => searchInputRef.current?.focus(), 100);
+  };
+
+  const handlePrintWithChangeModal = () => {
+    if (completedSale?.paymentMethod === 'efectivo' && completedSale?.changeAmount > 0) {
+      setShowChangeModal(true);
+      // Esperar 4 segundos antes de imprimir automáticamente
+      setTimeout(() => {
+        handlePrintAndReset();
+      }, 4000);
+    } else {
+      handlePrintAndReset();
+    }
   };
 
   // Autocaptura global para usar TODO con 'ENTER'
@@ -399,7 +413,7 @@ export default function PosPage() {
       if (e.key === 'Enter') {
         if (completedSale) {
           e.preventDefault();
-          handlePrintAndReset();
+          handlePrintWithChangeModal();
         } else if (posState === 'payment' && !isProcessing) {
           // No procesar si acaba de entrar en modo pago (cooldown 800ms para evitar doble enter)
           if (Date.now() - lastCheckoutTime < 800) return; 
@@ -982,13 +996,36 @@ export default function PosPage() {
                 Cerrar (Esc)
               </button>
               <button 
-                onClick={handlePrintAndReset} 
+                onClick={handlePrintWithChangeModal} 
                 className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors"
                 autoFocus
               >
                 🖨️ Imprimir (Enter)
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cambio Llamativo */}
+      {showChangeModal && completedSale && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-blue-600 dark:bg-blue-700 animate-in fade-in duration-300">
+          <div className="text-center p-8 animate-in zoom-in-95 duration-500">
+            <div className="inline-flex items-center justify-center w-32 h-32 bg-white rounded-full mb-8 shadow-2xl animate-bounce">
+              <Banknote className="w-16 h-16 text-blue-600" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter uppercase">
+              ENTREGAR CAMBIO
+            </h2>
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border-4 border-white/20 shadow-inner">
+              <p className="text-7xl md:text-9xl font-black text-white drop-shadow-2xl">
+                ${Math.round(completedSale.changeAmount).toLocaleString('es-CO')}
+              </p>
+            </div>
+            <p className="mt-12 text-blue-100 text-xl font-bold animate-pulse flex items-center justify-center gap-3">
+              <div className="w-3 h-3 bg-blue-200 rounded-full animate-ping" />
+              Imprimiendo ticket automáticamente...
+            </p>
           </div>
         </div>
       )}
