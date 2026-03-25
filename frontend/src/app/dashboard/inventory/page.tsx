@@ -47,8 +47,10 @@ export default function InventoryPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryDescription, setCategoryDescription] = useState('');
 
-  // Referencia para input de archivo
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Estado para gestión de productos dentro de categoría
+  const [isManagingProducts, setIsManagingProducts] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -255,10 +257,41 @@ export default function InventoryPage() {
     }
   };
 
+  const openManageCategoryProducts = (category: Category) => {
+    setActiveCategory(category);
+    setIsManagingProducts(true);
+    setProductSearchTerm('');
+  };
+
+  const closeManageCategoryProducts = () => {
+    setIsManagingProducts(false);
+    setActiveCategory(null);
+  };
+
+  const assignProductToCategory = async (productId: string, catId: string | null) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ categoryId: catId })
+      });
+      if (res.ok) {
+        fetchProducts(); // Refrescar lista
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const openCreateModalWithCategory = (catId: string) => {
     openCreateModal();
     setCategoryId(catId);
     setIsCategoryModalOpen(false);
+    closeManageCategoryProducts();
   };
 
   // --- Funciones de Import/Export ---
@@ -594,83 +627,166 @@ export default function InventoryPage() {
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm transition-opacity">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden border border-gray-100 dark:border-slate-700">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Gestionar Categorías</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Crea etiquetas para organizar tus productos (ej: Bebidas, Aseo).</p>
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-800/30 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  {isManagingProducts ? `Productos en ${activeCategory?.name}` : 'Gestionar Categorías'}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {isManagingProducts ? 'Asegúrate de que cada producto esté en su lugar.' : 'Crea etiquetas para organizar tus productos.'}
+                </p>
+              </div>
+              {isManagingProducts && (
+                <button 
+                  onClick={closeManageCategoryProducts}
+                  className="text-xs font-bold text-blue-600 hover:underline"
+                >
+                  Volver a lista
+                </button>
+              )}
             </div>
             
             <div className="p-6 space-y-4">
-              <form onSubmit={handleCreateCategory} className="flex gap-2 pb-4 border-b border-gray-100 dark:border-slate-800">
-                <input 
-                  required 
-                  title="Nombre de la nueva categoría"
-                  placeholder="Nueva categoría..." 
-                  className="flex-1 rounded-xl border-0 py-2 px-3 text-sm ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                  value={newCategoryName}
-                  onChange={e => setNewCategoryName(e.target.value)}
-                />
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-4 py-2 text-sm font-bold shadow-sm transition-colors">
-                    {editingCategory ? 'Actualizar' : 'Crear'}
-                  </button>
-                  {editingCategory && (
-                    <button 
-                      type="button" 
-                      onClick={() => { setEditingCategory(null); setNewCategoryName(''); }}
-                      className="bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-xl px-3 py-2 text-xs font-bold transition-all"
-                    >
-                      Cancelar
+              {!isManagingProducts ? (
+                <>
+                  <form onSubmit={handleCreateCategory} className="flex gap-2 pb-4 border-b border-gray-100 dark:border-slate-800">
+                    <input 
+                      required 
+                      title="Nombre de la nueva categoría"
+                      placeholder="Nueva categoría..." 
+                      className="flex-1 rounded-xl border-0 py-2 px-3 text-sm ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                      value={newCategoryName}
+                      onChange={e => setNewCategoryName(e.target.value)}
+                    />
+                    <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-4 py-2 text-sm font-bold shadow-sm transition-colors">
+                      {editingCategory ? 'Actualizar' : 'Crear'}
                     </button>
-                  )}
-              </form>
+                    {editingCategory && (
+                      <button 
+                        type="button" 
+                        onClick={() => { setEditingCategory(null); setNewCategoryName(''); }}
+                        className="bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-200 rounded-xl px-3 py-2 text-xs font-bold transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </form>
 
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                {categories.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No hay categorías aún.</p>
+                  <div className="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {categories.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">No hay categorías aún.</p>
+                      </div>
+                    ) : (
+                      categories.map((c: Category) => (
+                        <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-slate-700 transition-all">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold dark:text-gray-200">{c.name}</span>
+                            {editingCategory?.id === c.id && <span className="text-[10px] text-blue-500 font-bold uppercase">Editando...</span>}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={() => openManageCategoryProducts(c)}
+                              title="Gestionar productos de esta categoría"
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleEditCategory(c)}
+                              title="Editar nombre de categoría"
+                              className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteCategory(c.id, c.name)} 
+                              title="Eliminar categoría"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
                   </div>
-                ) : (
-                  categories.map((c: Category) => (
-                    <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-slate-700 transition-all">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold dark:text-gray-200">{c.name}</span>
-                        {editingCategory?.id === c.id && <span className="text-[10px] text-blue-500 font-bold uppercase">Editando...</span>}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button 
-                          onClick={() => openCreateModalWithCategory(c.id)}
-                          title="Añadir producto a esta categoría"
-                          className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleEditCategory(c)}
-                          title="Editar nombre de categoría"
-                          className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteCategory(c.id, c.name)} 
-                          title="Eliminar categoría"
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  {/* Buscador de productos para asignar */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                    <input 
+                      type="text"
+                      title="Buscar productos para asignar o desasignar"
+                      placeholder="Buscar por nombre o código..."
+                      className="w-full pl-9 pr-3 py-2 rounded-xl bg-gray-50 dark:bg-slate-800 border-none text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      value={productSearchTerm}
+                      onChange={e => setProductSearchTerm(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="max-h-80 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    {/* Sección 1: Productos actuales en esta categoría */}
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Productos en esta categoría</div>
+                    {products.filter((p: Product) => p.categoryId === activeCategory?.id && (p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) || p.barcode?.includes(productSearchTerm))).length === 0 ? (
+                      <div className="text-[11px] text-gray-500 italic px-2">No se encontraron productos asignados.</div>
+                    ) : (
+                      products.filter((p: Product) => p.categoryId === activeCategory?.id && (p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) || p.barcode?.includes(productSearchTerm))).map((p: Product) => (
+                        <div key={p.id} className="flex items-center justify-between p-2 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-100 dark:border-blue-900/20">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold dark:text-gray-200">{p.name}</span>
+                            <span className="text-[10px] text-gray-500">{p.barcode || 'Manual'}</span>
+                          </div>
+                          <button 
+                            onClick={() => assignProductToCategory(p.id, null)}
+                            className="text-[10px] font-bold text-red-500 hover:underline"
+                          >
+                            Quitar
+                          </button>
+                        </div>
+                      ))
+                    )}
+
+                    {/* Sección 2: Productos SIN CATEGORÍA o en otras (para asignar) */}
+                    <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest px-1 mt-4">Asignar otros productos</div>
+                    {products.filter((p: Product) => p.categoryId !== activeCategory?.id && (p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) || p.barcode?.includes(productSearchTerm))).length === 0 ? (
+                      <div className="text-[11px] text-gray-500 italic px-2">No hay otros productos para mostrar.</div>
+                    ) : (
+                      products.filter((p: Product) => p.categoryId !== activeCategory?.id && (p.name.toLowerCase().includes(productSearchTerm.toLowerCase()) || p.barcode?.includes(productSearchTerm))).map((p: Product) => (
+                        <div key={p.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-slate-700 transition-all opacity-70 hover:opacity-100">
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold dark:text-gray-200">{p.name}</span>
+                            <span className="text-[10px] text-gray-500">
+                              {p.barcode || 'Manual'} • <span className={p.category ? 'text-blue-500' : 'text-red-400 italic'}>{p.category?.name || 'SIN CATEGORÍA'}</span>
+                            </span>
+                          </div>
+                          <button 
+                            onClick={() => assignProductToCategory(p.id, activeCategory?.id || null)}
+                            className="text-[10px] font-bold text-emerald-600 hover:underline"
+                          >
+                            Asignar
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 dark:border-slate-800">
+                    <button 
+                      onClick={() => openCreateModalWithCategory(activeCategory?.id || '')}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Plus className="h-3 w-3" /> Crear Nuevo Producto aquí
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="p-4 bg-gray-50/50 dark:bg-slate-800/20 border-t border-gray-100 dark:border-slate-800 flex justify-end">
-              <button 
-                onClick={() => setIsCategoryModalOpen(false)}
-                className="rounded-xl px-5 py-2 text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-all"
-              >
-                Cerrar
-              </button>
+            <div className="px-6 py-4 bg-gray-50 dark:bg-slate-800/30 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
+              <button onClick={() => { setIsCategoryModalOpen(false); closeManageCategoryProducts(); }} className="rounded-xl px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">Cerrar</button>
             </div>
           </div>
         </div>
