@@ -170,7 +170,7 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -242,13 +242,13 @@ export default function CreditsPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-800/50">
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Factura #</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Fecha Deuda</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Monto Original</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Saldo Pendiente</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px]">Factura #</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[180px]">Cliente</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center min-w-[140px]">Fecha Deuda</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[140px]">Monto Original</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[160px]">Saldo Pendiente</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px]">Estado</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right min-w-[180px]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">

@@ -81,7 +81,7 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -134,10 +134,10 @@ export default function CustomersPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 dark:border-slate-800/50">
-                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Información Cliente</th>
-                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Contacto</th>
-                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center">Estado Crédito</th>
-                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest min-w-[200px]">Información Cliente</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest min-w-[150px]">Contacto</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center min-w-[160px]">Estado Crédito</th>
+                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right min-w-[160px]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800/50">

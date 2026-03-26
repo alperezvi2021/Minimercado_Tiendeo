@@ -187,47 +187,49 @@ export default function ReportsPage() {
       
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden text-left">
         {sales.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">No hay ventas registradas todavía.</div>
+          <div className="p-4 md:p-8 text-center text-gray-500 dark:text-gray-400">No hay ventas registradas todavía.</div>
         ) : (
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
-            <thead className="bg-gray-50 dark:bg-slate-800/50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Factura #</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha / Hora</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Método / Cliente</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Productos</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-slate-800">
-              {sales.map((sale) => (
-                <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-blue-600 dark:text-blue-400">
-                    {sale.invoiceNumber || 'S/N'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 font-medium">
-                    {new Date(sale.createdAt).toLocaleString('es-CO')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                      sale.paymentMethod === 'credito' 
-                        ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' 
-                        : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                    }`}>
-                      {sale.paymentMethod === 'credito' ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <Banknote className="w-3 h-3 mr-1" />}
-                      {sale.paymentMethod} {sale.customerName ? `(${sale.customerName})` : ''}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                    {sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-black text-gray-900 dark:text-white">
-                    {formatCurrency(Number(sale.totalAmount))}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
+              <thead className="bg-gray-50 dark:bg-slate-800/50">
+                <tr>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[120px]">Factura</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[170px]">Fecha / Hora</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[180px]">Método / Cliente</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[300px]">Productos</th>
+                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right min-w-[120px]">Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-slate-800">
+                {sales.map((sale) => (
+                  <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-blue-600 dark:text-blue-400">
+                      {sale.invoiceNumber || 'S/N'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 font-medium">
+                      {new Date(sale.createdAt).toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        sale.paymentMethod === 'credito' 
+                          ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' 
+                          : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                      }`}>
+                        {sale.paymentMethod === 'credito' ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <Banknote className="w-3 h-3 mr-1" />}
+                        {sale.paymentMethod} {sale.customerName ? `(${sale.customerName})` : ''}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 min-w-[300px]">
+                      {sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-black text-gray-900 dark:text-white">
+                      {formatCurrency(Number(sale.totalAmount))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

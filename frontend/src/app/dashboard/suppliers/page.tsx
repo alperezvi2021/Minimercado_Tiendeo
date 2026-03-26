@@ -322,19 +322,19 @@ export default function SuppliersPage() {
             <thead className="bg-slate-50 dark:bg-slate-800/50">
               {activeTab === 'suppliers' ? (
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nombre / NIT</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Contacto</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Dirección</th>
-                  <th className="relative px-6 py-4"></th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Nombre / NIT</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Contacto</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Dirección</th>
+                  <th className="relative px-6 py-4 min-w-[100px]"></th>
                 </tr>
               ) : (
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Factura #</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Proveedor</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Estado</th>
-                  <th className="relative px-6 py-4"></th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[110px]">Factura #</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[110px]">Fecha</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Proveedor</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[120px]">Total</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[120px]">Estado</th>
+                  <th className="relative px-6 py-4 min-w-[100px]"></th>
                 </tr>
               )}
             </thead>
