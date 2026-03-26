@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, ForbiddenException, BadRequestException, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { MaintenanceService } from './maintenance.service';
 import { Role } from '../auth/enums/role.enum';
@@ -11,16 +11,24 @@ export class MaintenanceController {
   @UseGuards(JwtAuthGuard)
   @Roles(Role.OWNER, Role.SUPER_ADMIN)
   @Post('reset-my-data')
-  async resetMyData(@Request() req, @Body('confirmText') confirmText: string) {
+  async resetMyData(@Request() req, @Body() options: any) {
+    const { confirmText, ...resetOptions } = options;
     if (confirmText !== 'REINICIAR_TODO_A_CEROS') {
       throw new BadRequestException('Confirmación inválida. Escriba exactamente: REINICIAR_TODO_A_CEROS');
     }
     
-    // Only Owners or Superadmins can do this
-    if (req.user.role !== Role.OWNER && req.user.role !== Role.SUPER_ADMIN) {
-      throw new ForbiddenException('No tienes permisos suficientes para realizar esta acción');
+    return this.maintenanceService.resetTenantData(req.user.tenantId, resetOptions);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Post('admin-reset/:tenantId')
+  async adminResetTenant(@Request() req, @Body() options: any, @Param('tenantId') tenantId: string) {
+    const { confirmText, ...resetOptions } = options;
+    if (confirmText !== 'REINICIAR_SISTEMA_GLOBAL') {
+      throw new BadRequestException('Confirmación inválida para SuperAdmin. Escriba exactamente: REINICIAR_SISTEMA_GLOBAL');
     }
     
-    return this.maintenanceService.resetTenantData(req.user.tenantId);
+    return this.maintenanceService.resetTenantData(tenantId, resetOptions);
   }
 }

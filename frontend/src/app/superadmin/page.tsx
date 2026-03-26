@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft } from 'lucide-react';
+import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw } from 'lucide-react';
 import BackupsManager from '@/components/admin/BackupsManager';
 
 export default function SuperAdminPage() {
@@ -12,6 +12,17 @@ export default function SuperAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
+  const [selectedTenantForReset, setSelectedTenantForReset] = useState<any>(null);
+  const [adminResetConfirmText, setAdminResetConfirmText] = useState('');
+  const [isResettingData, setIsResettingData] = useState(false);
+  const [resetOptions, setResetOptions] = useState({
+    cleanSales: true,
+    cleanCredits: true,
+    cleanCashClosures: true,
+    cleanRefunds: true,
+    cleanSupplierInvoices: false
+  });
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newPassword, setNewPassword] = useState('');
 
@@ -64,6 +75,43 @@ export default function SuperAdminPage() {
       }
     } catch (error) {
       alert('Error de conexión');
+    }
+  };
+
+  const handleAdminResetData = async () => {
+    if (adminResetConfirmText !== 'REINICIAR_SISTEMA_GLOBAL') {
+      alert('Error: Escriba la frase de confirmación exacta.');
+      return;
+    }
+
+    setIsResettingData(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenance/admin-reset/${selectedTenantForReset.id}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ 
+          confirmText: adminResetConfirmText,
+          ...resetOptions
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert(data.message || 'Limpieza completada con éxito');
+        setIsMaintenanceModalOpen(false);
+        setAdminResetConfirmText('');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo completar la limpieza'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión');
+    } finally {
+      setIsResettingData(false);
     }
   };
 
@@ -213,9 +261,21 @@ export default function SuperAdminPage() {
                     </td>
                     <td className="px-8 py-6 text-sm font-medium text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
                     <td className="px-8 py-6">
-                      <button className="text-gray-600 hover:text-white transition-colors" title="Ver detalles del negocio">
-                        <ExternalLink className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          className="text-gray-600 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" 
+                          title="Ver detalles del negocio"
+                        >
+                          <ExternalLink className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => { setSelectedTenantForReset(t); setIsMaintenanceModalOpen(true); }}
+                          className="text-rose-500 hover:text-rose-400 transition-colors p-2 hover:bg-rose-500/10 rounded-lg" 
+                          title="Mantenimiento / Limpieza de Datos"
+                        >
+                          <RefreshCcw className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -298,6 +358,134 @@ export default function SuperAdminPage() {
               >
                 Confirmar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Maintenance / Reset Modal */}
+      {isMaintenanceModalOpen && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0a0a1a] border border-white/10 w-full max-w-2xl rounded-[40px] shadow-3xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-10 bg-gradient-to-b from-rose-500/10 to-transparent">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 bg-rose-500/20 rounded-2xl flex items-center justify-center">
+                  <RefreshCcw className="w-8 h-8 text-rose-500" />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-white italic">Mantenimiento de Datos</h3>
+                  <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Tienda: <span className="text-rose-500">{selectedTenantForReset?.name}</span></p>
+                </div>
+              </div>
+
+              <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-6 mb-8">
+                <div className="flex gap-4">
+                  <AlertTriangle className="w-6 h-6 text-rose-500 shrink-0" />
+                  <div>
+                    <p className="text-sm font-bold text-white mb-1">¡ADVERTENCIA DE SEGURIDAD!</p>
+                    <p className="text-xs text-rose-200/60 leading-relaxed font-medium">
+                      Esta herramienta permite reiniciar contadores y borrar registros históricos. **Esta acción es irreversible**. 
+                      Las facturas de proveedores están protegidas por defecto.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-10">
+                <label className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+                  <input 
+                    type="checkbox" 
+                    className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500"
+                    checked={resetOptions.cleanSales} 
+                    onChange={e => setResetOptions({...resetOptions, cleanSales: e.target.checked})}
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-white">Ventas y Boletas</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-black">Historique de Facturación</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+                  <input 
+                    type="checkbox" 
+                    className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500"
+                    checked={resetOptions.cleanCredits} 
+                    onChange={e => setResetOptions({...resetOptions, cleanCredits: e.target.checked})}
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-white">Créditos y Deudas</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-black">Cuentas por Cobrar</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+                  <input 
+                    type="checkbox" 
+                    className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500"
+                    checked={resetOptions.cleanCashClosures} 
+                    onChange={e => setResetOptions({...resetOptions, cleanCashClosures: e.target.checked})}
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-white">Cierres de Caja</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-black">Reportes Daily</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 cursor-pointer hover:bg-white/10 transition-all">
+                  <input 
+                    type="checkbox" 
+                    className="w-5 h-5 rounded border-gray-700 bg-gray-800 text-blue-600 focus:ring-blue-500"
+                    checked={resetOptions.cleanRefunds} 
+                    onChange={e => setResetOptions({...resetOptions, cleanRefunds: e.target.checked})}
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-white">Devoluciones</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-black">Log de Reembolsos</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 p-4 bg-rose-500/5 rounded-2xl border border-rose-500/20 cursor-pointer hover:bg-rose-500/10 transition-all col-span-2">
+                  <input 
+                    type="checkbox" 
+                    className="w-5 h-5 rounded border-rose-900 bg-gray-800 text-rose-600 focus:ring-rose-500"
+                    checked={resetOptions.cleanSupplierInvoices} 
+                    onChange={e => setResetOptions({...resetOptions, cleanSupplierInvoices: e.target.checked})}
+                  />
+                  <div>
+                    <p className="text-sm font-bold text-rose-500">Limpiar Costos y Facturas de Proveedores</p>
+                    <p className="text-[10px] text-rose-700 uppercase font-black tracking-tight">¡CUIDADO! Esto borrará todos los gastos registrados.</p>
+                  </div>
+                </label>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-4 text-center">Escriba para confirmar ejecución: <span className="text-rose-500">REINICIAR_SISTEMA_GLOBAL</span></label>
+                  <input 
+                    type="text" 
+                    value={adminResetConfirmText}
+                    onChange={(e) => setAdminResetConfirmText(e.target.value)}
+                    placeholder="Frase de seguridad obligatoria"
+                    className="w-full bg-white/5 border border-white/5 rounded-3xl px-8 py-5 focus:ring-2 focus:ring-rose-500/50 text-white font-black text-center text-xl tracking-tight transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 mt-12 bg-white/5 -mx-10 -mb-10 p-8 border-t border-white/5">
+                <button 
+                  onClick={() => setIsMaintenanceModalOpen(false)}
+                  className="flex-1 px-6 py-4 rounded-2xl font-black text-gray-400 hover:bg-white/5 transition-all text-xs uppercase tracking-widest"
+                >
+                  Mejor No, Cancelar
+                </button>
+                <button 
+                  onClick={handleAdminResetData}
+                  disabled={isResettingData || adminResetConfirmText !== 'REINICIAR_SISTEMA_GLOBAL' || Object.values(resetOptions).every(v => !v)}
+                  className="flex-[2] bg-rose-600 hover:bg-rose-700 text-white px-6 py-4 rounded-2xl font-black shadow-2xl shadow-rose-600/30 transition-all text-sm uppercase tracking-widest disabled:bg-gray-800 disabled:text-gray-600 disabled:shadow-none"
+                >
+                  {isResettingData ? 'VACIANDO BASE DE DATOS...' : 'EJECUTAR LIMPIEZA AHORA'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

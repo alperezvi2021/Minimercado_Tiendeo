@@ -230,7 +230,14 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ confirmText: resetConfirmText })
+        body: JSON.stringify({ 
+          confirmText: resetConfirmText,
+          cleanSales: true,
+          cleanCredits: true,
+          cleanCashClosures: true,
+          cleanRefunds: true,
+          cleanSupplierInvoices: false // Protect these by default as requested
+        })
       });
 
       if (res.ok) {

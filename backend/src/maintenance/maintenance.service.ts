@@ -35,40 +35,55 @@ export class MaintenanceService {
     private dataSource: DataSource,
   ) {}
 
-  async resetTenantData(tenantId: string) {
+  async resetTenantData(tenantId: string, options: {
+    cleanSales?: boolean;
+    cleanCredits?: boolean;
+    cleanCashClosures?: boolean;
+    cleanRefunds?: boolean;
+    cleanSupplierInvoices?: boolean;
+  } = {}) {
     return await this.dataSource.transaction(async (manager) => {
-      // Delete in order to satisfy FKs (though some have CASCADE)
-      
-      // 1. Credit Payments
-      await manager.delete(CreditPayment, { tenantId });
-      
-      // 2. Credit Sales
-      await manager.delete(CreditSale, { tenantId });
-      
-      // 3. Supplier Invoices and Items
-      // Some might not have CASCADE DELETE on DB level, so we do it manually
-      await manager.delete(InvoiceItem, { tenantId });
-      await manager.delete(SupplierInvoice, { tenantId });
-      
-      // 4. Refunds and Items
-      await manager.query('DELETE FROM refund_items WHERE refund_id IN (SELECT id FROM refunds WHERE tenant_id = $1)', [tenantId]);
-      await manager.delete(Refund, { tenantId });
+      const results = [];
 
-      // 5. Sales and Items
-      // SaleItem has CASCADE DELETE in entity definition, but let's be sure
-      // await manager.delete(SaleItem, { sale: { tenantId } }); // Custom partial where might be tricky in TypeORM delete
-      // Better way for SaleItem:
-      await manager.query('DELETE FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE tenant_id = $1)', [tenantId]);
+      // 1. Credit Payments (Dependent on Credits)
+      if (options.cleanCredits) {
+        await manager.delete(CreditPayment, { tenantId });
+        await manager.delete(CreditSale, { tenantId });
+        results.push('Créditos y abonos');
+      }
       
-      await manager.delete(Sale, { tenantId });
+      // 2. Supplier Invoices and Items (Explicitly requested NOT to delete by default)
+      if (options.cleanSupplierInvoices) {
+        await manager.delete(InvoiceItem, { tenantId });
+        await manager.delete(SupplierInvoice, { tenantId });
+        results.push('Facturas de proveedores');
+      }
       
-      // 6. Cash Closures
-      await manager.delete(CashClosure, { tenantId });
+      // 3. Refunds and Items
+      if (options.cleanRefunds) {
+        await manager.query('DELETE FROM refund_items WHERE refund_id IN (SELECT id FROM refunds WHERE tenant_id = $1)', [tenantId]);
+        await manager.delete(Refund, { tenantId });
+        results.push('Devoluciones');
+      }
 
-      return { 
-        success: true, 
-        message: 'Todos los reportes, créditos y datos contables han sido reiniciados a cero.' 
-      };
+      // 4. Sales and Items
+      if (options.cleanSales) {
+        await manager.query('DELETE FROM sale_items WHERE sale_id IN (SELECT id FROM sales WHERE tenant_id = $1)', [tenantId]);
+        await manager.delete(Sale, { tenantId });
+        results.push('Ventas y facturas de venta');
+      }
+      
+      // 5. Cash Closures
+      if (options.cleanCashClosures) {
+        await manager.delete(CashClosure, { tenantId });
+        results.push('Cierres de caja');
+      }
+
+      const message = results.length > 0 
+        ? `Se han reiniciado los siguientes datos: ${results.join(', ')}.`
+        : 'No se seleccionaron datos para reiniciar.';
+
+      return { success: true, message };
     });
   }
 }
