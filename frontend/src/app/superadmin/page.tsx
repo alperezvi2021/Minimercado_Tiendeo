@@ -400,8 +400,8 @@ export default function SuperAdminPage() {
                     onChange={e => setResetOptions({...resetOptions, cleanSales: e.target.checked})}
                   />
                   <div>
-                    <p className="text-sm font-bold text-white">Ventas y Boletas</p>
-                    <p className="text-[10px] text-gray-500 uppercase font-black">Historique de Facturación</p>
+                    <p className="text-sm font-bold text-white">Ventas</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-black">Historial de Caja y Facturación</p>
                   </div>
                 </label>
 
@@ -413,8 +413,8 @@ export default function SuperAdminPage() {
                     onChange={e => setResetOptions({...resetOptions, cleanCredits: e.target.checked})}
                   />
                   <div>
-                    <p className="text-sm font-bold text-white">Créditos y Deudas</p>
-                    <p className="text-[10px] text-gray-500 uppercase font-black">Cuentas por Cobrar</p>
+                    <p className="text-sm font-bold text-white">Créditos y Abonos</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-black">Cuentas por Cobrar de Clientes</p>
                   </div>
                 </label>
 
@@ -452,8 +452,8 @@ export default function SuperAdminPage() {
                     onChange={e => setResetOptions({...resetOptions, cleanSupplierInvoices: e.target.checked})}
                   />
                   <div>
-                    <p className="text-sm font-bold text-rose-500">Limpiar Costos y Facturas de Proveedores</p>
-                    <p className="text-[10px] text-rose-700 uppercase font-black tracking-tight">¡CUIDADO! Esto borrará todos los gastos registrados.</p>
+                    <p className="text-sm font-bold text-rose-500">Limpiar Facturas de Proveedores (Gastos/Costos)</p>
+                    <p className="text-[10px] text-rose-700 uppercase font-black tracking-tight">¡CUIDADO! Esta opción borra todos los gastos. Usar solo si es estrictamente necesario.</p>
                   </div>
                 </label>
               </div>
