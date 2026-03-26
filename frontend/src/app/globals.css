@@ -54,6 +54,24 @@ body {
   }
 }
 
+/* --- MEJORA GLOBAL DE LEGIBILIDAD PARA INPUTS --- */
+input, textarea, select {
+  font-weight: 700 !important; /* Texto en negrita en toda la app */
+}
+
+/* En modo oscuro, asegurar texto blanco en inputs que NO tengan fondo blanco explícito */
+.dark input:not(.bg-white), 
+.dark textarea:not(.bg-white), 
+.dark select:not(.bg-white) {
+  color: #ffffff !important;
+}
+
+.dark input::placeholder, 
+.dark textarea::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+  font-weight: 400 !important;
+}
+
 /* --- PRO UX CLEANUP --- */
 /* Ocultar indicadores de desarrollo de Next.js y alertas de error que distraen al usuario final */
 #nextjs-portal,

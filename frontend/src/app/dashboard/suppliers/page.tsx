@@ -460,23 +460,23 @@ export default function SuppliersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Nombre de la Empresa *</label>
-                  <input required className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supName} onChange={e => setSupName(e.target.value)} />
+                  <input required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supName} onChange={e => setSupName(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">NIT / Tax ID</label>
-                  <input className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supTaxId} onChange={e => setSupTaxId(e.target.value)} />
+                  <input className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supTaxId} onChange={e => setSupTaxId(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Teléfono</label>
-                  <input className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supPhone} onChange={e => setSupPhone(e.target.value)} />
+                  <input className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supPhone} onChange={e => setSupPhone(e.target.value)} />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Email</label>
-                  <input type="email" className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supEmail} onChange={e => setSupEmail(e.target.value)} />
+                  <input type="email" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supEmail} onChange={e => setSupEmail(e.target.value)} />
                 </div>
                 <div className="col-span-2">
                   <label className="text-xs font-bold text-slate-500 uppercase">Dirección</label>
-                  <input className="w-full mt-1 p-3 rounded-xl bg-white text-black border-2 border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supAddress} onChange={e => setSupAddress(e.target.value)} />
+                  <input className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={supAddress} onChange={e => setSupAddress(e.target.value)} />
                 </div>
               </div>
               <div className="flex justify-end gap-3 pt-4">
@@ -507,14 +507,14 @@ export default function SuppliersPage() {
               <div className="col-span-3 grid grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Nº Factura</label>
-                  <input required placeholder="Ej: FV-001" className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={invNumber} onChange={e => setInvNumber(e.target.value)} />
+                  <input required placeholder="Ej: FV-001" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-700 text-black dark:text-white border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={invNumber} onChange={e => setInvNumber(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Fecha</label>
                   <input 
                     type="date" 
                     required 
-                    className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold appearance-none cursor-pointer" 
+                    className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-700 text-black dark:text-white border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold appearance-none cursor-pointer" 
                     value={invDate} 
                     onChange={e => setInvDate(e.target.value)} 
                     onClick={(e) => e.currentTarget.showPicker?.()}
@@ -522,7 +522,7 @@ export default function SuppliersPage() {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Proveedor</label>
-                  <select required className="w-full mt-1 p-3 rounded-xl bg-white text-black border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={selectedSupplierId} onChange={e => setSelectedSupplierId(e.target.value)}>
+                  <select required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-700 text-black dark:text-white border-none outline-none focus:ring-2 focus:ring-emerald-500 font-bold" value={selectedSupplierId} onChange={e => setSelectedSupplierId(e.target.value)}>
                     <option value="">Seleccionar...</option>
                     {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -543,7 +543,7 @@ export default function SuppliersPage() {
                     <div key={idx} className="grid grid-cols-12 gap-3 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800 items-end animate-in slide-in-from-right-3 duration-200">
                       <div className="col-span-4">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Descripción del Producto</label>
-                        <input required placeholder="Ej: Arroz Diana 1kg x24" className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} />
+                        <input required placeholder="Ej: Arroz Diana 1kg x24" className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-700 text-black dark:text-white text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.description} onChange={e => updateItem(idx, 'description', e.target.value)} />
                       </div>
                       <div className="col-span-1">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Cant.</label>
@@ -552,7 +552,7 @@ export default function SuppliersPage() {
                           step="0.01" 
                           required 
                           placeholder="0"
-                          className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" 
+                          className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-700 text-black dark:text-white text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" 
                           value={item.quantity === 0 ? '' : item.quantity} 
                           onChange={e => updateItem(idx, 'quantity', parseFloat(e.target.value) || 0)} 
                         />
@@ -563,14 +563,14 @@ export default function SuppliersPage() {
                           type="number" 
                           required 
                           placeholder="0"
-                          className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" 
+                          className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-700 text-black dark:text-white text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" 
                           value={item.unitNetValue === 0 ? '' : item.unitNetValue} 
                           onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value) || 0)} 
                         />
                       </div>
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">IVA %</label>
-                        <select className="w-full p-2.5 rounded-lg bg-white text-black text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.taxRate} onChange={e => updateItem(idx, 'taxRate', parseFloat(e.target.value))}>
+                        <select className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-700 text-black dark:text-white text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" value={item.taxRate} onChange={e => updateItem(idx, 'taxRate', parseFloat(e.target.value))}>
                           <option value="0">0%</option>
                           <option value="5">5%</option>
                           <option value="19">19%</option>

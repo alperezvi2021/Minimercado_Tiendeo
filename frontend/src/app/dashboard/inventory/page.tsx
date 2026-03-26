@@ -587,7 +587,7 @@ export default function InventoryPage() {
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Categoría</label>
                   <select 
                     title="Seleccionar categoría"
-                    className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all"
+                    className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all font-bold"
                     value={categoryId} 
                     onChange={e => setCategoryId(e.target.value)}
                   >
@@ -599,7 +599,7 @@ export default function InventoryPage() {
                 </div>
                 <div>
                   <label htmlFor="stock" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Stock Inicial</label>
-                  <input id="stock" title="Cantidad en stock inicial" type="number" step="0.01" placeholder="0" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={stock} onChange={e => setStock(e.target.value)} />
+                  <input id="stock" title="Cantidad en stock inicial" type="number" step="0.01" placeholder="0" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all font-bold" value={stock} onChange={e => setStock(e.target.value)} />
                 </div>
               </div>
 
@@ -609,7 +609,7 @@ export default function InventoryPage() {
                   type="number" 
                   title="Alerta de stock bajo"
                   placeholder="Ej: 5"
-                  className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all text-red-600 font-bold" 
+                  className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 bg-gray-50 dark:bg-slate-800 text-red-600 dark:text-white ring-1 ring-inset ring-gray-300 dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all font-bold" 
                   value={lowStockThreshold} 
                   onChange={e => setLowStockThreshold(e.target.value)} 
                 />

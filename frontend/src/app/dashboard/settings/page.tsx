@@ -309,7 +309,7 @@ export default function SettingsPage() {
                     type="text" 
                     value={tenantData.name}
                     onChange={(e) => setTenantData({...tenantData, name: e.target.value})}
-                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                   />
                 </div>
 
@@ -320,7 +320,7 @@ export default function SettingsPage() {
                     placeholder="Ej. 901.234.567-1"
                     value={tenantData.rutNit}
                     onChange={(e) => setTenantData({...tenantData, rutNit: e.target.value})}
-                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                    className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                   />
                 </div>
                 
@@ -332,7 +332,7 @@ export default function SettingsPage() {
                       type="text" 
                       value={tenantData.phone}
                       onChange={(e) => setTenantData({...tenantData, phone: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
                 </div>
@@ -345,7 +345,7 @@ export default function SettingsPage() {
                       type="text" 
                       value={tenantData.location}
                       onChange={(e) => setTenantData({...tenantData, location: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
                 </div>
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                       placeholder="Ej. Calle 10 # 5-20"
                       value={tenantData.address}
                       onChange={(e) => setTenantData({...tenantData, address: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function SettingsPage() {
                       value={newUser.name}
                       onChange={(e) => setNewUser({...newUser, name: e.target.value})}
                       placeholder="Ej. Juan Pérez"
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
                   <div>
@@ -544,7 +544,7 @@ export default function SettingsPage() {
                       value={newUser.email}
                       onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                       placeholder="email@ejemplo.com"
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
                   <div>
@@ -570,7 +570,7 @@ export default function SettingsPage() {
                     <select 
                       value={newUser.role}
                       onChange={(e) => setNewUser({...newUser, role: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     >
                       <option value="CASHIER">Cajero / Vendedor</option>
                       <option value="ADMIN">Administrador</option>
@@ -690,7 +690,7 @@ export default function SettingsPage() {
                       type="text" 
                       value={editingUser.name}
                       onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
                   <div>
@@ -699,7 +699,7 @@ export default function SettingsPage() {
                       type="email" 
                       value={editingUser.email}
                       onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
                   <div>
@@ -725,7 +725,7 @@ export default function SettingsPage() {
                     <select 
                       value={editingUser.role}
                       onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     >
                       <option value="CASHIER">Cajero / Vendedor</option>
                       <option value="ADMIN">Administrador</option>
