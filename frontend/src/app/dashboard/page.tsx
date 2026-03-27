@@ -472,19 +472,19 @@ export default function PosPage() {
             <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{tenantData.name} • {tenantData.location}</p>
           </div>
           <div className="flex items-center gap-3">
-            {pendingSales.length > 0 && (
+            {offlineStore.pendingSales.length > 0 && (
               <div className="flex items-center text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full animate-pulse">
                 <CloudSync className="w-4 h-4 mr-1.5" />
-                {pendingSales.length} {pendingSales.length === 1 ? 'venta pendiente' : 'ventas pendientes'}
+                {offlineStore.pendingSales.length} {offlineStore.pendingSales.length === 1 ? 'venta pendiente' : 'ventas pendientes'}
               </div>
             )}
             <div className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-              isOnline 
+              offlineStore.isOnline 
                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-bounce'
             }`}>
-              {isOnline ? <Wifi className="w-4 h-4 mr-1.5" /> : <WifiOff className="w-4 h-4 mr-1.5" />}
-              {isOnline ? 'Online' : 'Trabajando Offline'}
+              {offlineStore.isOnline ? <Wifi className="w-4 h-4 mr-1.5" /> : <WifiOff className="w-4 h-4 mr-1.5" />}
+              {offlineStore.isOnline ? 'Online' : 'Trabajando Offline'}
             </div>
           </div>
         </div>
