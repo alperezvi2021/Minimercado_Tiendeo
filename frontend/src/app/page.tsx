@@ -44,22 +44,23 @@ export default function LandingPage() {
           </button>
         </div>
 
-        {/* Mobile Menu Drawer */}
-        <div className={`
-          fixed inset-0 top-20 z-[100] bg-[#020617] md:hidden transition-all duration-300 ease-in-out border-t border-white/5
-          ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
-        `}>
-          <div className="flex flex-col p-6 gap-6 text-center">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Funcionalidades</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Precios</a>
-            <div className="h-px bg-white/5 my-2" />
-            <Link href="/login" className="text-2xl font-bold text-white">Iniciar Sesión</Link>
-            <Link href="/register" className="px-8 py-4 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl">
-              Crear mi Negocio
-            </Link>
-          </div>
-        </div>
       </nav>
+
+      {/* Mobile Menu Drawer (Movido fuera del nav para evitar el bug del backdrop-filter) */}
+      <div className={`
+        fixed inset-0 top-20 z-[100] bg-[#020617] md:hidden transition-all duration-300 ease-in-out border-t border-white/5
+        ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
+      `}>
+        <div className="flex flex-col p-6 gap-6 text-center">
+          <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Funcionalidades</a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Precios</a>
+          <div className="h-px bg-white/5 my-2" />
+          <Link href="/login" className="text-2xl font-bold text-white">Iniciar Sesión</Link>
+          <Link href="/register" className="px-8 py-4 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl">
+            Crear mi Negocio
+          </Link>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="relative pt-40 pb-20 px-6">
