@@ -46,7 +46,7 @@ export default function LandingPage() {
 
         {/* Mobile Menu Drawer */}
         <div className={`
-          fixed inset-0 top-20 z-[100] bg-[#020617]/95 backdrop-blur-3xl md:hidden transition-all duration-300 ease-in-out border-t border-white/5
+          fixed inset-0 top-20 z-[100] bg-[#020617] md:hidden transition-all duration-300 ease-in-out border-t border-white/5
           ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
         `}>
           <div className="flex flex-col p-6 gap-6 text-center">

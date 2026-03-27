@@ -395,7 +395,7 @@ export default function InventoryPage() {
            </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button 
             onClick={handleExport}
             title="Exportar inventario a Excel"
@@ -456,7 +456,7 @@ export default function InventoryPage() {
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden transition-colors">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-4">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
             <thead className="bg-gray-50 dark:bg-slate-800/50">
               <tr>

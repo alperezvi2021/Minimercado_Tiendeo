@@ -181,7 +181,7 @@ export default function CreditsPage() {
           <p className="text-slate-400 mt-2 font-medium">Gestiona las deudas de tus clientes y registra sus pagos</p>
         </div>
         
-        <div className="bg-slate-900 border border-slate-800 px-6 py-4 rounded-3xl shadow-xl flex items-center gap-4">
+        <div className="bg-slate-900 border border-slate-800 px-4 sm:px-6 py-4 rounded-3xl shadow-xl flex flex-wrap items-center justify-center gap-2 sm:gap-4 shrink-0">
           <div>
             <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Total por Cobrar</p>
             <p className="text-3xl font-black text-orange-500">${Math.round(totalOwed).toLocaleString()}</p>
@@ -193,7 +193,7 @@ export default function CreditsPage() {
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button 
             onClick={exportToPDF}
             className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-all active:scale-95"
@@ -238,7 +238,7 @@ export default function CreditsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto pb-4">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-800/50">
