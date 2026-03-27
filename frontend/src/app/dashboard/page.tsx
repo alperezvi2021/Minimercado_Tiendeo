@@ -336,7 +336,7 @@ export default function PosPage() {
            offlineStore.removePendingSale(sale.localId);
         }
       } catch (err) {
-         console.error("Error syncing sale", sale.id, err);
+         console.error("Error syncing sale", sale.localId, err);
       }
     }
     fetchProducts();
