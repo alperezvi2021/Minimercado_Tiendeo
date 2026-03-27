@@ -1,7 +1,8 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Search, Bell, LogOut, Sun, Moon, User, Menu, X } from 'lucide-react';
+import { Search, Bell, LogOut, Sun, Moon, User, Menu, X, Wifi, WifiOff, CloudLightning } from 'lucide-react';
+import { useOfflineStore } from '@/store/useOfflineStore';
 import { useState, useEffect } from 'react';
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
@@ -16,6 +17,27 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     if (name) setUserName(name);
     if (role) setUserRole(role);
   }, []);
+
+  const { isOnline, setIsOnline, pendingSales } = useOfflineStore();
+
+  useEffect(() => {
+    // Manejo de eventos de red global
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Initial check
+    if (typeof navigator !== 'undefined') {
+      setIsOnline(navigator.onLine);
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [setIsOnline]);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -55,6 +77,25 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       </div>
       
       <div className="flex items-center space-x-4">
+        {/* Offline Status Indicator */}
+        <div className="flex items-center">
+          {!isOnline ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-600 dark:text-rose-400 text-xs font-black tracking-tight animate-pulse transition-all">
+              <WifiOff className="w-4 h-4" />
+              <span className="hidden sm:inline">Sin Conexión</span>
+              {pendingSales.length > 0 && (
+                <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1">{pendingSales.length}</span>
+              )}
+            </div>
+          ) : pendingSales.length > 0 ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-600 dark:text-amber-500 text-xs font-black tracking-tight animate-pulse transition-all" title="Sincronizando ventas pendientes...">
+              <CloudLightning className="w-4 h-4" />
+              <span className="hidden sm:inline">Sincronizando</span>
+              <span className="bg-amber-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1">{pendingSales.length}</span>
+            </div>
+          ) : null}
+        </div>
+
         {/* Theme Toggle */}
         <button 
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft } from 'lucide-react';
+import { useOfflineStore } from '@/store/useOfflineStore';
 
 interface Product {
   id: string;
@@ -31,10 +32,10 @@ export default function PosPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastCheckoutTime, setLastCheckoutTime] = useState(0); 
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
-  const [isOnline, setIsOnline] = useState(true);
-  const [pendingSales, setPendingSales] = useState<any[]>([]);
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
+  
+  const offlineStore = useOfflineStore();
   const [cashReceived, setCashReceived] = useState<string>('');
   const [showChangeModal, setShowChangeModal] = useState(false);
   // Store info state (Dynamic from DB)
@@ -53,22 +54,11 @@ export default function PosPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
     fetchProducts();
     fetchTenantData();
     fetchCustomers();
-    loadPendingSales();
     // Auto-focus on mount for rapid scanning
     searchInputRef.current?.focus();
-
-    const handleOnline = () => {
-      setIsOnline(true);
-      syncPendingSales();
-    };
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
 
     // Identity update
     const savedName = localStorage.getItem('user_name');
@@ -76,10 +66,6 @@ export default function PosPage() {
     if (savedName) setUserName(savedName);
     if (savedRole) setUserRole(savedRole);
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
   }, []);
 
   const fetchTenantData = async () => {
@@ -106,12 +92,11 @@ export default function PosPage() {
     }
   };
 
-  const loadPendingSales = () => {
-    const saved = localStorage.getItem('pending_sales');
-    if (saved) setPendingSales(JSON.parse(saved));
-  };
-
   const fetchProducts = async () => {
+    if (!offlineStore.isOnline) {
+      setAllProducts(offlineStore.products);
+      return;
+    }
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`, {
@@ -120,24 +105,21 @@ export default function PosPage() {
       if (res.ok) {
         const data = await res.json();
         setAllProducts(data);
-        localStorage.setItem('cached_products', JSON.stringify(data));
+        offlineStore.setCache({ products: data });
       } else {
-        loadCachedProducts();
+        setAllProducts(offlineStore.products);
       }
     } catch (error) {
       console.error("Error fetching products", error);
-      loadCachedProducts();
-    }
-  };
-
-  const loadCachedProducts = () => {
-    const cached = localStorage.getItem('cached_products');
-    if (cached) {
-      setAllProducts(JSON.parse(cached));
+      setAllProducts(offlineStore.products);
     }
   };
 
   const fetchCustomers = async () => {
+    if (!offlineStore.isOnline) {
+      setCustomers(offlineStore.customers);
+      return;
+    }
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers`, {
@@ -146,9 +128,13 @@ export default function PosPage() {
       if (res.ok) {
         const data = await res.json();
         setCustomers(data);
+        offlineStore.setCache({ customers: data });
+      } else {
+        setCustomers(offlineStore.customers);
       }
     } catch (error) {
       console.error("Error fetching customers", error);
+      setCustomers(offlineStore.customers);
     }
   };
 
@@ -312,14 +298,15 @@ export default function PosPage() {
     const saleToStore = { 
       ...payload, 
       id: offlineId, 
+      localId: offlineId,
+      timestamp: Date.now(),
+      isCredit: payload.paymentMethod === 'credito',
       createdAt: new Date().toISOString(), 
       offline: true,
       receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
       changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0
     };
-    const newPending = [...pendingSales, saleToStore];
-    setPendingSales(newPending);
-    localStorage.setItem('pending_sales', JSON.stringify(newPending));
+    offlineStore.addPendingSale(saleToStore);
     
     // UI Feedback
     const saleWithItems = { ...saleToStore, items: [...cart] };
@@ -327,20 +314,15 @@ export default function PosPage() {
     setCart([]);
     setPosState('billing');
     setIsProcessing(false);
-
-    // Auto-print will be handled by useEffect watching completedSale
   };
 
   const syncPendingSales = async () => {
-    const saved = localStorage.getItem('pending_sales');
-    if (!saved) return;
-    const items = JSON.parse(saved);
+    const items = offlineStore.pendingSales;
     if (items.length === 0) return;
 
     const token = localStorage.getItem('access_token');
-    const remaining: any[] = [];
 
-    for (const sale of items) {
+    for (const sale of [...items]) {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
           method: 'POST',
@@ -350,21 +332,22 @@ export default function PosPage() {
           },
           body: JSON.stringify(sale)
         });
-        if (!res.ok) {
-          remaining.push(sale);
+        if (res.ok) {
+           offlineStore.removePendingSale(sale.localId);
         }
       } catch (err) {
-        remaining.push(sale);
+         console.error("Error syncing sale", sale.id, err);
       }
     }
-
-    setPendingSales(remaining);
-    localStorage.setItem('pending_sales', JSON.stringify(remaining));
-    if (remaining.length === 0) {
-      console.log("Ventas offline sincronizadas con éxito.");
-      fetchProducts();
-    }
+    fetchProducts();
   };
+
+  // Auto-sync effect
+  useEffect(() => {
+    if (offlineStore.isOnline && offlineStore.pendingSales.length > 0) {
+      syncPendingSales();
+    }
+  }, [offlineStore.isOnline]);
 
   const handlePrintAndReset = () => {
     window.print();
