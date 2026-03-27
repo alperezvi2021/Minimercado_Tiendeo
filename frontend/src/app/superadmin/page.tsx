@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw } from 'lucide-react';
+import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X } from 'lucide-react';
 import BackupsManager from '@/components/admin/BackupsManager';
 
 export default function SuperAdminPage() {
@@ -13,6 +13,7 @@ export default function SuperAdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedTenantForReset, setSelectedTenantForReset] = useState<any>(null);
   const [adminResetConfirmText, setAdminResetConfirmText] = useState('');
   const [isResettingData, setIsResettingData] = useState(false);
@@ -126,16 +127,29 @@ export default function SuperAdminPage() {
   return (
     <div className="min-h-screen bg-[#050510] text-gray-300 font-sans selection:bg-blue-500/30">
       
+      {/* Mobile Sidebar Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar Navigation */}
-      <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#0a0a1a] border-r border-white/5 p-6 flex flex-col z-20">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Shield className="w-6 h-6 text-white" />
+      <aside className={`fixed left-0 top-0 bottom-0 w-72 bg-[#0a0a1a] border-r border-white/5 p-6 flex flex-col z-50 transform transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+        <div className="flex items-center justify-between gap-3 mb-10 px-2 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black text-white tracking-tight">TIENDEO <span className="text-blue-500">PRO</span></h1>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">SuperAdmin Console</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-black text-white tracking-tight">TIENDEO <span className="text-blue-500">PRO</span></h1>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">SuperAdmin Console</p>
-          </div>
+          <button onClick={() => setIsMobileMenuOpen(false)} title="Cerrar menú" aria-label="Cerrar menú" className="md:hidden p-2 text-gray-500 hover:text-white transition-colors">
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
         <nav className="flex-1 space-y-2">
@@ -174,10 +188,23 @@ export default function SuperAdminPage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="pl-72 p-10 max-w-[1600px] mx-auto">
+      <main className="md:pl-72 p-4 md:p-10 max-w-[1600px] mx-auto pt-24 md:pt-10">
         
+        {/* Mobile Header Toggle */}
+        <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#0a0a1a]/90 backdrop-blur-xl border-b border-white/5 z-30 flex items-center px-4">
+          <button 
+            onClick={() => setIsMobileMenuOpen(true)}
+            title="Abrir menú"
+            aria-label="Abrir menú"
+            className="p-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <div className="ml-2 font-black text-white tracking-tight">TIENDEO <span className="text-blue-500">PRO</span></div>
+        </div>
+
         {/* Header Section */}
-        <header className="flex justify-between items-end mb-12">
+        <header className="flex flex-col md:flex-row justify-between md:items-end gap-6 mb-8 md:mb-12">
           <div>
             <h2 className="text-4xl font-black text-white mb-2">Panel de Control <span className="text-gray-600 italic font-medium">Global</span></h2>
             <p className="text-gray-500 font-medium">Gestiona todos los negocios y usuarios en la red Tiendeo.</p>
@@ -194,7 +221,7 @@ export default function SuperAdminPage() {
         </header>
 
         {/* Global Stats */}
-        <div className="grid grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-10">
            <div className="bg-[#0a0a1a] border border-white/5 p-6 rounded-3xl shadow-sm">
               <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4">
                 <Store className="w-6 h-6 text-blue-500" />
@@ -238,9 +265,10 @@ export default function SuperAdminPage() {
         </div>
 
         {/* Lists Container */}
-        <div className={`${activeTab === 'backups' ? '' : 'bg-[#0a0a1a] border border-white/5 rounded-[40px] overflow-hidden shadow-2xl'}`}>
+        <div className={`${activeTab === 'backups' ? '' : 'bg-[#0a0a1a] border border-white/5 rounded-3xl md:rounded-[40px] overflow-hidden shadow-2xl'}`}>
           {activeTab === 'tenants' ? (
-            <table className="w-full text-left">
+            <div className="overflow-x-auto pb-4">
+              <table className="w-full text-left min-w-[900px]">
               {/* ... table content remains the same ... */}
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
@@ -281,8 +309,10 @@ export default function SuperAdminPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           ) : activeTab === 'users' ? (
-            <table className="w-full text-left">
+            <div className="overflow-x-auto pb-4">
+              <table className="w-full text-left min-w-[900px]">
               {/* ... table content remains the same ... */}
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
@@ -317,6 +347,7 @@ export default function SuperAdminPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           ) : (
             <div className="p-8">
               <BackupsManager />
