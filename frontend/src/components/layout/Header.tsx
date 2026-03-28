@@ -124,7 +124,12 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                 {totalPending}
               </span>
             </button>
-          ) : null}
+          ) : (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 dark:text-emerald-400 text-[10px] font-black tracking-widest uppercase transition-all">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-500/50" />
+              <span>en linea</span>
+            </div>
+          )}
         </div>
 
         {/* Theme Toggle */}
