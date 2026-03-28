@@ -192,6 +192,21 @@ export default function PosPage() {
     }));
   };
 
+  const updatePrice = (productId: string, newPrice: string) => {
+    const price = parseFloat(newPrice);
+    if (isNaN(price)) return;
+    
+    setCart(prev => prev.map(item => {
+      if (item.product.id === productId) {
+        return { 
+          ...item, 
+          product: { ...item.product, price } 
+        };
+      }
+      return item;
+    }));
+  };
+
   const removeFromCart = (productId: string) => {
     setCart(prev => prev.filter(item => item.product.id !== productId));
   };
@@ -386,7 +401,7 @@ export default function PosPage() {
       // Esperar 4 segundos antes de imprimir automáticamente
       setTimeout(() => {
         handlePrintAndReset();
-      }, 4000);
+      }, 1500);
     } else {
       handlePrintAndReset();
     }
@@ -606,9 +621,16 @@ export default function PosPage() {
                       <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate" title={item.product.name}>
                         {item.product.name}
                       </h4>
-                      <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-0.5">
-                        ${Math.round(item.product.price).toLocaleString('es-CO')}
-                      </p>
+                      <div className="relative mt-1 group">
+                        <span className="absolute left-0 top-0 text-[10px] text-gray-400 group-focus-within:text-blue-500 transition-colors font-bold">$</span>
+                        <input 
+                          type="number"
+                          title="Cambiar precio unitario"
+                          className="w-full pl-3 bg-transparent text-xs font-black text-green-600 dark:text-green-400 focus:outline-none focus:ring-0 border-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={Math.round(item.product.price)}
+                          onChange={(e) => updatePrice(item.product.id, e.target.value)}
+                        />
+                      </div>
                     </div>
                     
                     <div className="flex items-center gap-3">

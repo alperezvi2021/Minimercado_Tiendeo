@@ -115,16 +115,28 @@ export default function InventoryPage() {
     }
   };
 
-  // Autocalculador: Cuando cambia el Costo o el Porcentaje, calcular el Precio de Venta
-  const handleCostOrMarginChange = (newCost: string, newMargin: string) => {
+  // Autocalculador: Cuando cambia el Costo, calcular el Precio de Venta Sugerido (Costo / 0.8)
+  const handleCostChange = (newCost: string) => {
     setCost(newCost);
-    setProfitMargin(newMargin);
     
     const c = parseFloat(newCost);
+    if (!isNaN(c) && c >= 0) {
+      // Precio sugerido = Costo / 0.8 (Markup del 25% sobre costo / 20% margen sobre venta)
+      const calculatedPrice = c / 0.8;
+      setPrice(Math.round(calculatedPrice).toString());
+      
+      // Margen = ((Precio - Costo) / Costo) * 100
+      const calculatedMargin = ((calculatedPrice - c) / c) * 100;
+      setProfitMargin(Math.round(calculatedMargin).toString());
+    }
+  };
+
+  // Cuando cambian utilidad manualmente
+  const handleMarginChange = (newMargin: string) => {
+    setProfitMargin(newMargin);
+    const c = parseFloat(cost);
     const m = parseFloat(newMargin);
-    
     if (!isNaN(c) && !isNaN(m)) {
-      // Precio = Costo + (Costo * (Margen / 100))
       const calculatedPrice = c * (1 + (m / 100));
       setPrice(Math.round(calculatedPrice).toString());
     }
@@ -622,7 +634,7 @@ export default function InventoryPage() {
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <span className="text-gray-500 sm:text-sm">$</span>
                       </div>
-                      <input id="cost" title="Precio de compra" type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-2 pl-7 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={cost} onChange={e => handleCostOrMarginChange(e.target.value, profitMargin)} />
+                      <input id="cost" title="Precio de compra" type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-2 pl-7 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={cost} onChange={e => handleCostChange(e.target.value)} />
                     </div>
                   </div>
                   <div>
@@ -631,7 +643,7 @@ export default function InventoryPage() {
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                         <span className="text-gray-500 sm:text-sm">%</span>
                       </div>
-                      <input id="profitMargin" title="Porcentaje de utilidad" type="number" step="1" placeholder="30" className="block w-full rounded-lg border-0 py-2 pl-3 pr-7 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={profitMargin} onChange={e => handleCostOrMarginChange(cost, e.target.value)} />
+                      <input id="profitMargin" title="Porcentaje de utilidad" type="number" step="1" placeholder="30" className="block w-full rounded-lg border-0 py-2 pl-3 pr-7 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={profitMargin} onChange={e => handleMarginChange(e.target.value)} />
                     </div>
                   </div>
                 </div>
