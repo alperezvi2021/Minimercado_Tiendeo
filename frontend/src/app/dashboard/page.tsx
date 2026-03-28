@@ -238,52 +238,71 @@ export default function PosPage() {
       
       // Si es un cliente nuevo, lo creamos primero
       if (paymentMethod === 'credito' && isNewCustomer && customerName) {
-        const custRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({
+        if (isOnline) {
+          const custRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+              name: customerName,
+              phone: newCustomerPhone,
+              isCreditActive: true
+            })
+          });
+          if (custRes.ok) {
+            const newCust = await custRes.json();
+            payload.customerId = newCust.id;
+            payload.customerName = newCust.name;
+          }
+        } else {
+          // OFFLINE - Creación de cliente temporal
+          const tempCustId = `temp-cust-${Date.now()}`;
+          const newTempCust = {
+            id: tempCustId,
+            localId: tempCustId,
             name: customerName,
             phone: newCustomerPhone,
-            isCreditActive: true
-          })
-        });
-        if (custRes.ok) {
-          const newCust = await custRes.json();
-          // Update payload with real customer info if created
-          payload.customerId = newCust.id;
-          payload.customerName = newCust.name;
+            totalDebt: calculateTotal(),
+            pendingInvoices: 1
+          };
+          offlineStore.addPendingCustomer(newTempCust);
+          payload.customerId = tempCustId;
+          payload.customerName = customerName;
         }
       }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
-        method: 'POST',
-        headers: { 
-           'Content-Type': 'application/json',
-           Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify(payload)
-      });
-      if(res.ok) {
-        const savedSale = await res.json();
-        const saleWithItems = { 
-          ...savedSale, 
-          items: [...cart],
-          customerName: paymentMethod === 'credito' ? finalCustomerName : undefined,
-          receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
-          changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0
-        };
-        setCompletedSale(saleWithItems);
-        setCart([]);
-        setPosState('billing');
-        fetchProducts();
+      if (isOnline) {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
+          method: 'POST',
+          headers: { 
+             'Content-Type': 'application/json',
+             Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify(payload)
+        });
+        if(res.ok) {
+          const savedSale = await res.json();
+          const saleWithItems = { 
+            ...savedSale, 
+            items: [...cart],
+            customerName: paymentMethod === 'credito' ? finalCustomerName : undefined,
+            receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
+            changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0
+          };
+          setCompletedSale(saleWithItems);
+          setCart([]);
+          setPosState('billing');
+          fetchProducts();
 
-        // Auto-print will be handled by useEffect watching completedSale
+          // Auto-print will be handled by useEffect watching completedSale
+        } else {
+          const err = await res.json();
+          alert('Error al procesar la venta: ' + (err.message || 'Error desconocido'));
+        }
       } else {
-        const err = await res.json();
-        alert('Error al procesar la venta: ' + (err.message || 'Error desconocido'));
+        queueOfflineSale(payload);
       }
     } catch (e) { 
       console.error(e);
@@ -342,12 +361,12 @@ export default function PosPage() {
     fetchProducts();
   };
 
-  // Auto-sync effect
-  useEffect(() => {
+  // Auto-sync effect - DELEGADO AL SyncManager
+  /* useEffect(() => {
     if (offlineStore.isOnline && offlineStore.pendingSales.length > 0) {
       syncPendingSales();
     }
-  }, [offlineStore.isOnline]);
+  }, [offlineStore.isOnline]); */
 
   const handlePrintAndReset = () => {
     window.print();

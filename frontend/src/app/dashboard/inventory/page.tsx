@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, Barcode, Download, Upload, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Barcode, Download, Upload, FileSpreadsheet, CloudSync, Wifi, WifiOff } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useOfflineStore } from '@/store/useOfflineStore';
 
 interface Category {
   id: string;
@@ -23,6 +24,17 @@ interface Product {
 }
 
 export default function InventoryPage() {
+  const { 
+    isOnline, 
+    products: cachedProducts, 
+    categories: cachedCategories,
+    setCache,
+    addPendingProduct,
+    addPendingCategory,
+    pendingProducts,
+    pendingCategories
+  } = useOfflineStore();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,9 +69,15 @@ export default function InventoryPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
+    if (isOnline) {
+      fetchProducts();
+      fetchCategories();
+    } else {
+      setProducts(cachedProducts);
+      setCategories(cachedCategories);
+      setLoading(false);
+    }
+  }, [isOnline, cachedProducts, cachedCategories]);
 
   const fetchCategories = async () => {
     try {
@@ -70,9 +88,11 @@ export default function InventoryPage() {
       if (res.ok) {
         const data = await res.json();
         setCategories(data);
+        setCache({ categories: data });
       }
     } catch (error) {
       console.error("Error fetching categories", error);
+      setCategories(cachedCategories);
     }
   };
 
@@ -85,9 +105,11 @@ export default function InventoryPage() {
       if (res.ok) {
         const data = await res.json();
         setProducts(data);
+        setCache({ products: data });
       }
     } catch (error) {
       console.error("Error fetching products", error);
+      setProducts(cachedProducts);
     } finally {
       setLoading(false);
     }
@@ -139,6 +161,28 @@ export default function InventoryPage() {
 
       const url = editingId ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/${editingId}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`;
       const method = editingId ? 'PATCH' : 'POST';
+
+      if (!isOnline && !editingId) {
+        // MODO OFFLINE - CREACIÓN
+        const localId = `temp-prod-${Date.now()}`;
+        const newProduct = {
+          ...payload,
+          id: localId,
+          localId,
+          category: categories.find(c => c.id === categoryId),
+          isActive: true
+        };
+        addPendingProduct(newProduct);
+        setIsModalOpen(false);
+        setEditingId(null); setName(''); setBarcode(''); setCost(''); setProfitMargin(''); setPrice(''); setStock('0');
+        setCategoryId(''); setLowStockThreshold('5');
+        return;
+      }
+
+      if (!isOnline && editingId) {
+          alert('No se pueden editar productos existentes en modo offline todavía.');
+          return;
+      }
 
       const res = await fetch(url, {
         method,
@@ -216,6 +260,20 @@ export default function InventoryPage() {
       const payload = { name: newCategoryName, description: categoryDescription };
       const url = editingCategory ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories/${editingCategory.id}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/categories`;
       const method = editingCategory ? 'PATCH' : 'POST';
+
+      if (!isOnline && !editingCategory) {
+        const localId = `temp-cat-${Date.now()}`;
+        const newCat = { id: localId, name: newCategoryName, localId };
+        addPendingCategory(newCat);
+        setNewCategoryName('');
+        setCategoryDescription('');
+        return;
+      }
+
+      if (!isOnline && editingCategory) {
+          alert('No se puede editar categorías en modo offline.');
+          return;
+      }
 
       const res = await fetch(url, {
         method,
@@ -503,6 +561,11 @@ export default function InventoryPage() {
                         }`}>
                           {product.stock}
                         </span>
+                        {(product as any).localId && (
+                          <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black rounded uppercase tracking-tighter self-center">
+                            Pendiente
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button onClick={() => handleEdit(product)} title="Editar producto" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4">

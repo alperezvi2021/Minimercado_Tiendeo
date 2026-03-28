@@ -7,6 +7,9 @@ export class Category {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'local_id', nullable: true })
+  localId: string;
+
   @Column()
   name: string;
 

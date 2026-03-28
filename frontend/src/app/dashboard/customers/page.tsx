@@ -12,19 +12,32 @@ import {
   AlertCircle,
   CreditCard,
   History,
-  Trash2,
-  Settings
+  Settings,
+  Wifi,
+  WifiOff,
+  CloudSync
 } from 'lucide-react';
 import CustomerModal from '@/components/customers/CustomerModal';
 import CustomerHistoryModal from '@/components/customers/CustomerHistoryModal';
+import { useOfflineStore } from '@/store/useOfflineStore';
 
 export default function CustomersPage() {
+  const { isOnline, customers: cachedCustomers, setCache } = useOfflineStore();
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOnline) {
+      fetchCustomers();
+    } else {
+      setCustomers(cachedCustomers);
+      setLoading(false);
+    }
+  }, [isOnline, cachedCustomers]);
 
   const fetchCustomers = async () => {
     try {
@@ -35,17 +48,15 @@ export default function CustomersPage() {
       if (res.ok) {
         const data = await res.json();
         setCustomers(data);
+        setCache({ customers: data });
       }
     } catch (error) {
       console.error(error);
+      setCustomers(cachedCustomers);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este cliente? No se podrá eliminar si tiene créditos asociados.')) return;
@@ -149,7 +160,12 @@ export default function CustomersPage() {
                         <User className="w-6 h-6" />
                       </div>
                       <div>
-                        <p className="text-lg font-black text-gray-900 dark:text-white leading-tight">{c.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-lg font-black text-gray-900 dark:text-white leading-tight">{c.name}</p>
+                          {(c as any).localId && (
+                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black rounded uppercase">Pendiente</span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                           <CreditCard className="w-3.5 h-3.5 text-gray-400" />
                           <p className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-tighter">

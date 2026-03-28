@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { X, User, Phone, Mail, MapPin, CreditCard, Loader2 } from 'lucide-react';
+import { useOfflineStore } from '@/store/useOfflineStore';
 
 interface CustomerModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CustomerModalProps {
 }
 
 export default function CustomerModal({ isOpen, onClose, onSave, customer }: CustomerModalProps) {
+  const { isOnline, addPendingCustomer } = useOfflineStore();
   const [formData, setFormData] = useState({
     name: '',
     idNumber: '',
@@ -43,6 +45,27 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
     e.preventDefault();
     setLoading(true);
     try {
+      if (!isOnline && !customer) {
+        // MODO OFFLINE - CREACIÓN
+        const localId = `temp-cust-${Date.now()}`;
+        const newCustomer = {
+          ...formData,
+          id: localId,
+          localId,
+          totalDebt: 0,
+          pendingInvoices: 0
+        };
+        addPendingCustomer(newCustomer);
+        onSave();
+        onClose();
+        return;
+      }
+
+      if (!isOnline && customer) {
+        alert('No se pueden editar clientes existentes en modo offline todavía.');
+        return;
+      }
+
       const token = localStorage.getItem('access_token');
       const url = customer 
         ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers/${customer.id}`

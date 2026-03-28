@@ -6,6 +6,9 @@ export class Customer {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'local_id', nullable: true })
+  localId: string;
+
   @Column({ name: 'tenant_id' })
   tenantId: string;
 

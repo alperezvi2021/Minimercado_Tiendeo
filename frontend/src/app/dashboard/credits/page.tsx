@@ -18,6 +18,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { utils, writeFile } from 'xlsx';
 import AbonoModal from '@/components/customers/AbonoModal';
+import { useOfflineStore } from '@/store/useOfflineStore';
 
 interface CreditSale {
   id: string;
@@ -34,6 +35,7 @@ interface CreditSale {
 }
 
 export default function CreditsPage() {
+  const { isOnline, rawCredits: cachedCredits, setCache } = useOfflineStore();
   const [credits, setCredits] = useState<CreditSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
@@ -41,6 +43,15 @@ export default function CreditsPage() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedCredit, setSelectedCredit] = useState<CreditSale | null>(null);
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOnline) {
+      fetchCredits();
+    } else {
+      setCredits(cachedCredits || []);
+      setLoading(false);
+    }
+  }, [isOnline, cachedCredits]);
 
   const fetchCredits = async () => {
     try {
@@ -51,17 +62,15 @@ export default function CreditsPage() {
       if (res.ok) {
         const data = await res.json();
         setCredits(data);
+        setCache({ rawCredits: data });
       }
     } catch (e) {
       console.error(e);
+      setCredits(cachedCredits || []);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchCredits();
-  }, []);
 
   const handlePay = async (creditId: string) => {
     if (!confirm('¿Confirmar que el cliente ha pagado este crédito en efectivo?')) return;

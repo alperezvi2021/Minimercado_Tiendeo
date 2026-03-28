@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, FileText, Loader2, ArrowDownCircle, History, User } from 'lucide-react';
+import { useOfflineStore } from '@/store/useOfflineStore';
 
 interface AbonoModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface AbonoModalProps {
 }
 
 export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoModalProps) {
+  const { isOnline, addPendingPayment, rawCredits, setCache } = useOfflineStore();
   const [amount, setAmount] = useState<string>('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,6 +51,39 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
     
     setLoading(true);
     try {
+      if (!isOnline) {
+        const localId = `temp-pay-${Date.now()}`;
+        const amountVal = parseFloat(amount);
+        
+        const newPayment = {
+          localId,
+          creditSaleId: credit.id, // Puede ser un ID real o temp-prod-...
+          amount: amountVal,
+          notes,
+          paymentDate: new Date().toISOString(),
+          paymentMethod: 'efectivo'
+        };
+        
+        addPendingPayment(newPayment);
+
+        // Actualizar el saldo localmente en el cache para feedback inmediato
+        const updatedCredits = rawCredits.map((c: any) => {
+          if (c.id === credit.id) {
+            return {
+              ...c,
+              remainingAmount: (Number(c.remainingAmount || c.amount) - amountVal).toString(),
+              status: 'PARTIAL'
+            };
+          }
+          return c;
+        });
+        setCache({ rawCredits: updatedCredits });
+
+        onSave();
+        onClose();
+        return;
+      }
+
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/credits/${credit.id}/partial-payment`, {
         method: 'POST',
