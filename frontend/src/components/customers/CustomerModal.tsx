@@ -30,6 +30,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         phone: customer.phone || '',
         email: customer.email || '',
         address: customer.address || '',
+        initialDebt: '',
       });
     } else {
       setFormData({
