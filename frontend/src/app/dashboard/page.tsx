@@ -478,14 +478,6 @@ export default function PosPage() {
                 {offlineStore.pendingSales.length} {offlineStore.pendingSales.length === 1 ? 'venta pendiente' : 'ventas pendientes'}
               </div>
             )}
-            <div className={`flex items-center px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-              offlineStore.isOnline 
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-bounce'
-            }`}>
-              {offlineStore.isOnline ? <Wifi className="w-4 h-4 mr-1.5" /> : <WifiOff className="w-4 h-4 mr-1.5" />}
-              {offlineStore.isOnline ? 'Online' : 'Trabajando Offline'}
-            </div>
           </div>
         </div>
         

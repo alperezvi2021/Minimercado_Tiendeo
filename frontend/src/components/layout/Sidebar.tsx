@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft, Database, RotateCcw } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useOfflineStore } from '@/store/useOfflineStore';
 
 const navItems = [
   { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
@@ -20,6 +21,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
   const pathname = usePathname();
   const [userRole, setUserRole] = useState('CASHIER');
   const [userName, setUserName] = useState('Usuario');
+  const { isOnline } = useOfflineStore();
 
   useEffect(() => {
     const role = localStorage.getItem('user_role');
@@ -45,6 +47,23 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
           {filteredItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
+            
+            // Si estamos offline, solo la Caja (POS) funciona
+            const isOfflineDisabled = !isOnline && item.href !== '/dashboard';
+
+            if (isOfflineDisabled) {
+              return (
+                <div
+                  key={item.href}
+                  className="group flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 text-slate-600 opacity-50 cursor-not-allowed"
+                  title="No disponible sin conexión"
+                >
+                  <Icon className="w-5 h-5 mr-3 text-slate-600" />
+                  {item.name}
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={item.href}
