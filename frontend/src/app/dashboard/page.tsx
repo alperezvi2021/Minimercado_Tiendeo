@@ -58,11 +58,22 @@ export default function PosPage() {
     if (offlineStore.products.length > 0) setAllProducts(offlineStore.products);
     if (offlineStore.customers.length > 0) setCustomers(offlineStore.customers);
 
-    // 2. Refresh en background
-    fetchProducts();
-    fetchTenantData();
-    fetchCustomers();
+    // 2. Lógica de Sincronización Inteligente
+    const lastSync = offlineStore.lastSyncTime || 0;
+    const oneHour = 60 * 60 * 1000;
+    const shouldSync = Date.now() - lastSync > oneHour;
+
+    if (offlineStore.isOnline) {
+      fetchTenantData();
+      if (shouldSync || offlineStore.products.length === 0) {
+        fetchAllData();
+      }
+    }
     
+    // Listener para refresco manual desde el Header
+    const handleForceSync = () => fetchAllData();
+    window.addEventListener('force-sync', handleForceSync);
+
     searchInputRef.current?.focus();
 
     // Identity update
@@ -71,7 +82,16 @@ export default function PosPage() {
     if (savedName) setUserName(savedName);
     if (savedRole) setUserRole(savedRole);
 
+    return () => window.removeEventListener('force-sync', handleForceSync);
   }, []);
+
+  const fetchAllData = async () => {
+    await Promise.all([
+      fetchProducts(),
+      fetchCustomers()
+    ]);
+    offlineStore.setLastSyncTime(Date.now());
+  };
 
   const fetchTenantData = async () => {
     try {

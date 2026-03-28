@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Search, Bell, LogOut, Sun, Moon, User, Menu, X, Wifi, WifiOff, CloudLightning } from 'lucide-react';
+import { Search, Bell, LogOut, Sun, Moon, User, Menu, X, Wifi, WifiOff, CloudLightning, RefreshCcw } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
 import { useState, useEffect } from 'react';
 
@@ -57,6 +57,13 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       // Simular final de sync hasta que conectemos la lógica del backend
       setTimeout(() => setIsSyncing(false), 2000);
     }
+  };
+
+  const handleRefreshData = () => {
+    setIsSyncing(true);
+    window.dispatchEvent(new Event('force-sync'));
+    // Feedback visual breve
+    setTimeout(() => setIsSyncing(false), 1500);
   };
 
   const handleLogout = () => {
@@ -131,6 +138,16 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             </div>
           )}
         </div>
+
+        {/* Refresh Data Button */}
+        <button 
+          onClick={handleRefreshData}
+          disabled={isSyncing}
+          className={`text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-all ${isSyncing ? 'animate-spin text-emerald-500' : ''}`}
+          title="Refrescar datos del servidor (Productos, Clientes, Categorías)"
+        >
+          <RefreshCcw className="w-5 h-5" />
+        </button>
 
         {/* Theme Toggle */}
         <button 

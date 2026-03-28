@@ -73,14 +73,36 @@ export default function InventoryPage() {
     if (cachedProducts.length > 0) setProducts(cachedProducts);
     if (cachedCategories.length > 0) setCategories(cachedCategories);
 
-    // 2. Refresh en background si estamos online
+    // 2. Lógica de Sincronización Inteligente
+    const { lastSyncTime } = useOfflineStore.getState();
+    const lastSync = lastSyncTime || 0;
+    const oneHour = 60 * 60 * 1000;
+    const shouldSync = Date.now() - lastSync > oneHour;
+
     if (isOnline) {
-      fetchProducts();
-      fetchCategories();
+      if (shouldSync || cachedProducts.length === 0) {
+        fetchAllData();
+      }
     } else {
       setLoading(false);
     }
-  }, [isOnline, cachedProducts, cachedCategories]);
+
+    // Listener para refresco manual desde el Header
+    const handleForceSync = () => fetchAllData();
+    window.addEventListener('force-sync', handleForceSync);
+
+    return () => window.removeEventListener('force-sync', handleForceSync);
+  }, [isOnline]);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchProducts(),
+      fetchCategories()
+    ]);
+    useOfflineStore.getState().setLastSyncTime(Date.now());
+    setLoading(false);
+  };
 
   const fetchCategories = async () => {
     try {
