@@ -258,7 +258,8 @@ export default function PosPage() {
           }
         } else {
           // OFFLINE - Creación de cliente temporal
-          const tempCustId = `temp-cust-${Date.now()}`;
+          const uuid = crypto.randomUUID();
+          const tempCustId = `temp-cust-${uuid}`;
           const newTempCust = {
             id: tempCustId,
             localId: tempCustId,
@@ -313,7 +314,8 @@ export default function PosPage() {
   };
 
   const queueOfflineSale = (payload: any) => {
-    const offlineId = 'off-' + Date.now();
+    const uuid = crypto.randomUUID();
+    const offlineId = 'off-' + uuid;
     const saleToStore = { 
       ...payload, 
       id: offlineId, 

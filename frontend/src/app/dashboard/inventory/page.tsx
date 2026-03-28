@@ -164,7 +164,8 @@ export default function InventoryPage() {
 
       if (!isOnline && !editingId) {
         // MODO OFFLINE - CREACIÓN
-        const localId = `temp-prod-${Date.now()}`;
+        const uuid = crypto.randomUUID();
+        const localId = `temp-prod-${uuid}`;
         const newProduct = {
           ...payload,
           id: localId,
@@ -262,7 +263,8 @@ export default function InventoryPage() {
       const method = editingCategory ? 'PATCH' : 'POST';
 
       if (!isOnline && !editingCategory) {
-        const localId = `temp-cat-${Date.now()}`;
+        const uuid = crypto.randomUUID();
+        const localId = `temp-cat-${uuid}`;
         const newCat = { id: localId, name: newCategoryName, localId };
         addPendingCategory(newCat);
         setNewCategoryName('');

@@ -47,7 +47,8 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
     try {
       if (!isOnline && !customer) {
         // MODO OFFLINE - CREACIÓN
-        const localId = `temp-cust-${Date.now()}`;
+        const uuid = crypto.randomUUID();
+        const localId = `temp-cust-${uuid}`;
         const newCustomer = {
           ...formData,
           id: localId,

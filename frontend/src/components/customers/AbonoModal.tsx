@@ -52,7 +52,8 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
     setLoading(true);
     try {
       if (!isOnline) {
-        const localId = `temp-pay-${Date.now()}`;
+        const uuid = crypto.randomUUID();
+        const localId = `temp-pay-${uuid}`;
         const amountVal = parseFloat(amount);
         
         const newPayment = {
