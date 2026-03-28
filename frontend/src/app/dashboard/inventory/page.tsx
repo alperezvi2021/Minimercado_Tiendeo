@@ -82,8 +82,15 @@ export default function InventoryPage() {
     if (isOnline) {
       if (shouldSync || cachedProducts.length === 0) {
         fetchAllData();
+      } else {
+        setLoading(false);
       }
     } else {
+      setLoading(false);
+    }
+
+    // Si ya tenemos productos en caché, quitamos el loading inicial para mostrar datos YA
+    if (cachedProducts.length > 0) {
       setLoading(false);
     }
 
@@ -567,7 +574,7 @@ export default function InventoryPage() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-slate-800">
-              {loading ? (
+              {loading && products.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">Cargando inventario...</td>
                 </tr>
