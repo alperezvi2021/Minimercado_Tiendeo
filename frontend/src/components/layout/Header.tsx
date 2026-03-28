@@ -18,7 +18,18 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     if (role) setUserRole(role);
   }, []);
 
-  const { isOnline, setIsOnline, pendingSales } = useOfflineStore();
+  const { 
+    isOnline, 
+    setIsOnline, 
+    pendingSales,
+    pendingProducts,
+    pendingCategories,
+    pendingCustomers,
+    pendingPayments
+  } = useOfflineStore();
+
+  const totalPending = pendingSales.length + pendingProducts.length + pendingCategories.length + pendingCustomers.length + pendingPayments.length;
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     // Manejo de eventos de red global
@@ -38,6 +49,15 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       window.removeEventListener('offline', handleOffline);
     };
   }, [setIsOnline]);
+
+  const handleManualSync = () => {
+    if (totalPending > 0) {
+      setIsSyncing(true);
+      window.dispatchEvent(new Event('manual-sync'));
+      // Simular final de sync hasta que conectemos la lógica del backend
+      setTimeout(() => setIsSyncing(false), 2000);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -77,22 +97,33 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       </div>
       
       <div className="flex items-center space-x-4">
-        {/* Offline Status Indicator */}
+        {/* Offline Status Indicator & Sync Button */}
         <div className="flex items-center">
           {!isOnline ? (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-600 dark:text-rose-400 text-xs font-black tracking-tight animate-pulse transition-all">
               <WifiOff className="w-4 h-4" />
               <span className="hidden sm:inline">Sin Conexión</span>
-              {pendingSales.length > 0 && (
-                <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1">{pendingSales.length}</span>
+              {totalPending > 0 && (
+                <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1">{totalPending}</span>
               )}
             </div>
-          ) : pendingSales.length > 0 ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-600 dark:text-amber-500 text-xs font-black tracking-tight animate-pulse transition-all" title="Sincronizando ventas pendientes...">
-              <CloudLightning className="w-4 h-4" />
-              <span className="hidden sm:inline">Sincronizando</span>
-              <span className="bg-amber-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1">{pendingSales.length}</span>
-            </div>
+          ) : totalPending > 0 ? (
+            <button 
+              onClick={handleManualSync}
+              disabled={isSyncing}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black tracking-tight transition-all shadow-sm
+                ${isSyncing 
+                  ? 'bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-500 cursor-wait animate-pulse' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5'
+                }`}
+              title="Sincronizar datos pendientes con el servidor"
+            >
+              <CloudLightning className={`w-4 h-4 ${isSyncing ? '' : 'animate-bounce'}`} />
+              <span className="hidden sm:inline">{isSyncing ? 'Sincronizando...' : 'Sincronizar'}</span>
+              <span className={`${isSyncing ? 'bg-amber-500' : 'bg-white/20 text-white'} px-1.5 py-0.5 rounded-full text-[10px] ml-1`}>
+                {totalPending}
+              </span>
+            </button>
           ) : null}
         </div>
 
