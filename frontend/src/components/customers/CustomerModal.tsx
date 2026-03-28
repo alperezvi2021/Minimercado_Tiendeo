@@ -18,6 +18,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
     phone: '',
     email: '',
     address: '',
+    initialDebt: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +38,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         phone: '',
         email: '',
         address: '',
+        initialDebt: '',
       });
     }
   }, [customer, isOpen]);
@@ -169,6 +171,21 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
+            </div>
+
+            <div className="relative bg-rose-50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/20">
+              <div className="flex items-center gap-2 mb-2 text-rose-600 dark:text-rose-400">
+                <CreditCard className="w-4 h-4" />
+                <span className="text-xs font-black uppercase tracking-widest">Saldo Pendiente Inicial (Opcional)</span>
+              </div>
+              <input
+                type="number"
+                placeholder="Ej: 50000"
+                className="w-full bg-white dark:bg-slate-900 text-black dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/50 outline-none transition-all font-black text-lg"
+                value={formData.initialDebt}
+                onChange={(e) => setFormData({ ...formData, initialDebt: e.target.value })}
+              />
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 italic">* Use este campo para subir deudas de cuadernos al sistema.</p>
             </div>
           </div>
 

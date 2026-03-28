@@ -69,12 +69,15 @@ export default function InventoryPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // 1. Carga inmediata del caché
+    if (cachedProducts.length > 0) setProducts(cachedProducts);
+    if (cachedCategories.length > 0) setCategories(cachedCategories);
+
+    // 2. Refresh en background si estamos online
     if (isOnline) {
       fetchProducts();
       fetchCategories();
     } else {
-      setProducts(cachedProducts);
-      setCategories(cachedCategories);
       setLoading(false);
     }
   }, [isOnline, cachedProducts, cachedCategories]);
@@ -450,10 +453,12 @@ export default function InventoryPage() {
     e.target.value = '';
   };
 
-  const filteredProducts = products.filter((p: Product) => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (p.barcode && p.barcode.includes(searchTerm))
-  );
+  const filteredProducts = products.filter((p: Product) => {
+    const term = searchTerm.toLowerCase().trim();
+    const nameMatch = p.name.toLowerCase().includes(term);
+    const barcodeMatch = p.barcode && p.barcode.toLowerCase().includes(term);
+    return nameMatch || barcodeMatch;
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">

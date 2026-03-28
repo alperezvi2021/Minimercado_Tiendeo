@@ -13,7 +13,7 @@ export class CustomersController {
   @Post()
   @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
   create(@Request() req, @Body() createCustomerDto: any) {
-    return this.customersService.create(req.user.tenantId, createCustomerDto);
+    return this.customersService.create(req.user.tenantId, req.user.id, req.user.name, createCustomerDto);
   }
 
   @Get()
@@ -29,7 +29,7 @@ export class CustomersController {
   @Patch(':id')
   @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
   update(@Request() req, @Param('id') id: string, @Body() updateCustomerDto: any) {
-    return this.customersService.update(req.user.tenantId, id, updateCustomerDto);
+    return this.customersService.update(req.user.tenantId, req.user.id, req.user.name, id, updateCustomerDto);
   }
 
   @Delete(':id')

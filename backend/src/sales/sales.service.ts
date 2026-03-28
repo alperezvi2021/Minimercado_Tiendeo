@@ -472,4 +472,40 @@ export class SalesService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async createLegacyDebt(tenantId: string, userId: string, userName: string, customerId: string, amount: number): Promise<CreditSale> {
+    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+    const customer = await this.customerRepository.findOne({ where: { id: customerId, tenantId } });
+    
+    if (!customer) throw new NotFoundException('Cliente no encontrado');
+
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      // 1. Crear una venta ficticia de "SALDO INICIAL"
+      const sale = transactionalEntityManager.create(Sale, {
+        tenantId,
+        userId,
+        closureId: closure.id,
+        totalAmount: amount,
+        paymentMethod: 'credito',
+        invoiceNumber: `LEGACY-${Date.now().toString().slice(-6)}`,
+        customerName: customer.name,
+        items: [], // Sin items específicos, solo el total
+      });
+
+      const savedSale = await transactionalEntityManager.save<Sale>(sale);
+
+      // 2. Crear el registro de crédito
+      const creditSale = transactionalEntityManager.create(CreditSale, {
+        tenantId,
+        saleId: savedSale.id,
+        customerName: customer.name,
+        customerId: customer.id,
+        amount: savedSale.totalAmount,
+        remainingAmount: savedSale.totalAmount,
+        status: 'PENDING',
+      });
+
+      return transactionalEntityManager.save<CreditSale>(creditSale);
+    });
+  }
 }

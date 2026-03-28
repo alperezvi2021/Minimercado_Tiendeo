@@ -54,10 +54,15 @@ export default function PosPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // 1. Carga inmediata desde el caché (Instantánea)
+    if (offlineStore.products.length > 0) setAllProducts(offlineStore.products);
+    if (offlineStore.customers.length > 0) setCustomers(offlineStore.customers);
+
+    // 2. Refresh en background
     fetchProducts();
     fetchTenantData();
     fetchCustomers();
-    // Auto-focus on mount for rapid scanning
+    
     searchInputRef.current?.focus();
 
     // Identity update
@@ -172,7 +177,12 @@ export default function PosPage() {
       } else if (searchTerm.trim() !== '') {
         e.preventDefault();
         e.stopPropagation();
-        const found = allProducts.find(p => p.barcode === searchTerm || p.name.toLowerCase() === searchTerm.toLowerCase());
+        
+        const term = searchTerm.toLowerCase().trim();
+        const found = allProducts.find(p => 
+          (p.barcode && p.barcode.toLowerCase() === term) || 
+          p.name.toLowerCase() === term
+        );
         if (found) addToCart(found);
       } else if (cart.length > 0) {
         e.preventDefault();
@@ -468,12 +478,14 @@ export default function PosPage() {
     }
   }, [completedSale, tenantData.ticketAutoPrint]);
 
-  // Sugerencias visuales si tipean en vez de escanear
+  // Sugerencias visuales robustas
   const filteredSuggestions = searchTerm.length > 1 
-    ? allProducts.filter(p => 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (p.barcode && p.barcode.includes(searchTerm))
-      )
+    ? allProducts.filter(p => {
+        const term = searchTerm.toLowerCase().trim();
+        const nameMatch = p.name.toLowerCase().includes(term);
+        const barcodeMatch = p.barcode && p.barcode.toLowerCase().includes(term);
+        return nameMatch || barcodeMatch;
+      })
     : [];
 
   return (
@@ -626,7 +638,7 @@ export default function PosPage() {
                         <input 
                           type="number"
                           title="Cambiar precio unitario"
-                          className="w-full pl-3 bg-transparent text-xs font-black text-green-600 dark:text-green-400 focus:outline-none focus:ring-0 border-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className="w-full pl-3 bg-transparent text-sm font-black text-green-600 dark:text-green-400 focus:outline-none focus:ring-0 border-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                           value={Math.round(item.product.price)}
                           onChange={(e) => updatePrice(item.product.id, e.target.value)}
                         />

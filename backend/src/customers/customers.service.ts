@@ -2,17 +2,26 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
+import { SalesService } from '../sales/sales.service';
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private customersRepository: Repository<Customer>,
+    private salesService: SalesService,
   ) {}
 
-  async create(tenantId: string, data: Partial<Customer>) {
-    const customer = this.customersRepository.create({ ...data, tenantId });
-    return this.customersRepository.save(customer);
+  async create(tenantId: string, userId: string, userName: string, data: any) {
+    const { initialDebt, ...customerData } = data;
+    const customer = this.customersRepository.create({ ...customerData, tenantId });
+    const savedCustomer = await (this.customersRepository.save(customer) as any);
+
+    if (initialDebt && initialDebt > 0) {
+      await this.salesService.createLegacyDebt(tenantId, userId, userName, savedCustomer.id, initialDebt);
+    }
+
+    return savedCustomer;
   }
 
   async findAll(tenantId: string) {
@@ -53,9 +62,15 @@ export class CustomersService {
     return customer;
   }
 
-  async update(tenantId: string, id: string, data: Partial<Customer>) {
+  async update(tenantId: string, userId: string, userName: string, id: string, data: any) {
+    const { initialDebt, ...customerData } = data;
     await this.findOne(tenantId, id);
-    await this.customersRepository.update(id, data);
+    await this.customersRepository.update(id, customerData);
+
+    if (initialDebt && initialDebt > 0) {
+      await this.salesService.createLegacyDebt(tenantId, userId, userName, id, initialDebt);
+    }
+    
     return this.findOne(tenantId, id);
   }
 
