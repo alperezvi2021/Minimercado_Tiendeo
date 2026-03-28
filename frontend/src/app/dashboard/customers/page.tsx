@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CreditCard,
   History,
+  Trash2,
   Settings,
   Wifi,
   WifiOff,
