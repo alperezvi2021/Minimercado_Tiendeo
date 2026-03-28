@@ -238,7 +238,7 @@ export default function PosPage() {
       
       // Si es un cliente nuevo, lo creamos primero
       if (paymentMethod === 'credito' && isNewCustomer && customerName) {
-        if (isOnline) {
+        if (offlineStore.isOnline) {
           const custRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers`, {
             method: 'POST',
             headers: { 
@@ -273,7 +273,7 @@ export default function PosPage() {
         }
       }
 
-      if (isOnline) {
+      if (offlineStore.isOnline) {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
           method: 'POST',
           headers: { 
