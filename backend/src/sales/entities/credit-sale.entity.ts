@@ -23,7 +23,7 @@ export class CreditSale {
   @Column({ name: 'customer_id', nullable: true })
   customerId: string;
 
-  @ManyToOne('Customer', 'creditSales', { nullable: true })
+  @ManyToOne('Customer', 'creditSales', { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'customer_id' })
   customer: any;
 

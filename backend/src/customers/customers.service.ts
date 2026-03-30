@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
+import { CreditSale } from '../sales/entities/credit-sale.entity';
 import { SalesService } from '../sales/sales.service';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class CustomersService {
   constructor(
     @InjectRepository(Customer)
     private customersRepository: Repository<Customer>,
+    @InjectRepository(CreditSale)
+    private creditSalesRepository: Repository<CreditSale>,
     private salesService: SalesService,
   ) {}
 
@@ -76,6 +79,10 @@ export class CustomersService {
 
   async remove(tenantId: string, id: string) {
     const customer = await this.findOne(tenantId, id);
+    
+    // Eliminar relaciones manualmente para asegurar que el botón de la UI funcione siempre
+    await this.creditSalesRepository.delete({ customerId: id });
+    
     return this.customersRepository.remove(customer);
   }
 }
