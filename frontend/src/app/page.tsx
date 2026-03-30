@@ -219,7 +219,7 @@ export default function LandingPage() {
                 </div>
                 <div className="mb-8 relative">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-black text-white tracking-tighter">$1.8M</span>
+                    <span className="text-5xl font-black text-white tracking-tighter">$1.800.000</span>
                     <span className="text-slate-500 font-bold">/ año</span>
                   </div>
                   <p className="text-blue-400 text-sm font-bold mt-2">Ahorras más de $480.000 COP</p>
