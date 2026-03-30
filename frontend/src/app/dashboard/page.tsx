@@ -199,11 +199,18 @@ export default function PosPage() {
         e.stopPropagation();
         
         const term = searchTerm.toLowerCase().trim();
+        // Solo auto-agregar si el código de barras coincide exactamente al 100%
         const found = allProducts.find(p => 
-          (p.barcode && p.barcode.toLowerCase() === term) || 
-          p.name.toLowerCase() === term
+          (p.barcode && p.barcode.toLowerCase() === term)
         );
-        if (found) addToCart(found);
+        
+        if (found) {
+          addToCart(found);
+        } else {
+          // Si no es un código exacto, no agregamos "basura". 
+          // El usuario puede elegir de la lista de sugerencias que se muestra abajo.
+          console.log('No barcode match for:', term);
+        }
       } else if (cart.length > 0) {
         e.preventDefault();
         e.stopPropagation();
@@ -223,6 +230,17 @@ export default function PosPage() {
   };
 
   const updatePrice = (productId: string, newPrice: string) => {
+    // Permitir borrar completamente el campo (valor vacío)
+    if (newPrice === '') {
+      setCart(prev => prev.map(item => {
+        if (item.product.id === productId) {
+          return { ...item, product: { ...item.product, price: 0 } };
+        }
+        return item;
+      }));
+      return;
+    }
+
     const price = parseFloat(newPrice);
     if (isNaN(price)) return;
     
@@ -659,8 +677,9 @@ export default function PosPage() {
                           type="number"
                           title="Cambiar precio unitario"
                           className="w-full pl-3 bg-transparent text-sm font-black text-green-600 dark:text-green-400 focus:outline-none focus:ring-0 border-none p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          value={Math.round(item.product.price)}
+                          value={item.product.price === 0 ? '' : Math.round(item.product.price)}
                           onChange={(e) => updatePrice(item.product.id, e.target.value)}
+                          onFocus={(e) => e.target.select()}
                         />
                       </div>
                     </div>
