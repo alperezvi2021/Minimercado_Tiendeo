@@ -16,13 +16,13 @@ BEGIN
         WHERE customer_id IN (
             SELECT id FROM customers 
             WHERE tenant_id = target_tenant_id 
-            AND name IN ('Cliente Genérico', 'Cliente Recuperado', 'daniel', 'Juan Perez')
+            AND name IN ('Cliente Genérico', 'Cliente Recuperado')
         );
 
         -- 3. Eliminar los clientes de la tienda Grupo DK
         DELETE FROM customers 
         WHERE tenant_id = target_tenant_id 
-        AND name IN ('Cliente Genérico', 'Cliente Recuperado', 'daniel', 'Juan Perez');
+        AND name IN ('Cliente Genérico', 'Cliente Recuperado');
 
         RAISE NOTICE 'Limpieza completada exitosamente.';
     ELSE
