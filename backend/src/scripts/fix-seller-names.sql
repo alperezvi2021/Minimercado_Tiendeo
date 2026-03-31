@@ -4,12 +4,12 @@
 UPDATE sales 
 SET "sellerName" = users.name
 FROM users 
-WHERE sales.user_id = users.id::text 
-AND sales."sellerName" IS NULL;
+WHERE sales.user_id::text = users.id::text 
+AND (sales."sellerName" IS NULL OR sales."sellerName" = '');
 
 -- Si alguna venta aún queda sin nombre (vía turnos de caja), intentamos desde cash_closures
 UPDATE sales
-SET "sellerName" = cash_closures."userName"
+SET "sellerName" = cash_closures.user_name
 FROM cash_closures
-WHERE sales.closure_id = cash_closures.id::text
-AND sales."sellerName" IS NULL;
+WHERE sales.closure_id::text = cash_closures.id::text
+AND (sales."sellerName" IS NULL OR sales."sellerName" = '');
