@@ -25,6 +25,9 @@ export class Sale {
   @Column({ name: 'user_id', nullable: true })
   userId: string;
 
+  @Column({ nullable: true })
+  sellerName: string;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;

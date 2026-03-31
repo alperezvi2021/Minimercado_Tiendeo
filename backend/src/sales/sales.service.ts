@@ -79,6 +79,7 @@ export class SalesService {
       const sale = transactionalEntityManager.create(Sale, {
         tenantId,
         userId,
+        sellerName: userName,
         closureId: closure.id,
         totalAmount: createSaleDto.totalAmount,
         paymentMethod: createSaleDto.paymentMethod || 'efectivo',
@@ -484,6 +485,7 @@ export class SalesService {
       const sale = transactionalEntityManager.create(Sale, {
         tenantId,
         userId,
+        sellerName: userName,
         closureId: closure.id,
         totalAmount: amount,
         paymentMethod: 'credito',

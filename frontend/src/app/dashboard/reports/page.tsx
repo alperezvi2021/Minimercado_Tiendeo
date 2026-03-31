@@ -20,6 +20,7 @@ interface Sale {
   paymentMethod: string;
   customerName?: string;
   userId?: string;
+  sellerName?: string;
   user?: { name: string };
   createdAt: string;
   items: SaleItem[];
@@ -65,8 +66,8 @@ export default function ReportsPage() {
     let bValue: any = b[sortConfig.key as keyof Sale];
 
     if (sortConfig.key === 'user') {
-      aValue = a.user?.name || '';
-      bValue = b.user?.name || '';
+      aValue = a.sellerName || a.user?.name || '';
+      bValue = b.sellerName || b.user?.name || '';
     }
 
     if (aValue === null || aValue === undefined) aValue = '';
@@ -253,7 +254,7 @@ export default function ReportsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-slate-800">
-                {sales.map((sale) => (
+                {sortedSales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-xs font-black text-blue-600 dark:text-blue-400">
                       {sale.invoiceNumber || 'S/N'}
@@ -264,10 +265,10 @@ export default function ReportsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                          <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase">
-                            {(sale.user?.name || 'S')[0]}
+                            {(sale.sellerName || sale.user?.name || 'S')[0]}
                          </div>
                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                           {sale.user?.name || <span className="text-gray-400 italic font-medium">Sistema</span>}
+                           {sale.sellerName || sale.user?.name || <span className="text-gray-400 italic font-medium">Sistema</span>}
                          </span>
                       </div>
                     </td>
