@@ -99,7 +99,7 @@ export default function ReportsPage() {
     const tableData = sortedSales.map(sale => [
       sale.invoiceNumber || 'S/N',
       new Date(sale.createdAt).toLocaleString(),
-      sale.user?.name || 'Sistema',
+      sale.sellerName || sale.user?.name || 'Sistema',
       sale.paymentMethod + (sale.customerName ? ` (${sale.customerName})` : ''),
       sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
       `$${Math.round(sale.totalAmount).toLocaleString()}`
@@ -119,7 +119,7 @@ export default function ReportsPage() {
     const data = sortedSales.map(sale => ({
       'Factura #': sale.invoiceNumber || 'S/N',
       Fecha: new Date(sale.createdAt).toLocaleString(),
-      Vendedor: sale.user?.name || 'Sistema',
+      Vendedor: sale.sellerName || sale.user?.name || 'Sistema',
       Metodo: sale.paymentMethod,
       Cliente: sale.customerName || 'N/A',
       Productos: sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
