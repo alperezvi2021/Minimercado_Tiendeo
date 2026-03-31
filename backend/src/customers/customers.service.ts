@@ -27,10 +27,10 @@ export class CustomersService {
     return savedCustomer;
   }
 
-  async findAll(tenantId: string) {
+  async findAll(tenantId: string, full = false) {
     const customers = await this.customersRepository.find({
       where: { tenantId },
-      relations: ['creditSales'],
+      relations: full ? ['creditSales', 'creditSales.sale', 'creditSales.payments'] : ['creditSales'],
       order: { name: 'ASC' },
     });
 
@@ -40,8 +40,10 @@ export class CustomersService {
         .reduce((sum, cs) => sum + Number(cs.remainingAmount), 0);
       const pendingInvoices = c.creditSales.filter(cs => cs.status !== 'PAID').length;
       
-      // Remove creditSales from output to keep it light
-      delete (c as any).creditSales;
+      // Remove creditSales from output to keep it light if not requested full
+      if (!full) {
+        delete (c as any).creditSales;
+      }
       
       return {
         ...c,

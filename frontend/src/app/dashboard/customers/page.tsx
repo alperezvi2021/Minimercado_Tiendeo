@@ -16,16 +16,20 @@ import {
   Settings,
   Wifi,
   WifiOff,
-  CloudSync
+  CloudSync,
+  FileDown
 } from 'lucide-react';
 import CustomerModal from '@/components/customers/CustomerModal';
 import CustomerHistoryModal from '@/components/customers/CustomerHistoryModal';
 import { useOfflineStore } from '@/store/useOfflineStore';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function CustomersPage() {
   const { isOnline, customers: cachedCustomers, setCache } = useOfflineStore();
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
@@ -56,6 +60,70 @@ export default function CustomersPage() {
       setCustomers(cachedCustomers);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generatePDF = async () => {
+    setIsExporting(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      // Fetch full data with relations
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers?full=true`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (!res.ok) throw new Error('Error fetching data');
+      const fullCustomers = await res.json();
+      
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFillColor(37, 99, 235); // Blue 600
+      doc.rect(0, 0, 210, 40, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.text('REPORTE GENERAL DE CARTERA', 14, 25);
+      
+      doc.setFontSize(10);
+      doc.text(`TIENDEO POS - Gestión de Cobros`, 150, 22);
+      doc.text(`Generado: ${new Date().toLocaleString()}`, 150, 28);
+      doc.text(`Clientes Activos: ${fullCustomers.length}`, 150, 34);
+
+      // Summary
+      const totalCartera = fullCustomers.reduce((acc: number, c: any) => acc + (c.totalDebt || 0), 0);
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(14);
+      doc.text('RESUMEN FINANCIERO', 14, 50);
+      doc.setFontSize(11);
+      doc.text(`Total Cartera por Cobrar: $${Math.round(totalCartera).toLocaleString('es-CO')}`, 14, 60);
+
+      // Table
+      const tableData = fullCustomers
+        .filter((c: any) => c.totalDebt > 0)
+        .map((c: any) => [
+          c.name,
+          c.idNumber || 'S/I',
+          c.phone || 'N/R',
+          c.pendingInvoices,
+          `$${Math.round(c.totalDebt).toLocaleString('es-CO')}`
+        ]);
+
+      autoTable(doc, {
+        startY: 70,
+        head: [['Cliente', 'Identificación', 'Teléfono', 'Facturas', 'Deuda Total']],
+        body: tableData,
+        headStyles: { fillColor: [37, 99, 235] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        styles: { fontSize: 9 }
+      });
+
+      doc.save(`Reporte_Cartera_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error(error);
+      alert('Error generando el reporte PDF');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -110,6 +178,17 @@ export default function CustomersPage() {
               <p className="text-[10px] font-black uppercase text-gray-400 dark:text-slate-500 tracking-widest">Cartera Total</p>
               <p className="text-2xl font-black text-rose-600 dark:text-rose-500">${Math.round(totalOwedByAll).toLocaleString('es-CO')}</p>
             </div>
+            <div className="h-10 w-[1px] bg-gray-100 dark:bg-slate-800 mx-2" />
+            <button 
+              onClick={generatePDF}
+              disabled={isExporting}
+              className="group flex flex-col items-center gap-1 hover:text-blue-600 transition-colors"
+            >
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-all">
+                {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-tighter">Informe PDF</span>
+            </button>
           </div>
           <button 
             onClick={() => { setSelectedCustomer(null); setIsModalOpen(true); }}
