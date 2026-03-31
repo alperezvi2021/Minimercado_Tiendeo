@@ -19,6 +19,8 @@ interface Sale {
   totalAmount: number;
   paymentMethod: string;
   customerName?: string;
+  userId?: string;
+  user?: { name: string };
   createdAt: string;
   items: SaleItem[];
 }
@@ -26,6 +28,7 @@ interface Sale {
 export default function ReportsPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Sale | 'user'; direction: 'asc' | 'desc' } | null>(null);
 
   useEffect(() => {
     fetchSales();
@@ -47,6 +50,32 @@ export default function ReportsPage() {
       setLoading(false);
     }
   };
+  const requestSort = (key: keyof Sale | 'user') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedSales = [...sales].sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    let aValue: any = a[sortConfig.key as keyof Sale];
+    let bValue: any = b[sortConfig.key as keyof Sale];
+
+    if (sortConfig.key === 'user') {
+      aValue = a.user?.name || '';
+      bValue = b.user?.name || '';
+    }
+
+    if (aValue === null || aValue === undefined) aValue = '';
+    if (bValue === null || bValue === undefined) bValue = '';
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   const totalRevenue = sales.reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
   const totalCredit = sales.filter(s => s.paymentMethod === 'credito').reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
@@ -61,9 +90,10 @@ export default function ReportsPage() {
     doc.setFontSize(10);
     doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
     
-    const tableData = sales.map(sale => [
+    const tableData = sortedSales.map(sale => [
       sale.invoiceNumber || 'S/N',
       new Date(sale.createdAt).toLocaleString(),
+      sale.user?.name || 'Sistema',
       sale.paymentMethod + (sale.customerName ? ` (${sale.customerName})` : ''),
       sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
       `$${Math.round(sale.totalAmount).toLocaleString()}`
@@ -71,7 +101,7 @@ export default function ReportsPage() {
     
     autoTable(doc, {
       startY: 35,
-      head: [['Factura #', 'Fecha', 'Método / Cliente', 'Resumen Productos', 'Total']],
+      head: [['Factura #', 'Fecha', 'Vendedor', 'Método / Cliente', 'Resumen Productos', 'Total']],
       body: tableData,
       headStyles: { fillColor: [37, 99, 235] }
     });
@@ -80,9 +110,10 @@ export default function ReportsPage() {
   };
 
   const exportToExcel = () => {
-    const data = sales.map(sale => ({
+    const data = sortedSales.map(sale => ({
       'Factura #': sale.invoiceNumber || 'S/N',
       Fecha: new Date(sale.createdAt).toLocaleString(),
+      Vendedor: sale.user?.name || 'Sistema',
       Metodo: sale.paymentMethod,
       Cliente: sale.customerName || 'N/A',
       Productos: sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
@@ -193,11 +224,32 @@ export default function ReportsPage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
               <thead className="bg-gray-50 dark:bg-slate-800/50">
                 <tr>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[120px]">Factura</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[170px]">Fecha / Hora</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[180px]">Método / Cliente</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[300px]">Productos</th>
-                <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right min-w-[120px]">Total</th>
+                  <th 
+                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('invoiceNumber')}
+                  >
+                    Factura {sortConfig?.key === 'invoiceNumber' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[170px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('createdAt')}
+                  >
+                    Fecha / Hora {sortConfig?.key === 'createdAt' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('user')}
+                  >
+                    Vendedor {sortConfig?.key === 'user' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[180px]">Método / Cliente</th>
+                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[300px]">Productos</th>
+                  <th 
+                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('totalAmount')}
+                  >
+                    Total {sortConfig?.key === 'totalAmount' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-slate-800">
@@ -208,6 +260,16 @@ export default function ReportsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 font-medium">
                       {new Date(sale.createdAt).toLocaleString('es-CO')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                         <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase">
+                            {(sale.user?.name || 'S')[0]}
+                         </div>
+                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
+                           {sale.user?.name || <span className="text-gray-400 italic font-medium">Sistema</span>}
+                         </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${

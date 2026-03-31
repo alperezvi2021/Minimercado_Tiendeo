@@ -34,6 +34,7 @@ export default function SuppliersPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   // Modales
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
@@ -245,6 +246,43 @@ export default function SuppliersPage() {
     setInvDiscount(0);
     setIsInvoiceModalOpen(true);
   };
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedSuppliers = [...suppliers].filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    s.taxId?.toLowerCase().includes(searchTerm.toLowerCase())
+  ).sort((a: any, b: any) => {
+    if (!sortConfig) return 0;
+    const aValue = a[sortConfig.key] || '';
+    const bValue = b[sortConfig.key] || '';
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const sortedInvoices = [...invoices].filter(inv => 
+    inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    inv.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase())
+  ).sort((a: any, b: any) => {
+    if (!sortConfig) return 0;
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+    
+    if (sortConfig.key === 'supplier') {
+      aValue = a.supplier?.name || '';
+      bValue = b.supplier?.name || '';
+    }
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
@@ -322,18 +360,43 @@ export default function SuppliersPage() {
             <thead className="bg-slate-50 dark:bg-slate-800/50">
               {activeTab === 'suppliers' ? (
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Nombre / NIT</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Contacto</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Dirección</th>
+                  <th 
+                    className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[200px] cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('name')}
+                  >
+                    Nombre / NIT {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[180px]">Contacto</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[200px]">Dirección</th>
                   <th className="relative px-6 py-4 min-w-[100px]"></th>
                 </tr>
               ) : (
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[110px]">Factura #</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[110px]">Fecha</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Proveedor</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[120px]">Total</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[120px]">Estado</th>
+                  <th 
+                    className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[110px] cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('invoiceNumber')}
+                  >
+                    Factura # {sortConfig?.key === 'invoiceNumber' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[110px] cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('date')}
+                  >
+                    Fecha {sortConfig?.key === 'date' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[180px] cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('supplier')}
+                  >
+                    Proveedor {sortConfig?.key === 'supplier' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('totalAmount')}
+                  >
+                    Total {sortConfig?.key === 'totalAmount' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[120px]">Estado</th>
                   <th className="relative px-6 py-4 min-w-[100px]"></th>
                 </tr>
               )}
@@ -342,7 +405,7 @@ export default function SuppliersPage() {
               {loading ? (
                 <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-500">Cargando datos...</td></tr>
               ) : activeTab === 'suppliers' ? (
-                suppliers.map(s => (
+                sortedSuppliers.map(s => (
                   <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -366,7 +429,7 @@ export default function SuppliersPage() {
                   </tr>
                 ))
               ) : activeTab === 'invoices' ? (
-                invoices.map(inv => (
+                sortedInvoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 font-mono text-sm font-bold text-blue-600">{inv.invoiceNumber}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(inv.date).toLocaleDateString()}</td>

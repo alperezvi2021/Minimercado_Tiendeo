@@ -121,7 +121,7 @@ export class SalesService {
   async findAll(tenantId: string): Promise<Sale[]> {
     return this.salesRepository.find({
       where: { tenantId },
-      relations: ['items'],
+      relations: ['items', 'user'],
       order: { createdAt: 'DESC' },
     });
   }

@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { SaleItem } from './sale-item.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('sales')
 export class Sale {
@@ -23,6 +24,10 @@ export class Sale {
 
   @Column({ name: 'user_id', nullable: true })
   userId: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column({ name: 'closure_id', nullable: true })
   closureId: string;

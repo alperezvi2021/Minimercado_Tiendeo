@@ -39,6 +39,7 @@ export default function InventoryPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Product | 'category'; direction: 'asc' | 'desc' } | null>(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -402,15 +403,15 @@ export default function InventoryPage() {
 
   // --- Funciones de Import/Export ---
   const handleExport = () => {
-    const dataToExport = products.map((p: Product) => ({
-      'Nombre': p.name,
+    const dataToExport = sortedProducts.map((p: Product) => ({
       'Código de Barras': p.barcode || 'Manual',
+      'Nombre': p.name,
+      'Categoría': p.category?.name || 'Sin Categoría',
       'Precio Compra': p.cost || 0,
       'Utilidad (%)': p.profitMargin || 0,
       'Precio Venta': p.price,
       'Stock Actual': p.stock,
-      'Mínimo Stock': p.lowStockThreshold,
-      'Categoría': p.category?.name || 'Sin Categoría'
+      'Mínimo Stock': p.lowStockThreshold
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -482,12 +483,39 @@ export default function InventoryPage() {
     e.target.value = '';
   };
 
-  const filteredProducts = products.filter((p: Product) => {
+  const requestSort = (key: keyof Product | 'category') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedProducts = [...products].filter((p: Product) => {
     const term = searchTerm.toLowerCase().trim();
     const nameMatch = p.name.toLowerCase().includes(term);
     const barcodeMatch = p.barcode && p.barcode.toLowerCase().includes(term);
     return nameMatch || barcodeMatch;
+  }).sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    let aValue: any = a[sortConfig.key as keyof Product];
+    let bValue: any = b[sortConfig.key as keyof Product];
+
+    if (sortConfig.key === 'category') {
+      aValue = a.category?.name || '';
+      bValue = b.category?.name || '';
+    }
+
+    if (aValue === null || aValue === undefined) aValue = '';
+    if (bValue === null || bValue === undefined) bValue = '';
+
+    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
   });
+
+  const filteredProducts = sortedProducts;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
@@ -566,10 +594,41 @@ export default function InventoryPage() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
             <thead className="bg-gray-50 dark:bg-slate-800/50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px]">Código</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[200px]">Producto</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[150px]">Precio de Venta</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[100px]">Stock</th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  onClick={() => requestSort('barcode')}
+                >
+                  Código {sortConfig?.key === 'barcode' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[200px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  onClick={() => requestSort('name')}
+                >
+                  Producto {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  onClick={() => requestSort('category')}
+                >
+                  Categoría {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  onClick={() => requestSort('price')}
+                >
+                  Precio de Venta {sortConfig?.key === 'price' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  onClick={() => requestSort('stock')}
+                >
+                  Stock {sortConfig?.key === 'stock' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                </th>
                 <th scope="col" className="relative px-6 py-3"><span className="sr-only">Acciones</span></th>
               </tr>
             </thead>
@@ -580,7 +639,7 @@ export default function InventoryPage() {
                 </tr>
               ) : filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay productos. ¡Agrega el primero!</td>
+                  <td colSpan={6} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">No hay productos. ¡Agrega el primero!</td>
                 </tr>
               ) : (
                 filteredProducts.map((product: Product) => {
@@ -591,12 +650,12 @@ export default function InventoryPage() {
                         {product.barcode || <span className="text-gray-400 italic">Manual</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-gray-900 dark:text-white leading-tight">{product.name}</span>
-                          <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">
-                            {product.category?.name || 'Sin Categoría'}
-                          </span>
-                        </div>
+                        <span className="font-semibold text-gray-900 dark:text-white leading-tight">{product.name}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                          {product.category?.name || 'Sin Categoría'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-medium">
                         ${Math.round(Number(product.price)).toLocaleString('es-CO')}
