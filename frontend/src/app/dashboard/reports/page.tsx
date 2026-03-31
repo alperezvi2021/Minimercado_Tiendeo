@@ -70,6 +70,11 @@ export default function ReportsPage() {
       bValue = b.sellerName || b.user?.name || '';
     }
 
+    if (sortConfig.key === 'paymentMethod') {
+      aValue = a.paymentMethod + (a.customerName || '');
+      bValue = b.paymentMethod + (b.customerName || '');
+    }
+
     if (aValue === null || aValue === undefined) aValue = '';
     if (bValue === null || bValue === undefined) bValue = '';
 
@@ -243,7 +248,12 @@ export default function ReportsPage() {
                   >
                     Vendedor {sortConfig?.key === 'user' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[180px]">Método / Cliente</th>
+                  <th 
+                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[180px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    onClick={() => requestSort('paymentMethod')}
+                  >
+                    Método / Cliente {sortConfig?.key === 'paymentMethod' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  </th>
                   <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[300px]">Productos</th>
                   <th 
                     className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
