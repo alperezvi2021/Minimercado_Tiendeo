@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, CreditCard, Loader2 } from 'lucide-react';
+import { X, User, Phone, Mail, MapPin, CreditCard, Loader2, Banknote, ArrowDownCircle } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
+import AbonoModal from './AbonoModal';
 
 interface CustomerModalProps {
   isOpen: boolean;
@@ -23,6 +24,9 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
   const [loading, setLoading] = useState(false);
   const [debts, setDebts] = useState<any[]>([]);
   const [loadingDebts, setLoadingDebts] = useState(false);
+  const [selectedCredit, setSelectedCredit] = useState<any>(null);
+  const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (customer) {
@@ -64,6 +68,32 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       console.error(error);
     } finally {
       setLoadingDebts(false);
+    }
+  };
+
+  const handlePay = async (creditId: string) => {
+    if (!confirm('¿Confirmar que el cliente ha pagado esta factura totalmente en efectivo?')) return;
+    
+    setProcessingId(creditId);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/credits/${creditId}/pay`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        alert('Pago registrado correctamente.');
+        fetchCustomerDebts();
+        onSave(); // Refrescar lista principal también
+      } else {
+        alert('Error al procesar el pago');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión');
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -235,36 +265,61 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                     {debts.map((debt) => {
                       const totalPaid = debt.payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
                       return (
-                        <div key={debt.id} className="p-4 bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                             <div className={`p-2 rounded-lg ${debt.status === 'PAID' ? 'bg-green-100 text-green-600' : 'bg-rose-100 text-rose-600'}`}>
-                               <CreditCard className="w-4 h-4" />
-                             </div>
-                             <div>
-                               <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Factura No.</p>
-                               <p className="text-sm font-black text-gray-900 dark:text-white">{debt.sale?.invoiceNumber || 'S/N'}</p>
-                             </div>
+                        <div key={debt.id} className="p-4 bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-100 dark:border-slate-700 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                               <div className={`p-2 rounded-lg ${debt.status === 'PAID' ? 'bg-green-100 text-green-600' : 'bg-rose-100 text-rose-600'}`}>
+                                 <CreditCard className="w-4 h-4" />
+                               </div>
+                               <div>
+                                 <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Factura No.</p>
+                                 <p className="text-sm font-black text-gray-900 dark:text-white">{debt.sale?.invoiceNumber || 'S/N'}</p>
+                               </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                              <div className="text-right">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</p>
+                                <p className="font-bold text-gray-700 dark:text-slate-300">
+                                  ${Math.round(debt.amount).toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Abonado</p>
+                                <p className="font-bold text-emerald-600 dark:text-emerald-400">
+                                  ${Math.round(totalPaid).toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Saldo</p>
+                                <p className="font-bold text-rose-600 dark:text-rose-500 text-lg">
+                                  ${Math.round(debt.remainingAmount).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-6">
-                            <div className="text-right">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</p>
-                              <p className="font-bold text-gray-700 dark:text-slate-300">
-                                ${Math.round(debt.amount).toLocaleString()}
-                              </p>
+                          
+                          {/* Payment Actions */}
+                          {debt.remainingAmount > 0 && (
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-slate-700">
+                              <button
+                                type="button"
+                                onClick={() => { setSelectedCredit(debt); setIsAbonoModalOpen(true); }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                              >
+                                <ArrowDownCircle className="w-3.5 h-3.5" />
+                                Abonar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={processingId === debt.id}
+                                onClick={() => handlePay(debt.id)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all shadow-sm disabled:opacity-50"
+                              >
+                                {processingId === debt.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Banknote className="w-3.5 h-3.5" />}
+                                Pagar Total
+                              </button>
                             </div>
-                            <div className="text-right">
-                              <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Abonado</p>
-                              <p className="font-bold text-emerald-600 dark:text-emerald-400">
-                                ${Math.round(totalPaid).toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Saldo</p>
-                              <p className="font-bold text-rose-600 dark:text-rose-500 text-lg">
-                                ${Math.round(debt.remainingAmount).toLocaleString()}
-                              </p>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       );
                     })}
@@ -286,6 +341,12 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
           </button>
         </div>
       </div>
-    </div>
+      
+      <AbonoModal 
+        isOpen={isAbonoModalOpen}
+        onClose={() => setIsAbonoModalOpen(false)}
+        onSave={() => { fetchCustomerDebts(); onSave(); }}
+        credit={selectedCredit}
+      />
   );
 }

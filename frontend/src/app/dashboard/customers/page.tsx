@@ -34,6 +34,15 @@ export default function CustomersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' } | null>(null);
+
+  const requestSort = (key: string) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   useEffect(() => {
     if (isOnline) {
@@ -145,7 +154,17 @@ export default function CustomersPage() {
     }
   };
 
-  const filteredCustomers = customers.filter(c => 
+  const sortedCustomers = [...customers].sort((a, b) => {
+    if (!sortConfig) return 0;
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+    
+    if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+    return 0;
+  });
+
+  const filteredCustomers = sortedCustomers.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (c.idNumber && c.idNumber.includes(searchTerm))
   );
@@ -225,9 +244,25 @@ export default function CustomersPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 dark:border-slate-800/50">
-                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest min-w-[200px]">Información Cliente</th>
+                <th 
+                  onClick={() => requestSort('name')}
+                  className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest min-w-[200px] cursor-pointer hover:text-blue-600 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Información Cliente
+                    {sortConfig?.key === 'name' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                  </div>
+                </th>
                 <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest min-w-[150px]">Contacto</th>
-                <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center min-w-[160px]">Estado Crédito</th>
+                <th 
+                  onClick={() => requestSort('totalDebt')}
+                  className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center min-w-[160px] cursor-pointer hover:text-blue-600 transition-colors"
+                >
+                  <div className="flex items-center gap-2 justify-center">
+                    Estado Crédito
+                    {sortConfig?.key === 'totalDebt' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                  </div>
+                </th>
                 <th className="px-8 py-5 text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-right min-w-[160px]">Acciones</th>
               </tr>
             </thead>

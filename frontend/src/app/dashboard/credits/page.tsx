@@ -39,10 +39,19 @@ export default function CreditsPage() {
   const [credits, setCredits] = useState<CreditSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' } | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedCredit, setSelectedCredit] = useState<CreditSale | null>(null);
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
+
+  const requestSort = (key: string) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
 
   useEffect(() => {
     if (isOnline) {
@@ -161,7 +170,29 @@ export default function CreditsPage() {
     writeFile(wb, 'Cuentas_Por_Cobrar.xlsx');
   };
 
-  const filteredCredits = credits.filter(c => 
+  const sortedCredits = [...credits].sort((a, b) => {
+    if (!sortConfig) return 0;
+    
+    let aValue: any = a[sortConfig.key as keyof CreditSale];
+    let bValue: any = b[sortConfig.key as keyof CreditSale];
+
+    if (sortConfig.key === 'invoice') {
+      aValue = a.sale?.invoiceNumber || '';
+      bValue = b.sale?.invoiceNumber || '';
+    } else if (sortConfig.key === 'remaining') {
+       aValue = Number(a.remainingAmount || a.amount);
+       bValue = Number(b.remainingAmount || b.amount);
+    } else if (sortConfig.key === 'amount') {
+       aValue = Number(a.amount);
+       bValue = Number(b.amount);
+    }
+    
+    if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+    return 0;
+  });
+
+  const filteredCredits = sortedCredits.filter(c => 
     c.customerName.toLowerCase().includes(filter.toLowerCase())
   );
 
@@ -251,11 +282,51 @@ export default function CreditsPage() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-800/50">
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px]">Factura #</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[180px]">Cliente</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center min-w-[140px]">Fecha Deuda</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[140px]">Monto Original</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[160px]">Saldo Pendiente</th>
+                <th 
+                  onClick={() => requestSort('invoice')}
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px] cursor-pointer hover:text-blue-500 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Factura #
+                    {sortConfig?.key === 'invoice' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => requestSort('customerName')}
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[180px] cursor-pointer hover:text-blue-500 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Cliente
+                    {sortConfig?.key === 'customerName' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => requestSort('createdAt')}
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center min-w-[140px] cursor-pointer hover:text-blue-500 transition-colors"
+                >
+                  <div className="flex items-center gap-2 justify-center">
+                    Fecha Deuda
+                    {sortConfig?.key === 'createdAt' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => requestSort('amount')}
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[140px] cursor-pointer hover:text-blue-500 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Monto Original
+                    {sortConfig?.key === 'amount' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => requestSort('remaining')}
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[160px] cursor-pointer hover:text-blue-500 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    Saldo Pendiente
+                    {sortConfig?.key === 'remaining' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
+                  </div>
+                </th>
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px]">Estado</th>
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right min-w-[180px]">Acciones</th>
               </tr>

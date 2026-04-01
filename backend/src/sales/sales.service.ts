@@ -210,7 +210,10 @@ export class SalesService {
 
   async findAllPendingCredits(tenantId: string): Promise<CreditSale[]> {
     return this.creditSalesRepository.find({
-      where: { tenantId, status: 'PENDING' },
+      where: [
+        { tenantId, status: 'PENDING' },
+        { tenantId, status: 'PARTIAL' }
+      ],
       relations: ['sale'],
       order: { createdAt: 'DESC' },
     });
