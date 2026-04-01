@@ -34,14 +34,16 @@ export class SalesController {
   performClosure(@Request() req) {
     const tenantId = req.user.tenantId;
     const userId = req.user.userId;
-    // The provided code snippet for accounting logic was malformed and placed incorrectly.
-    // Assuming the intent was to add accounting logic to the closure process,
-    // this would typically involve fetching sales/invoices and then calculating.
-    // For now, I'm restoring the original `performClosure` method body.
-    // If you intended to add specific accounting calculations here, please provide
-    // the full, correct context including where `sales`, `cashAndCardSales`, etc.,
-    // would be obtained.
     return this.salesService.performClosure(tenantId, userId);
+  }
+
+  @Post('closure/open')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  openClosure(@Request() req, @Body() body: { openingAmount: number }) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.userId;
+    const userName = req.user.name || 'Cajero';
+    return this.salesService.openClosure(tenantId, userId, userName, body.openingAmount);
   }
 
   @Post('mark-credit')

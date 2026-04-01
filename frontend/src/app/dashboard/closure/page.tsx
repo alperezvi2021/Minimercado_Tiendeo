@@ -10,8 +10,13 @@ import {
   User as UserIcon,
   Search,
   ArrowRightLeft,
-  Banknote
+  Banknote,
+  FileText,
+  PlusCircle,
+  Wallet
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Sale {
   id: string;
@@ -26,10 +31,13 @@ interface ClosureStatus {
     id: string;
     userName: string;
     openedAt: string;
+    openingAmount: number;
   };
+  openingAmount: number;
   totalCash: number;
   totalCredit: number;
   totalPayments?: number;
+  totalToDeliver: number;
   salesCount: number;
 }
 
@@ -39,6 +47,8 @@ export default function ClosurePage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [closing, setClosing] = useState(false);
+  const [openingAmount, setOpeningAmount] = useState<string>('');
+  const [opening, setOpening] = useState(false);
 
   const fetchStatus = async () => {
     try {
@@ -97,6 +107,33 @@ export default function ClosurePage() {
     }
   };
 
+  const handleOpenBox = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!openingAmount || parseFloat(openingAmount) < 0) return;
+
+    setOpening(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/closure/open`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ openingAmount: parseFloat(openingAmount) })
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        alert('Error al abrir la caja');
+      }
+    } catch (error) {
+      console.error('Error opening box:', error);
+    } finally {
+      setOpening(false);
+    }
+  };
+
   const handleCloseBox = async () => {
     if (!confirm('¿Está seguro de que desea realizar el cierre de caja? Esto finalizará su turno actual.')) {
       return;
@@ -112,14 +149,73 @@ export default function ClosurePage() {
       });
 
       if (response.ok) {
-        alert('Cierre de caja realizado con éxito');
-        window.location.reload();
+          // Generar PDF antes de recargar si es posible, o avisar
+          alert('Cierre de caja realizado con éxito. El turno ha sido guardado.');
+          window.location.reload();
       }
     } catch (error) {
       console.error('Error performing closure:', error);
     } finally {
       setClosing(false);
     }
+  };
+
+  const exportToPDF = () => {
+    if (!status) return;
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(30, 41, 59); // Slate 800
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.text('COMPROBANTE DE ARQUEO', 105, 20, { align: 'center' });
+    doc.setFontSize(10);
+    doc.text(`Tiendeo POS - ${status.closure.userName}`, 105, 30, { align: 'center' });
+
+    // Summary Info
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(12);
+    doc.text('RESUMEN DE TURNO', 14, 50);
+    
+    const summaryData = [
+      ['Cajero:', status.closure.userName],
+      ['Apertura:', new Date(status.closure.openedAt).toLocaleString()],
+      ['Cierre (Generado):', new Date().toLocaleString()],
+      ['Base de Caja:', `$${Number(status.openingAmount).toLocaleString()}`],
+      ['Ventas Efectivo:', `$${Number(status.totalCash).toLocaleString()}`],
+      ['Abonos Crédito:', `$${Number(status.totalPayments).toLocaleString()}`],
+      ['TOTAL EFECTIVO A ENTREGAR:', `$${Number(status.totalToDeliver).toLocaleString()}`]
+    ];
+
+    autoTable(doc, {
+      startY: 55,
+      body: summaryData,
+      theme: 'plain',
+      styles: { fontSize: 10, cellPadding: 2 },
+      columnStyles: { 0: { fontStyle: 'bold', width: 60 } }
+    });
+
+    // Sales Detail
+    doc.setFontSize(12);
+    doc.text('DETALLE DE VENTAS', 14, (doc as any).lastAutoTable.finalY + 15);
+
+    const salesData = sales.map(s => [
+      `#${s.id.split('-')[0]}`,
+      new Date(s.createdAt).toLocaleTimeString(),
+      s.paymentMethod.toUpperCase(),
+      s.customerName || 'Contado',
+      `$${Number(s.totalAmount).toLocaleString()}`
+    ]);
+
+    autoTable(doc, {
+      startY: (doc as any).lastAutoTable.finalY + 20,
+      head: [['Ticket', 'Hora', 'Método', 'Cliente', 'Monto']],
+      body: salesData,
+      headStyles: { fillColor: [59, 130, 246] } // Blue 500
+    });
+
+    doc.save(`Arqueo_${status.closure.userName}_${new Date().toLocaleDateString()}.pdf`);
   };
 
   if (loading) {
@@ -132,13 +228,39 @@ export default function ClosurePage() {
 
   if (!status || !status.closure) {
     return (
-      <div className="p-8 max-w-4xl mx-auto text-center">
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-3xl p-12 shadow-2xl">
-          <AlertCircle className="w-16 h-16 text-slate-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold mb-4 text-white">No hay turno abierto</h2>
-          <p className="text-slate-400 mb-8">
-            Realice una venta en la caja para iniciar un nuevo turno automáticamente.
-          </p>
+      <div className="p-8 max-w-2xl mx-auto animate-in zoom-in-95 duration-500">
+        <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-12 shadow-2xl text-center space-y-8">
+          <div className="bg-blue-600/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto">
+            <PlusCircle className="w-12 h-12 text-blue-500" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-white mb-2 italic uppercase tracking-tighter">Apertura de Caja</h2>
+            <p className="text-slate-400 font-medium">Inicie su turno definiendo el monto base de la caja</p>
+          </div>
+
+          <form onSubmit={handleOpenBox} className="space-y-6">
+            <div className="relative">
+              <CircleDollarSign className="absolute left-6 top-5 w-6 h-6 text-blue-500" />
+              <input
+                required
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                className="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl pl-16 pr-6 py-5 text-3xl font-black text-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-800"
+                value={openingAmount}
+                onChange={(e) => setOpeningAmount(e.target.value)}
+                autoFocus
+              />
+            </div>
+            
+            <button
+              disabled={opening}
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-3xl font-black text-xl shadow-xl shadow-blue-900/30 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {opening ? 'Abriendo Turno...' : 'Iniciar Turno de Trabajo'}
+            </button>
+          </form>
         </div>
       </div>
     );
@@ -149,69 +271,79 @@ export default function ClosurePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-black text-white flex items-center gap-3 tracking-tight">
+          <h1 className="text-4xl font-black text-white flex items-center gap-3 tracking-tight italic uppercase">
             <ClipboardCheck className="w-10 h-10 text-blue-500" />
             Cierre de Caja
           </h1>
-          <p className="text-slate-400 mt-2 font-medium">Gestiona tu turno y concilia las ventas del día</p>
+          <p className="text-slate-400 mt-2 font-bold uppercase tracking-widest text-[10px]">Gestión de Arqueo y Conciliación Actual</p>
         </div>
-        <button
-          onClick={handleCloseBox}
-          disabled={closing}
-          className="bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-red-900/20 transition-all active:scale-95 disabled:opacity-50"
-        >
-          {closing ? 'Procesando...' : 'Finalizar Turno y Cerrar Caja'}
-          <CheckCircle2 className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportToPDF}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all active:scale-95"
+          >
+            <FileText className="w-4 h-4" />
+            Informe Arqueo
+          </button>
+          <button
+            onClick={handleCloseBox}
+            disabled={closing}
+            className="bg-red-600 hover:bg-red-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-red-900/20 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {closing ? 'Procesando...' : 'Finalizar Turno'}
+            <CheckCircle2 className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+          <div className="flex items-center gap-3 mb-6">
             <div className="bg-blue-500/10 p-2 rounded-xl">
               <UserIcon className="w-5 h-5 text-blue-400" />
             </div>
-            <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">Cajero</span>
+            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Responsable</span>
           </div>
-          <p className="text-2xl font-black text-white">{status.closure?.userName || 'Cajero'}</p>
-          <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
-            <Clock className="w-3 h-3" />
-            Desde {status.closure?.openedAt ? new Date(status.closure.openedAt).toLocaleString() : '---'}
+          <p className="text-2xl font-black text-white uppercase tracking-tighter italic">{status.closure?.userName || 'Cajero'}</p>
+          <div className="flex items-center gap-2 mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            <Clock className="w-3 h-3 text-blue-500" />
+            {status.closure?.openedAt ? new Date(status.closure.openedAt).toLocaleTimeString() : '---'}
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-orange-500/10 p-2 rounded-xl">
+              <Wallet className="w-5 h-5 text-orange-400" />
+            </div>
+            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Base Inicial</span>
+          </div>
+          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.openingAmount).toLocaleString()}</p>
+          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Efectivo declarado al abrir</p>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+          <div className="flex items-center gap-3 mb-6">
             <div className="bg-green-500/10 p-2 rounded-xl">
               <CircleDollarSign className="w-5 h-5 text-green-400" />
             </div>
-            <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">Efectivo Turno</span>
+            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Recaudo Turno</span>
           </div>
-          <p className="text-2xl font-black text-white">${Number(status.totalCash).toLocaleString()}</p>
-          <p className="text-xs text-slate-500 mt-2">Ventas pagadas al instante</p>
+          <p className="text-3xl font-black text-white tracking-tighter">${(Number(status.totalCash) + Number(status.totalPayments || 0)).toLocaleString()}</p>
+          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Ventas Efectivo + Abonos</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-indigo-500/10 p-2 rounded-xl">
-              <Banknote className="w-5 h-5 text-indigo-400" />
-            </div>
-            <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">Abonos Recibidos</span>
-          </div>
-          <p className="text-2xl font-black text-white">${Number(status.totalPayments || 0).toLocaleString()}</p>
-          <p className="text-xs text-slate-500 mt-2">Cobros de deudas antiguas</p>
-        </div>
-
-        <div className="bg-blue-600 p-6 rounded-3xl shadow-xl border border-blue-500/50">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-blue-600 p-8 rounded-[2.5rem] shadow-2xl border border-blue-500/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 transition-all group-hover:scale-110"></div>
+          <div className="flex items-center gap-3 mb-6">
             <div className="bg-white/20 p-2 rounded-xl">
               <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
-            <span className="text-blue-100 font-bold text-sm uppercase tracking-wider">Total Recaudado</span>
+            <span className="text-blue-100 font-black text-[10px] uppercase tracking-widest">Total a Entregar</span>
           </div>
-          <p className="text-2xl font-black text-white">${(Number(status.totalCash) + Number(status.totalPayments || 0)).toLocaleString()}</p>
-          <p className="text-xs text-blue-100 mt-2">Dinero real que debe haber en caja</p>
+          <p className="text-4xl font-black text-white tracking-tighter">${Number(status.totalToDeliver).toLocaleString()}</p>
+          <p className="text-[11px] font-bold text-blue-100 mt-4 uppercase tracking-widest">DINERO REAL QUE DEBE HABER EN CAJA</p>
         </div>
       </div>
 

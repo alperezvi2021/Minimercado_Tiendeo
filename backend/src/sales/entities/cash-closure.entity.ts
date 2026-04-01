@@ -22,6 +22,9 @@ export class CashClosure {
   @CreateDateColumn({ name: 'opened_at' })
   openedAt: Date;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0, name: 'opening_amount' })
+  openingAmount: number;
+
   @Column({ name: 'closed_at', nullable: true })
   closedAt: Date;
 

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft, AlertCircle } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
 
 interface Product {
@@ -17,6 +18,7 @@ interface CartItem {
 }
 
 export default function PosPage() {
+  const router = useRouter();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -34,6 +36,7 @@ export default function PosPage() {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
+  const [hasOpenClosure, setHasOpenClosure] = useState<boolean | null>(null);
   
   const offlineStore = useOfflineStore();
   const [cashReceived, setCashReceived] = useState<string>('');
@@ -65,6 +68,7 @@ export default function PosPage() {
 
     if (offlineStore.isOnline) {
       fetchTenantData();
+      checkClosureStatus();
       if (shouldSync || offlineStore.products.length === 0) {
         fetchAllData();
       }
@@ -114,6 +118,24 @@ export default function PosPage() {
       }
     } catch (error) {
       console.error("Error fetching tenant data", error);
+    }
+  };
+
+  const checkClosureStatus = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/closure/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHasOpenClosure(!!data?.closure);
+      } else {
+        setHasOpenClosure(false);
+      }
+    } catch (error) {
+      console.error("Error checking closure status", error);
+      setHasOpenClosure(true); // Permitir acceso en caso de error de red
     }
   };
 
@@ -525,6 +547,29 @@ export default function PosPage() {
         return nameMatch || barcodeMatch;
       })
     : [];
+
+  // Bloqueo de Caja Cerrada
+  if (hasOpenClosure === false && offlineStore.isOnline) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] bg-slate-950 p-8 text-center">
+        <div className="bg-slate-900 border border-slate-800 rounded-[3rem] p-12 shadow-2xl max-w-lg space-y-8 animate-in zoom-in-95 duration-500">
+          <div className="bg-amber-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-12 h-12 text-amber-500" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter italic">Caja Cerrada</h2>
+            <p className="text-slate-400 font-medium">No puede realizar ventas sin antes haber realizado la apertura de caja.</p>
+          </div>
+          <button
+            onClick={() => router.push('/dashboard/closure')}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-3xl font-black text-xl shadow-xl shadow-blue-900/30 active:scale-95 transition-all"
+          >
+            Ir a Apertura de Caja
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col md:flex-row overflow-hidden bg-gray-50 dark:bg-[#0f172a] transition-colors rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800">

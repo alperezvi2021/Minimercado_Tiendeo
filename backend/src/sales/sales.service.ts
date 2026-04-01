@@ -33,22 +33,25 @@ export class SalesService {
     private dataSource: DataSource,
   ) {}
 
-  async getOrCreateOpenClosure(tenantId: string, userId: string, userName: string): Promise<CashClosure> {
-    let closure = await this.cashClosureRepository.findOne({
+  async getOpenClosure(tenantId: string, userId: string): Promise<CashClosure> {
+    return await this.cashClosureRepository.findOne({
       where: { tenantId, userId, status: 'OPEN' },
     });
+  }
 
-    if (!closure) {
-      closure = this.cashClosureRepository.create({
-        tenantId,
-        userId,
-        userName,
-        status: 'OPEN',
-      });
-      closure = await this.cashClosureRepository.save(closure);
-    }
+  async openClosure(tenantId: string, userId: string, userName: string, openingAmount: number): Promise<CashClosure> {
+    const existing = await this.getOpenClosure(tenantId, userId);
+    if (existing) throw new BadRequestException('Ya existe un turno abierto para este usuario');
 
-    return closure;
+    const closure = this.cashClosureRepository.create({
+      tenantId,
+      userId,
+      userName,
+      openingAmount,
+      status: 'OPEN',
+    });
+
+    return await this.cashClosureRepository.save(closure);
   }
 
   async create(tenantId: string, userId: string, userName: string, createSaleDto: CreateSaleDto): Promise<Sale> {
@@ -56,7 +59,8 @@ export class SalesService {
       throw new BadRequestException('El ticket no puede estar vacío');
     }
 
-    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+    const closure = await this.getOpenClosure(tenantId, userId);
+    if (!closure) throw new BadRequestException('Debe realizar la apertura de caja primero');
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
       // Logic for invoice number
@@ -158,9 +162,7 @@ export class SalesService {
   }
 
   async getCurrentClosureStatus(tenantId: string, userId: string): Promise<any> {
-    const closure = await this.cashClosureRepository.findOne({
-      where: { tenantId, userId, status: 'OPEN' },
-    });
+    const closure = await this.getOpenClosure(tenantId, userId);
 
     if (!closure) return null;
 
@@ -174,12 +176,18 @@ export class SalesService {
     const totalCash = cashSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
     const totalCredit = creditSales.reduce((sum, s) => sum + Number(s.totalAmount), 0);
     const totalPayments = Number(closure.totalCreditPayments || 0);
+    const openingAmount = Number(closure.openingAmount || 0);
+
+    // El efectivo que DEBE haber en caja es: Base + Ventas Efectivo + Abonos de créditos
+    const totalToDeliver = openingAmount + totalCash + totalPayments;
 
     return {
       closure,
+      openingAmount,
       totalCash,
       totalCredit,
       totalPayments,
+      totalToDeliver,
       salesCount: sales.length,
     };
   }
@@ -192,7 +200,8 @@ export class SalesService {
     closure.totalCashSales = status.totalCash;
     closure.totalCreditSales = status.totalCredit;
     closure.totalCreditPayments = status.totalPayments;
-    closure.totalAmount = status.totalCash + status.totalCredit + status.totalPayments;
+    // totalAmount en la entidad será el total recolectado en efectivo (incluyendo base)
+    closure.totalAmount = status.totalToDeliver; 
     closure.closedAt = new Date();
     closure.status = 'CLOSED';
 
@@ -251,9 +260,11 @@ export class SalesService {
     await this.creditPaymentsRepository.save(payment);
 
     // Registrar en el cierre de caja actual
-    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
-    closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(creditSale.amount);
-    await this.cashClosureRepository.save(closure);
+    const closure = await this.getOpenClosure(tenantId, userId);
+    if (closure) {
+      closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(creditSale.amount);
+      await this.cashClosureRepository.save(closure);
+    }
 
     if (creditSale.sale) {
       creditSale.sale.paymentMethod = 'efectivo';
@@ -287,9 +298,11 @@ export class SalesService {
     await this.creditPaymentsRepository.save(payment);
 
     // Registrar en el cierre de caja actual
-    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
-    closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(amount);
-    await this.cashClosureRepository.save(closure);
+    const closure = await this.getOpenClosure(tenantId, userId);
+    if (closure) {
+      closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(amount);
+      await this.cashClosureRepository.save(closure);
+    }
 
     // Actualizar saldo de la deuda
     creditSale.remainingAmount = remaining - amount;
@@ -338,9 +351,11 @@ export class SalesService {
           sale.paymentMethod = 'efectivo';
           await this.salesRepository.save(sale);
           // Registrar en el cierre de caja actual si se actualiza una venta antigua
-          const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
-          closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(sale.totalAmount);
-          await this.cashClosureRepository.save(closure);
+          const closure = await this.getOpenClosure(tenantId, userId);
+          if (closure) {
+            closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(sale.totalAmount);
+            await this.cashClosureRepository.save(closure);
+          }
       }
     }
   }
@@ -416,7 +431,8 @@ export class SalesService {
 
     if (!sale) throw new NotFoundException('Venta original no encontrada');
 
-    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+    const closure = await this.getOpenClosure(tenantId, userId);
+    if (!closure) throw new BadRequestException('Debe abrir la caja primero');
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
       const refund = transactionalEntityManager.create(Refund, {
@@ -478,7 +494,8 @@ export class SalesService {
   }
 
   async createLegacyDebt(tenantId: string, userId: string, userName: string, customerId: string, amount: number): Promise<CreditSale> {
-    const closure = await this.getOrCreateOpenClosure(tenantId, userId, userName);
+    const closure = await this.getOpenClosure(tenantId, userId);
+    if (!closure) throw new BadRequestException('Debe abrir la caja primero');
     const customer = await this.customerRepository.findOne({ where: { id: customerId, tenantId } });
     
     if (!customer) throw new NotFoundException('Cliente no encontrado');
