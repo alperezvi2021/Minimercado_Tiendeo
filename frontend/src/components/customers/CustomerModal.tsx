@@ -348,5 +348,6 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         onSave={() => { fetchCustomerDebts(); onSave(); }}
         credit={selectedCredit}
       />
+    </div>
   );
 }
