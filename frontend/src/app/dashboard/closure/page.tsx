@@ -193,7 +193,7 @@ export default function ClosurePage() {
       body: summaryData,
       theme: 'plain',
       styles: { fontSize: 10, cellPadding: 2 },
-      columnStyles: { 0: { fontStyle: 'bold', width: 60 } }
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 60 } }
     });
 
     // Sales Detail
