@@ -481,7 +481,7 @@ export default function SuppliersPage() {
                   <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[200px]">Dirección</th>
                   <th className="relative px-6 py-4 min-w-[100px]"></th>
                 </tr>
-              ) : (
+              ) : activeTab === 'invoices' ? (
                 <tr>
                   <th 
                     className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[110px] cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
