@@ -34,11 +34,14 @@ export default function RefundsPage() {
       const data = await res.json();
       
       const query = searchQuery.toLowerCase();
-      const filteredSales = data.filter((s: any) => 
-        s.invoiceNumber.toLowerCase() === query || 
-        s.id === searchQuery ||
-        s.items.some((item: any) => item.productName.toLowerCase().includes(query))
-      );
+      const filteredSales = data.filter((s: any) => {
+        const invMatch = s.invoiceNumber ? s.invoiceNumber.toLowerCase().includes(query) : false;
+        const idMatch = s.id === searchQuery;
+        const productMatch = s.items?.some((item: any) => 
+          item.productName && item.productName.toLowerCase().includes(query)
+        );
+        return invMatch || idMatch || productMatch;
+      });
 
       if (filteredSales.length === 1) {
         selectSale(filteredSales[0]);
