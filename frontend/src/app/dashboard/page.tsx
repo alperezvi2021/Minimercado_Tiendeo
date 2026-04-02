@@ -309,14 +309,12 @@ export default function PosPage() {
     }
   };
 
-  const updateQuantity = (productId: string, change: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.product.id === productId) {
-        const newQty = item.quantity + change;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
-      }
-      return item;
-    }));
+  const updateQuantity = (index: number, newQty: number) => {
+    if (newQty <= 0) {
+      removeFromCart(index);
+      return;
+    }
+    setCart(prev => prev.map((item, i) => i === index ? { ...item, quantity: newQty } : item));
   };
 
   const updatePrice = (productId: string, newPrice: string) => {
@@ -345,8 +343,14 @@ export default function PosPage() {
     }));
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product.id !== productId));
+  const removeFromCart = (index: number) => {
+    setCart(prev => {
+      const newCart = prev.filter((_, i) => i !== index);
+      if (selectedCartIndex >= newCart.length && newCart.length > 0) {
+        setSelectedCartIndex(newCart.length - 1);
+      }
+      return newCart;
+    });
   };
 
   const calculateTotal = () => {
