@@ -1,3 +1,5 @@
+'use client';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Truck, Receipt, Eye, Edit3, Trash2, Calendar, User, FileText, CheckCircle2, Clock, Wallet, CalendarDays, DollarSign, CreditCard } from 'lucide-react';
 
 interface Supplier {
@@ -31,6 +33,16 @@ interface ScheduledOrder {
   date: string;
   status: string;
   supplier: Supplier;
+}
+interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  date: string;
+  totalAmount: number;
+  totalTax: number;
+  isPaid: boolean;
+  supplier: { id: string; name: string };
+  description?: string;
 }
 
 export default function SuppliersPage() {
