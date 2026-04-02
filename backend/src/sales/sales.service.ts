@@ -530,4 +530,12 @@ export class SalesService {
       return transactionalEntityManager.save<CreditSale>(creditSale);
     });
   }
+
+  async updateClosureExpenses(closureId: string, amount: number): Promise<void> {
+    const closure = await this.cashClosureRepository.findOne({ where: { id: closureId } });
+    if (closure) {
+      closure.totalExpenses = Number(closure.totalExpenses || 0) + Number(amount);
+      await this.cashClosureRepository.save(closure);
+    }
+  }
 }

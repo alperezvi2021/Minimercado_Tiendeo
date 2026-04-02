@@ -5,6 +5,7 @@ import { Search, RotateCcw, Package, AlertCircle, CheckCircle2, Hash, Trash2 } f
 export default function RefundsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sale, setSale] = useState<any>(null);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [refundItems, setRefundItems] = useState<any[]>([]);
   const [reason, setReason] = useState('');
@@ -20,6 +21,7 @@ export default function RefundsPage() {
     if (!searchQuery) return;
     setLoading(true);
     setSale(null);
+    setSearchResults([]);
     try {
       const token = localStorage.getItem('access_token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -31,19 +33,19 @@ export default function RefundsPage() {
       if (!res.ok) throw new Error('Error al buscar ventas');
       const data = await res.json();
       
-      const foundSale = data.find((s: any) => 
-        s.invoiceNumber === searchQuery || s.id === searchQuery
+      const query = searchQuery.toLowerCase();
+      const filteredSales = data.filter((s: any) => 
+        s.invoiceNumber.toLowerCase() === query || 
+        s.id === searchQuery ||
+        s.items.some((item: any) => item.productName.toLowerCase().includes(query))
       );
 
-      if (foundSale) {
-        setSale(foundSale);
-        setRefundItems(foundSale.items.map((item: any) => ({
-          ...item,
-          refundQuantity: 0,
-          returnsToInventory: true
-        })));
+      if (filteredSales.length === 1) {
+        selectSale(filteredSales[0]);
+      } else if (filteredSales.length > 1) {
+        setSearchResults(filteredSales);
       } else {
-        showNotification('Venta no encontrada', 'error');
+        showNotification('No se encontraron ventas con esos criterios', 'error');
       }
     } catch (error) {
       console.error(error);
@@ -51,6 +53,16 @@ export default function RefundsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const selectSale = (s: any) => {
+    setSale(s);
+    setSearchResults([]);
+    setRefundItems(s.items.map((item: any) => ({
+      ...item,
+      refundQuantity: 0,
+      returnsToInventory: true
+    })));
   };
 
   const handleQuantityChange = (index: number, val: number) => {
@@ -164,7 +176,7 @@ export default function RefundsPage() {
             </div>
             <input
               type="text"
-              placeholder="Buscar Ticket (ej: POS-0001)..."
+              placeholder="Buscar Ticket o Producto..."
               className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 rounded-3xl transition-all text-xl font-bold placeholder:font-medium placeholder:text-slate-400 dark:text-white outline-none"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -178,10 +190,38 @@ export default function RefundsPage() {
           >
             {loading ? (
                <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : 'Consultar Venta'}
+            ) : 'Buscar'}
           </button>
         </div>
       </div>
+
+      {/* Resultados de búsqueda (Múltiples ventas) */}
+      {searchResults.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in zoom-in duration-300">
+          {searchResults.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => selectSale(s)}
+              className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 text-left hover:border-blue-500 hover:shadow-xl transition-all group"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-2xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <Hash className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(s.createdAt).toLocaleDateString()}</span>
+              </div>
+              <h3 className="font-extrabold text-xl dark:text-white mb-1 uppercase tracking-tight">{s.invoiceNumber}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mb-4">${Math.round(s.totalAmount).toLocaleString()}</p>
+              <div className="space-y-1">
+                {s.items.slice(0, 2).map((item: any, i: number) => (
+                  <p key={i} className="text-xs text-slate-400 truncate tracking-tight">• {item.productName}</p>
+                ))}
+                {s.items.length > 2 && <p className="text-[10px] text-blue-500 font-black">+{s.items.length - 2} productos más</p>}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {sale && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-10 duration-700">

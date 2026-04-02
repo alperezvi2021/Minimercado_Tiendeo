@@ -41,6 +41,7 @@ export default function PosPage() {
   const offlineStore = useOfflineStore();
   const [cashReceived, setCashReceived] = useState<string>('');
   const [showChangeModal, setShowChangeModal] = useState(false);
+  const [selectedCartIndex, setSelectedCartIndex] = useState(0);
   // Store info state (Dynamic from DB)
   const [tenantData, setTenantData] = useState({
     name: 'TIENDA LAS MARGARITAS',
@@ -88,6 +89,72 @@ export default function PosPage() {
 
     return () => window.removeEventListener('force-sync', handleForceSync);
   }, []);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Evitar atajos si se está escribiendo en un input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        if (e.key === 'Escape') searchInputRef.current?.focus();
+        return;
+      }
+
+      if (cart.length === 0) return;
+
+      const currentIndex = selectedCartIndex;
+      const item = cart[currentIndex];
+
+      if (!item) {
+        if (cart.length > 0) setSelectedCartIndex(0);
+        return;
+      }
+
+      // Atajos de Cantidad (+ / -)
+      if (e.key === '+' || e.key === 'Add') {
+        e.preventDefault();
+        updateQuantity(currentIndex, item.quantity + 1);
+      } else if (e.key === '-' || e.key === 'Subtract') {
+        e.preventDefault();
+        updateQuantity(currentIndex, item.quantity - 1);
+      }
+
+      // Teclado Numérico Directo (0-9)
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        const digit = parseInt(e.key);
+        // Si acabamos de pulsar un número, podríamos estar digitando una cantidad multi-cifra? 
+        // Para simplificar, si es la primera vez en un tiempo, reemplazamos, si no, añadimos.
+        // Pero el requerimiento dice "digitar la cantidad", así que permitiremos sobrescribir o acumular.
+        // Implementación simple: Reemplazar el 1 inicial si existe, o acumular si es > 1 y fue reciente.
+        // Hagamoslo simple: Si digita un número, buscamos actualizar la cantidad del item seleccionado.
+        const newQty = item.quantity === 1 ? digit : parseInt(`${item.quantity}${digit}`);
+        if (!isNaN(newQty) && newQty > 0) updateQuantity(currentIndex, newQty);
+      }
+
+      // Eliminar Item (Suprimir)
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        removeFromCart(currentIndex);
+      }
+
+      // Navegar entre items (Flechas)
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedCartIndex(Math.max(0, currentIndex - 1));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedCartIndex(Math.min(cart.length - 1, currentIndex + 1));
+      }
+      
+      // Ir a Pago (Enter)
+      if (e.key === 'Enter' && cart.length > 0 && posState === 'billing') {
+        e.preventDefault();
+        setPosState('payment');
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [cart, selectedCartIndex, posState]);
 
   const fetchAllData = async () => {
     await Promise.all([
@@ -197,8 +264,9 @@ export default function PosPage() {
       }
       return [{ product, quantity: 1 }, ...prev];
     });
+    setSelectedCartIndex(0); // Enfocar el nuevo item o el actualizado
     setSearchTerm(''); // Clear scanner input
-    searchInputRef.current?.focus(); // Regain focus
+    searchInputRef.current?.focus();
   };
 
   const handleScannerInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -710,10 +778,18 @@ export default function PosPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {cart.map((item) => (
-                  <div key={item.product.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 flex justify-between items-center transition-colors">
+                {cart.map((item, idx) => (
+                  <div 
+                    key={item.product.id} 
+                    onClick={() => setSelectedCartIndex(idx)}
+                    className={`p-3 rounded-xl shadow-sm border flex justify-between items-center transition-all cursor-pointer ${
+                      selectedCartIndex === idx 
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 ring-2 ring-blue-500/10' 
+                        : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700'
+                    }`}
+                  >
                     <div className="flex-1 min-w-0 pr-2">
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate" title={item.product.name}>
+                      <h4 className={`text-sm font-bold truncate ${selectedCartIndex === idx ? 'text-blue-700 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`} title={item.product.name}>
                         {item.product.name}
                       </h4>
                       <div className="relative mt-1 group">
@@ -731,17 +807,17 @@ export default function PosPage() {
                     
                     <div className="flex items-center gap-3">
                       <div className="flex items-center bg-gray-100 dark:bg-slate-900 rounded-lg p-0.5 border border-gray-200 dark:border-slate-700">
-                        <button onClick={() => updateQuantity(item.product.id, -1)} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
+                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity - 1); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
                           <Minus className="w-3.5 h-3.5" />
                         </button>
                         <span className="w-8 text-center text-sm font-bold text-gray-900 dark:text-white">
                           {item.quantity}
                         </span>
-                        <button onClick={() => updateQuantity(item.product.id, 1)} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
+                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity + 1); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <button onClick={() => removeFromCart(item.product.id)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                      <button onClick={(e) => { e.stopPropagation(); removeFromCart(idx); }} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

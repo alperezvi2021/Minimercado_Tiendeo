@@ -1,6 +1,4 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { Plus, Search, Truck, Receipt, Eye, Edit3, Trash2, Calendar, User, FileText, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Search, Truck, Receipt, Eye, Edit3, Trash2, Calendar, User, FileText, CheckCircle2, Clock, Wallet, CalendarDays, DollarSign, CreditCard } from 'lucide-react';
 
 interface Supplier {
   id: string;
@@ -18,20 +16,29 @@ interface InvoiceItem {
   taxRate: number; // Ej: 19
 }
 
-interface Invoice {
+interface Expense {
   id: string;
-  invoiceNumber: string;
+  description: string;
+  amount: number;
   date: string;
+}
+
+interface ScheduledOrder {
+  id: string;
+  description: string;
   totalAmount: number;
-  totalTax: number;
-  isPaid: boolean;
+  paymentType: string;
+  date: string;
+  status: string;
   supplier: Supplier;
 }
 
 export default function SuppliersPage() {
-  const [activeTab, setActiveTab] = useState<'suppliers' | 'invoices' | 'report'>('suppliers');
+  const [activeTab, setActiveTab] = useState<'suppliers' | 'invoices' | 'expenses' | 'scheduled' | 'report'>('suppliers');
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [scheduledOrders, setScheduledOrders] = useState<ScheduledOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
@@ -39,6 +46,8 @@ export default function SuppliersPage() {
   // Modales
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isScheduledModalOpen, setIsScheduledModalOpen] = useState(false);
 
   // Form Proveedor
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -56,6 +65,18 @@ export default function SuppliersPage() {
   const [invItems, setInvItems] = useState<InvoiceItem[]>([{ description: '', quantity: 1, unitNetValue: 0, taxRate: 19 }]);
   const [invDiscount, setInvDiscount] = useState(0);
 
+  // Form Gastos
+  const [expDescription, setExpDescription] = useState('');
+  const [expAmount, setExpAmount] = useState('');
+  const [expDate, setExpDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Form Pedidos
+  const [schDescription, setSchDescription] = useState('');
+  const [schAmount, setSchAmount] = useState('');
+  const [schDate, setSchDate] = useState(new Date().toISOString().split('T')[0]);
+  const [schSupplierId, setSchSupplierId] = useState('');
+  const [schPaymentType, setSchPaymentType] = useState('CONTADO');
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);
@@ -64,14 +85,20 @@ export default function SuppliersPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const endpoint = activeTab === 'suppliers' ? 'suppliers' : 'suppliers/invoices';
+      let endpoint = 'suppliers';
+      if (activeTab === 'invoices') endpoint = 'suppliers/invoices';
+      else if (activeTab === 'expenses') endpoint = 'suppliers/expenses';
+      else if (activeTab === 'scheduled') endpoint = 'suppliers/scheduled-orders';
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         if (activeTab === 'suppliers') setSuppliers(data);
-        else setInvoices(data);
+        else if (activeTab === 'invoices') setInvoices(data);
+        else if (activeTab === 'expenses') setExpenses(data);
+        else if (activeTab === 'scheduled') setScheduledOrders(data);
       }
     } catch (error) {
       console.error(error);
@@ -246,6 +273,50 @@ export default function SuppliersPage() {
     setInvDiscount(0);
     setIsInvoiceModalOpen(true);
   };
+  const handleCreateExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/expenses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ description: expDescription, amount: Number(expAmount), date: expDate })
+      });
+      if (res.ok) {
+        setIsExpenseModalOpen(false);
+        setExpDescription(''); setExpAmount('');
+        fetchData();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleCreateScheduledOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/scheduled-orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ 
+          description: schDescription, 
+          totalAmount: Number(schAmount), 
+          date: schDate, 
+          supplierId: schSupplierId, 
+          paymentType: schPaymentType 
+        })
+      });
+      if (res.ok) {
+        setIsScheduledModalOpen(false);
+        setSchDescription(''); setSchAmount(''); setSchSupplierId('');
+        fetchData();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const requestSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -310,46 +381,86 @@ export default function SuppliersPage() {
             Facturas
           </button>
           <button 
+            onClick={() => setActiveTab('expenses')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'expenses' ? 'bg-white dark:bg-slate-700 text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Gastos
+          </button>
+          <button 
+            onClick={() => setActiveTab('scheduled')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'scheduled' ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Pedidos
+          </button>
+          <button 
             onClick={() => setActiveTab('report')}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'report' ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            Informe Proveedor
+            Informe
           </button>
         </div>
       </div>
 
       {/* Acciones Rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <button 
           onClick={() => setIsSupplierModalOpen(true)}
           className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-blue-500 transition-all group"
         >
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600">
-              <Truck className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600">
+              <Truck className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <p className="font-bold text-slate-900 dark:text-white">Nuevo Proveedor</p>
-              <p className="text-xs text-slate-500">Registra un nuevo socio comercial</p>
+              <p className="font-bold text-sm text-slate-900 dark:text-white">Nuevo Proveedor</p>
             </div>
           </div>
-          <Plus className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+          <Plus className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
         </button>
 
         <button 
           onClick={handleOpenNewInvoice}
           className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-emerald-500 transition-all group"
         >
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600">
-              <Receipt className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl text-emerald-600">
+              <Receipt className="w-5 h-5" />
             </div>
             <div className="text-left">
-              <p className="font-bold text-slate-900 dark:text-white">Registrar Factura</p>
-              <p className="text-xs text-slate-500">Ingresa una factura de compra detallada</p>
+              <p className="font-bold text-sm text-slate-900 dark:text-white">Registrar Factura</p>
             </div>
           </div>
-          <Plus className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+          <Plus className="w-4 h-4 text-slate-400 group-hover:text-emerald-600" />
+        </button>
+
+        <button 
+          onClick={() => setIsExpenseModalOpen(true)}
+          className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-orange-500 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl text-orange-600">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-sm text-slate-900 dark:text-white">Gestión de Gastos</p>
+            </div>
+          </div>
+          <Plus className="w-4 h-4 text-slate-400 group-hover:text-orange-600" />
+        </button>
+
+        <button 
+          onClick={() => setIsScheduledModalOpen(true)}
+          className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:border-indigo-500 transition-all group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl text-indigo-600">
+              <CalendarDays className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-sm text-slate-900 dark:text-white">Programar Pedido</p>
+            </div>
+          </div>
+          <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
         </button>
       </div>
 
@@ -398,6 +509,23 @@ export default function SuppliersPage() {
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider min-w-[120px]">Estado</th>
                   <th className="relative px-6 py-4 min-w-[100px]"></th>
+                </tr>
+              ) : activeTab === 'expenses' ? (
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Fecha</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Valor</th>
+                  <th className="relative px-6 py-4"></th>
+                </tr>
+              ) : (
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Fecha</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Proveedor</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Descripción</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Valor</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Pago</th>
+                  <th className="px-6 py-4 text-left text-xs font-black text-slate-500 uppercase tracking-wider">Estado</th>
+                  <th className="relative px-6 py-4"></th>
                 </tr>
               )}
             </thead>
@@ -454,17 +582,62 @@ export default function SuppliersPage() {
                     </td>
                   </tr>
                 ))
+              ) : activeTab === 'expenses' ? (
+                expenses.map((exp: Expense) => (
+                  <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(exp.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">{exp.description}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-orange-600">${Math.round(exp.amount).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right">
+                      <button onClick={async () => {
+                        if(confirm('¿Eliminar gasto?')) {
+                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/expenses/${exp.id}`, {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+                          });
+                          if(res.ok) fetchData();
+                        }
+                      }} className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                ))
+              ) : activeTab === 'scheduled' ? (
+                scheduledOrders.map((sch: ScheduledOrder) => (
+                  <tr key={sch.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(sch.date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">{sch.supplier?.name}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{sch.description}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-indigo-600">${Math.round(sch.totalAmount).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-xs font-bold uppercase">{sch.paymentType}</td>
+                    <td className="px-6 py-4 text-xs">
+                      <span className={`px-2 py-0.5 rounded-full ${sch.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {sch.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                       <button onClick={async () => {
+                        if(confirm('¿Eliminar pedido?')) {
+                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/suppliers/scheduled-orders/${sch.id}`, {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+                          });
+                          if(res.ok) fetchData();
+                        }
+                      }} className="p-2 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                ))
               ) : (
                 <tr>
                   <td colSpan={6} className="px-6 py-12">
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Compras Brutas</p>
-                          <p className="text-3xl font-black text-slate-900 dark:text-white">${Math.round(invoices.reduce((s, i) => s + i.totalAmount, 0)).toLocaleString()}</p>
+                          <p className="text-3xl font-black text-slate-900 dark:text-white">${Math.round(invoices.reduce((s: number, i: any) => s + i.totalAmount, 0)).toLocaleString()}</p>
                        </div>
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Impuestos</p>
-                          <p className="text-3xl font-black text-blue-600">${Math.round(invoices.reduce((s, i) => s + i.totalTax, 0)).toLocaleString()}</p>
+                          <p className="text-3xl font-black text-blue-600">${Math.round(invoices.reduce((s: number, i: any) => s + i.totalTax, 0)).toLocaleString()}</p>
                        </div>
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Facturas Pendientes</p>
@@ -485,9 +658,9 @@ export default function SuppliersPage() {
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                            {suppliers.map(s => {
-                              const supInvoices = invoices.filter(i => i.supplier?.id === s.id);
-                              const total = supInvoices.reduce((sum, i) => sum + i.totalAmount, 0);
+                            {suppliers.map((s: Supplier) => {
+                              const supInvoices = invoices.filter((i: any) => i.supplier?.id === s.id);
+                              const total = supInvoices.reduce((sum: number, i: any) => sum + i.totalAmount, 0);
                               return (
                                 <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                   <td className="px-6 py-4">
@@ -694,6 +867,85 @@ export default function SuppliersPage() {
                 >
                   {editingInvoice ? 'Actualizar Factura' : 'Registrar Gasto'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Gasto */}
+      {isExpenseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Wallet className="text-orange-600" /> Gestión de Gastos
+              </h3>
+            </div>
+            <form onSubmit={handleCreateExpense} className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase">Descripción del Gasto *</label>
+                <input required placeholder="Ej: Pago de luz local" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-orange-500 font-bold" value={expDescription} onChange={e => setExpDescription(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase">Valor *</label>
+                <input type="number" required placeholder="0" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-orange-500 font-bold" value={expAmount} onChange={e => setExpAmount(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase">Fecha *</label>
+                <input type="date" required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-orange-500 font-bold" value={expDate} onChange={e => setExpDate(e.target.value)} />
+              </div>
+              
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setIsExpenseModalOpen(false)} className="px-6 py-3 font-bold text-slate-500">Cancelar</button>
+                <button type="submit" className="px-8 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-500 shadow-lg shadow-orange-500/20 transition-all uppercase">Registrar Gasto</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pedido Programado */}
+      {isScheduledModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <CalendarDays className="text-indigo-600" /> Programar Pedido
+              </h3>
+            </div>
+            <form onSubmit={handleCreateScheduledOrder} className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase">Proveedor *</label>
+                <select required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={schSupplierId} onChange={e => setSchSupplierId(e.target.value)}>
+                  <option value="">Seleccionar...</option>
+                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase">Descripción / Productos *</label>
+                <textarea required placeholder="Ej: Pedido semanal de lácteos" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={schDescription} onChange={e => setSchDescription(e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Valor Estimado *</label>
+                  <input type="number" required placeholder="0" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={schAmount} onChange={e => setSchAmount(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Tipo de Pago *</label>
+                  <select className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={schPaymentType} onChange={e => setSchPaymentType(e.target.value)}>
+                    <option value="CONTADO">Contado</option>
+                    <option value="CREDITO">Crédito</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase">Fecha Programada *</label>
+                <input type="date" required className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={schDate} onChange={e => setSchDate(e.target.value)} />
+              </div>
+              
+              <div className="flex justify-end gap-3 pt-4">
+                <button type="button" onClick={() => setIsScheduledModalOpen(false)} className="px-6 py-3 font-bold text-slate-500">Cancelar</button>
+                <button type="submit" className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all uppercase">Programar</button>
               </div>
             </form>
           </div>

@@ -37,6 +37,9 @@ export class CashClosure {
   @Column('decimal', { precision: 10, scale: 2, default: 0, name: 'total_credit_payments' })
   totalCreditPayments: number;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0, name: 'total_expenses' })
+  totalExpenses: number;
+
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   totalAmount: number;
 

@@ -57,4 +57,50 @@ export class SuppliersController {
   removeInvoice(@Param('id') id: string, @Request() req: any) {
     return this.suppliersService.removeInvoice(req.user.tenantId, id);
   }
+
+  // --- Gastos (Expenses) ---
+
+  @Post('expenses')
+  @Roles(Role.OWNER, Role.ADMIN, Role.CASHIER)
+  createExpense(@Request() req: any, @Body() data: any) {
+    return this.suppliersService.createExpense(req.user.tenantId, req.user.id, data);
+  }
+
+  @Get('expenses')
+  @Roles(Role.OWNER, Role.ADMIN)
+  findAllExpenses(@Request() req: any) {
+    return this.suppliersService.findAllExpenses(req.user.tenantId);
+  }
+
+  @Delete('expenses/:id')
+  @Roles(Role.OWNER, Role.ADMIN)
+  removeExpense(@Param('id') id: string, @Request() req: any) {
+    return this.suppliersService.removeExpense(req.user.tenantId, id);
+  }
+
+  // --- Pedidos Programados (Scheduled Orders) ---
+
+  @Post('scheduled-orders')
+  @Roles(Role.OWNER, Role.ADMIN)
+  createScheduledOrder(@Request() req: any, @Body() data: any) {
+    return this.suppliersService.createScheduledOrder(req.user.tenantId, data);
+  }
+
+  @Get('scheduled-orders')
+  @Roles(Role.OWNER, Role.ADMIN)
+  findAllScheduledOrders(@Request() req: any) {
+    return this.suppliersService.findAllScheduledOrders(req.user.tenantId);
+  }
+
+  @Patch('scheduled-orders/:id/status')
+  @Roles(Role.OWNER, Role.ADMIN)
+  updateScheduledOrderStatus(@Param('id') id: string, @Body('status') status: string, @Request() req: any) {
+    return this.suppliersService.updateScheduledOrderStatus(req.user.tenantId, id, status);
+  }
+
+  @Delete('scheduled-orders/:id')
+  @Roles(Role.OWNER, Role.ADMIN)
+  removeScheduledOrder(@Param('id') id: string, @Request() req: any) {
+    return this.suppliersService.removeScheduledOrder(req.user.tenantId, id);
+  }
 }
