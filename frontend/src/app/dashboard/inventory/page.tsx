@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Edit2, Trash2, Barcode, Download, Upload, FileSpreadsheet, CloudSync, Wifi, WifiOff } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Barcode, Download, Upload, FileSpreadsheet, CloudSync, Wifi, WifiOff, Scale } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useOfflineStore } from '@/store/useOfflineStore';
 
@@ -21,6 +21,7 @@ interface Product {
   categoryId: string | null;
   category?: Category;
   isActive: boolean;
+  isWeightBased: boolean;
 }
 
 export default function InventoryPage() {
@@ -54,6 +55,7 @@ export default function InventoryPage() {
   const [stock, setStock] = useState('0');
   const [categoryId, setCategoryId] = useState('');
   const [lowStockThreshold, setLowStockThreshold] = useState('5');
+  const [isWeightBased, setIsWeightBased] = useState(false);
 
   // Estado para el modal de categorías
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -202,6 +204,7 @@ export default function InventoryPage() {
         stock: parseFloat(stock),
         lowStockThreshold: parseInt(lowStockThreshold),
         categoryId: categoryId || null,
+        isWeightBased,
       };
 
       const url = editingId ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/${editingId}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`;
@@ -216,12 +219,13 @@ export default function InventoryPage() {
           id: localId,
           localId,
           category: categories.find(c => c.id === categoryId),
-          isActive: true
+          isActive: true,
+          isWeightBased
         };
         addPendingProduct(newProduct);
         setIsModalOpen(false);
         setEditingId(null); setName(''); setBarcode(''); setCost(''); setProfitMargin(''); setPrice(''); setStock('0');
-        setCategoryId(''); setLowStockThreshold('5');
+        setCategoryId(''); setLowStockThreshold('5'); setIsWeightBased(false);
         return;
       }
 
@@ -243,7 +247,7 @@ export default function InventoryPage() {
         setIsModalOpen(false);
         // Reset
         setEditingId(null); setName(''); setBarcode(''); setCost(''); setProfitMargin(''); setPrice(''); setStock('0');
-        setCategoryId(''); setLowStockThreshold('5');
+        setCategoryId(''); setLowStockThreshold('5'); setIsWeightBased(false);
         fetchProducts();
       } else {
         const err = await res.json();
@@ -264,6 +268,7 @@ export default function InventoryPage() {
     setStock(product.stock.toString());
     setCategoryId(product.categoryId || '');
     setLowStockThreshold(product.lowStockThreshold?.toString() || '5');
+    setIsWeightBased(product.isWeightBased || false);
     setIsModalOpen(true);
   };
 
@@ -289,7 +294,7 @@ export default function InventoryPage() {
   const openCreateModal = () => {
     setEditingId(null);
     setName(''); setBarcode(''); setCost(''); setProfitMargin(''); setPrice(''); setStock('0');
-    setCategoryId(''); setLowStockThreshold('5');
+    setCategoryId(''); setLowStockThreshold('5'); setIsWeightBased(false);
     setIsModalOpen(true);
   };
 
@@ -650,7 +655,12 @@ export default function InventoryPage() {
                         {product.barcode || <span className="text-gray-400 italic">Manual</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className="font-semibold text-gray-900 dark:text-white leading-tight">{product.name}</span>
+                        <div className="flex items-center">
+                          <span className="font-semibold text-gray-900 dark:text-white leading-tight">{product.name}</span>
+                          {product.isWeightBased && (
+                            <Scale className="ml-2 h-3.5 w-3.5 text-blue-500 dark:text-blue-400" title="Venta por Peso (FRUVER)" />
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
@@ -713,6 +723,23 @@ export default function InventoryPage() {
                 <div className="md:col-span-2">
                   <label htmlFor="barcode" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Código de Barras</label>
                   <input id="barcode" title="Código de barras" type="text" placeholder="Pistolea aquí o deja en blanco" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={barcode} onChange={e => setBarcode(e.target.value)} />
+                </div>
+                
+                <div className="md:col-span-2 flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-gray-100 dark:border-slate-800 transition-colors">
+                  <div className="flex items-center">
+                    <Scale className="h-5 w-5 text-blue-500 mr-3" />
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">Venta por Peso (FRUVER)</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Activa si este producto se vende por kilos o libras</p>
+                    </div>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setIsWeightBased(!isWeightBased)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ring-2 ring-transparent focus:ring-blue-600 ${isWeightBased ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-700'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isWeightBased ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
                 </div>
               </div>
 
