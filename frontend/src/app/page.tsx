@@ -55,8 +55,8 @@ export default function LandingPage() {
           <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Funcionalidades</a>
           <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Precios</a>
           <div className="h-px bg-white/5 my-2" />
-          <Link href="/login" className="text-2xl font-bold text-white">Iniciar Sesión</Link>
-          <Link href="/register" className="px-8 py-4 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl">
+          <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-white">Iniciar Sesión</Link>
+          <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="px-8 py-4 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl">
             Crear mi Negocio
           </Link>
         </div>

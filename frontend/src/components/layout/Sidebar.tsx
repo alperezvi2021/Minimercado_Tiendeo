@@ -50,6 +50,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onClose}
                 className={`${
                   isActive
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20'
@@ -67,6 +68,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
            {userRole === 'SUPER_ADMIN' && (
              <Link
                href="/superadmin"
+               onClick={onClose}
                className="group flex items-center px-4 py-3 text-sm font-bold rounded-xl text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all border border-orange-200/50 dark:border-orange-800/50 mb-2"
              >
                <ShoppingCart className="w-5 h-5 mr-3 rotate-180" />
@@ -75,6 +77,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
            )}
            <Link
               href={userRole === 'CASHIER' ? '/dashboard/profile' : '/dashboard/settings'}
+              onClick={onClose}
               className="group flex items-center px-4 py-3 text-sm font-semibold rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-200"
             >
               {userRole === 'CASHIER' ? (
