@@ -8,6 +8,4 @@ export class UpdateProductDto {
   lowStockThreshold?: number;
   categoryId?: string;
   isActive?: boolean;
-  isService?: boolean;
-  isWeightBased?: boolean;
 }

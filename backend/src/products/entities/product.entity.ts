@@ -48,10 +48,6 @@ export class Product {
   @Column({ default: true })
   isActive: boolean;
 
-  // Para productos que se venden por peso (FRUVER)
-  @Column({ default: false })
-  isWeightBased: boolean;
-
   // Por si el "producto" es un servicio (ej: recarga, domicilio) que no requiere stock
   @Column({ default: false })
   isService: boolean;
