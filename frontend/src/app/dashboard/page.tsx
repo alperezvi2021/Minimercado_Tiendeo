@@ -48,13 +48,10 @@ export default function PosPage() {
   const [cashReceived, setCashReceived] = useState<string>('');
   const [showChangeModal, setShowChangeModal] = useState(false);
   const [selectedCartIndex, setSelectedCartIndex] = useState(0);
-  
-  // Estados para productos pesables
   const [weightedProductToAdd, setWeightedProductToAdd] = useState<Product | null>(null);
   const [manualWeight, setManualWeight] = useState('');
   const { weight: scaleWeight, isReading: isReadingScale, error: scaleError, connectAndRead: captureScaleWeight, setWeight: setScaleWeight } = useUSBScale();
 
-  // Store info state (Dynamic from DB)
   const [tenantData, setTenantData] = useState({
     name: 'TIENDEO POS',
     phone: '',
@@ -65,79 +62,26 @@ export default function PosPage() {
     ticketHeaderMessage: '',
     ticketFooterMessage: ''
   });
-  
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (offlineStore.products.length > 0) setAllProducts(offlineStore.products);
     if (offlineStore.customers.length > 0) setCustomers(offlineStore.customers);
-
     const lastSync = offlineStore.lastSyncTime || 0;
-    const shouldSync = Date.now() - lastSync > 3600000;
-
     if (offlineStore.isOnline) {
       fetchTenantData();
       checkClosureStatus();
-      if (shouldSync || offlineStore.products.length === 0) {
-        fetchAllData();
-      }
+      if (Date.now() - lastSync > 3600000 || offlineStore.products.length === 0) fetchAllData();
     }
-    
     const handleForceSync = () => fetchAllData();
     window.addEventListener('force-sync', handleForceSync);
     searchInputRef.current?.focus();
-
     const savedName = localStorage.getItem('user_name');
     const savedRole = localStorage.getItem('user_role');
     if (savedName) setUserName(savedName);
     if (savedRole) setUserRole(savedRole);
-
     return () => window.removeEventListener('force-sync', handleForceSync);
   }, []);
-
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        if (e.key === 'Escape') searchInputRef.current?.focus();
-        return;
-      }
-
-      if (cart.length === 0) return;
-
-      const currentIndex = selectedCartIndex;
-      const item = cart[currentIndex];
-      if (!item) return;
-
-      if (e.key === '+' || e.key === 'Add') {
-        e.preventDefault();
-        updateQuantity(currentIndex, item.quantity + (item.product.isWeightBased ? 0.1 : 1));
-      } else if (e.key === '-' || e.key === 'Subtract') {
-        e.preventDefault();
-        updateQuantity(currentIndex, item.quantity - (item.product.isWeightBased ? 0.1 : 1));
-      }
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        removeFromCart(currentIndex);
-      }
-
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedCartIndex(Math.max(0, currentIndex - 1));
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedCartIndex(Math.min(cart.length - 1, currentIndex + 1));
-      }
-      
-      if (e.key === 'Enter' && cart.length > 0 && posState === 'billing' && !weightedProductToAdd) {
-        e.preventDefault();
-        handleCheckout();
-      }
-    };
-
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [cart, selectedCartIndex, posState, weightedProductToAdd]);
 
   const fetchAllData = async () => {
     await Promise.all([fetchProducts(), fetchCustomers()]);
@@ -147,101 +91,84 @@ export default function PosPage() {
   const fetchTenantData = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tenants/me`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/tenants/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setTenantData({
-          name: data.name,
-          phone: data.phone || '',
-          location: data.location || '',
-          rutNit: data.rutNit || '',
-          ticketPaperSize: data.ticketPaperSize || '58mm',
-          ticketAutoPrint: data.ticketAutoPrint || false,
-          ticketHeaderMessage: data.ticketHeaderMessage || '',
-          ticketFooterMessage: data.ticketFooterMessage || '',
+          name: data.name, phone: data.phone || '', location: data.location || '',
+          rutNit: data.rutNit || '', ticketPaperSize: data.ticketPaperSize || '58mm',
+          ticketAutoPrint: data.ticketAutoPrint || false, ticketHeaderMessage: data.ticketHeaderMessage || '',
+          ticketFooterMessage: data.ticketFooterMessage || ''
         });
       }
-    } catch (error) { console.error(error); }
+    } catch (e) { console.error(e); }
   };
 
   const checkClosureStatus = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/closure/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/closure/status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setHasOpenClosure(!!data?.closure);
       } else { setHasOpenClosure(false); }
-    } catch (error) { setHasOpenClosure(true); }
+    } catch (e) { setHasOpenClosure(true); }
   };
 
   const fetchProducts = async () => {
+    if (!offlineStore.isOnline) { setAllProducts(offlineStore.products); return; }
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setAllProducts(data);
         offlineStore.setCache({ products: data });
-      }
-    } catch (error) { setAllProducts(offlineStore.products); }
+      } else { setAllProducts(offlineStore.products); }
+    } catch (e) { setAllProducts(offlineStore.products); }
   };
 
   const fetchCustomers = async () => {
+    if (!offlineStore.isOnline) { setCustomers(offlineStore.customers); return; }
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/customers`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/customers`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setCustomers(data);
         offlineStore.setCache({ customers: data });
-      }
-    } catch (error) { setCustomers(offlineStore.customers); }
+      } else { setCustomers(offlineStore.customers); }
+    } catch (e) { setCustomers(offlineStore.customers); }
   };
-
   const addToCart = (product: Product) => {
     if (product.isWeightBased) {
       setWeightedProductToAdd(product);
-      setManualWeight('');
-      setScaleWeight(0);
+      setManualWeight(''); setScaleWeight(0);
       return;
     }
-
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
-      if (existing) {
-        return prev.map(item => 
-          item.product.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-      }
+      if (existing) return prev.map(item => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       return [{ product, quantity: 1 }, ...prev];
     });
-    setSelectedCartIndex(0);
-    setSearchTerm(''); 
-    searchInputRef.current?.focus();
+    setSelectedCartIndex(0); setSearchTerm(''); searchInputRef.current?.focus();
   };
 
   const addWeightedProductToCart = () => {
     if (!weightedProductToAdd) return;
     const finalWeight = scaleWeight > 0 ? scaleWeight : parseFloat(manualWeight);
-    if (isNaN(finalWeight) || finalWeight <= 0) { alert('Monto inválido'); return; }
+    if (isNaN(finalWeight) || finalWeight <= 0) { alert('Peso inválido'); return; }
     setCart(prev => [{ product: weightedProductToAdd, quantity: finalWeight }, ...prev]);
-    setWeightedProductToAdd(null);
-    setManualWeight('');
-    setScaleWeight(0);
-    setSelectedCartIndex(0);
-    setSearchTerm('');
-    setTimeout(() => searchInputRef.current?.focus(), 100);
+    setWeightedProductToAdd(null); setManualWeight(''); setScaleWeight(0);
+    setSelectedCartIndex(0); setSearchTerm(''); setTimeout(() => searchInputRef.current?.focus(), 100);
   };
 
   const handleScannerInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -253,16 +180,14 @@ export default function PosPage() {
       setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : 0);
     } else if (e.key === 'Enter') {
       if (selectedSuggestionIndex >= 0 && filteredSuggestions[selectedSuggestionIndex]) {
-        e.preventDefault();
-        addToCart(filteredSuggestions[selectedSuggestionIndex]);
+        e.preventDefault(); addToCart(filteredSuggestions[selectedSuggestionIndex]);
         setSelectedSuggestionIndex(-1);
       } else if (searchTerm.trim() !== '') {
         e.preventDefault();
         const found = allProducts.find(p => p.barcode === searchTerm.trim());
         if (found) addToCart(found);
       } else if (cart.length > 0) {
-        e.preventDefault();
-        handleCheckout();
+        e.preventDefault(); handleCheckout();
       }
     }
   };
@@ -277,13 +202,11 @@ export default function PosPage() {
     if (selectedCartIndex >= cart.length - 1) setSelectedCartIndex(Math.max(0, cart.length - 2));
   };
 
-  const calculateTotal = () => cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  const calculateTotal = () => cart.reduce((t, i) => t + (i.product.price * i.quantity), 0);
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
-    setPosState('payment');
-    setCashReceived('');
-    setLastCheckoutTime(Date.now());
+    setPosState('payment'); setCashReceived(''); setLastCheckoutTime(Date.now());
     setTimeout(() => document.getElementById('cash-received-input')?.focus(), 200);
   };
 
@@ -301,26 +224,18 @@ export default function PosPage() {
         subtotal: i.product.price * i.quantity
       }))
     };
-
     try {
       const token = localStorage.getItem('access_token');
       if (offlineStore.isOnline) {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify(payload)
         });
         if (res.ok) {
           const savedSale = await res.json();
-          setCompletedSale({ 
-            ...savedSale, 
-            items: [...cart], 
-            receivedAmount: Number(cashReceived), 
-            changeAmount: Math.max(0, Number(cashReceived) - calculateTotal()) 
-          });
-          setCart([]);
-          setPosState('billing');
-          fetchProducts();
+          setCompletedSale({ ...savedSale, items: [...cart], receivedAmount: Number(cashReceived), changeAmount: Math.max(0, Number(cashReceived) - calculateTotal()) });
+          setCart([]); setPosState('billing'); fetchProducts();
         }
       } else { queueOfflineSale(payload); }
     } catch (e) { queueOfflineSale(payload); } finally { setIsProcessing(false); }
@@ -328,168 +243,168 @@ export default function PosPage() {
 
   const queueOfflineSale = (payload: any) => {
     const offlineId = 'off-' + crypto.randomUUID();
-    const saleStore = { ...payload, id: offlineId, timestamp: Date.now(), offline: true };
-    offlineStore.addPendingSale(saleStore);
-    setCompletedSale({ ...saleStore, items: [...cart], receivedAmount: Number(cashReceived), changeAmount: Math.max(0, Number(cashReceived) - calculateTotal()) });
-    setCart([]);
-    setPosState('billing');
+    const sale = { ...payload, id: offlineId, timestamp: Date.now(), offline: true };
+    offlineStore.addPendingSale(sale);
+    setCompletedSale({ ...sale, items: [...cart], receivedAmount: Number(cashReceived), changeAmount: Math.max(0, Number(cashReceived) - calculateTotal()) });
+    setCart([]); setPosState('billing');
   };
 
-  const handlePrint = () => {
-    window.print();
-    setCompletedSale(null);
-    setShowChangeModal(false);
+  const handlePrintAndReset = () => {
+    window.print(); setCompletedSale(null); setShowChangeModal(false);
     setTimeout(() => searchInputRef.current?.focus(), 100);
   };
 
   const handleFinishSale = () => {
-    const changeAmount = Math.round(completedSale?.changeAmount || 0);
-    if (completedSale.paymentMethod === 'efectivo' && changeAmount > 0) {
+    const change = Math.round(completedSale?.changeAmount || 0);
+    if (completedSale.paymentMethod === 'efectivo' && change > 0) {
       setShowChangeModal(true);
-      setTimeout(() => handlePrint(), 2000);
-    } else {
-      handlePrint();
-    }
+      setTimeout(() => handlePrintAndReset(), 2000);
+    } else { handlePrintAndReset(); }
   };
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        if (e.key === 'Escape') searchInputRef.current?.focus();
+        return;
+      }
+      if (cart.length === 0) return;
+      const currentIndex = selectedCartIndex;
+      const item = cart[currentIndex];
+      if (!item) return;
+
+      if (e.key === '+' || e.key === 'Add') {
+        e.preventDefault(); updateQuantity(currentIndex, item.quantity + (item.product.isWeightBased ? 0.1 : 1));
+      } else if (e.key === '-' || e.key === 'Subtract') {
+        e.preventDefault(); updateQuantity(currentIndex, item.quantity - (item.product.isWeightBased ? 0.1 : 1));
+      }
+      
+      // Teclado Numérico Directo (0-9)
+      if (/^[0-9]$/.test(e.key) && !item.product.isWeightBased) {
+        e.preventDefault();
+        const digit = parseInt(e.key);
+        const newQty = item.quantity === 1 ? digit : parseInt(`${item.quantity}${digit}`);
+        if (!isNaN(newQty) && newQty > 0) updateQuantity(currentIndex, newQty);
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault(); removeFromCart(currentIndex);
+      }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setSelectedCartIndex(Math.max(0, currentIndex - 1)); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); setSelectedCartIndex(Math.min(cart.length - 1, currentIndex + 1)); }
       if (e.key === 'Enter') {
         if (completedSale) { e.preventDefault(); handleFinishSale(); }
-        else if (posState === 'payment' && !isProcessing) {
-          if (Date.now() - lastCheckoutTime > 800) processSale();
-        }
-      } else if (e.key === 'Escape') {
+        else if (posState === 'billing' && !weightedProductToAdd) { e.preventDefault(); handleCheckout(); }
+        else if (posState === 'payment' && !isProcessing) { e.preventDefault(); processSale(); }
+      }
+      if (e.key === 'Escape') {
         if (completedSale) setCompletedSale(null);
         else if (posState === 'payment') setPosState('billing');
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [completedSale, posState, isProcessing, lastCheckoutTime]);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [cart, selectedCartIndex, posState, weightedProductToAdd, completedSale, isProcessing]);
 
-  const filteredSuggestions = searchTerm.length > 1 ? allProducts.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.barcode?.includes(searchTerm)
-  ) : [];
-
+  const filteredSuggestions = searchTerm.length > 1 ? allProducts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.barcode?.includes(searchTerm)) : [];
   if (hasOpenClosure === false) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-slate-950 p-8 text-center text-white">
         <AlertCircle className="w-16 h-16 text-amber-500 mb-4" />
-        <h2 className="text-2xl font-black mb-4">CAJA CERRADA</h2>
+        <h2 className="text-2xl font-black mb-4 uppercase">Caja Cerrada</h2>
         <button onClick={() => router.push('/dashboard/closure')} className="bg-blue-600 px-6 py-3 rounded-2xl font-bold">Apertura Requerida</button>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col md:flex-row overflow-hidden bg-gray-50 dark:bg-[#0b1120] print:hidden">
+    <div className="flex h-full flex-col md:flex-row overflow-hidden bg-gray-50 dark:bg-[#0f172a] rounded-3xl border border-gray-200 dark:border-slate-800 shadow-sm print:hidden">
       <div className={`flex-1 flex flex-col p-4 md:p-6 overflow-hidden ${activeTab !== 'products' && 'hidden md:flex'}`}>
         <div className="relative mb-6">
           <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
-          <input 
-            ref={searchInputRef} 
-            type="text" 
-            className="w-full rounded-2xl border-0 py-4 pl-12 pr-4 ring-1 ring-inset ring-gray-200 dark:ring-slate-800 dark:bg-slate-900 dark:text-white" 
-            value={searchTerm} 
-            onChange={e => setSearchTerm(e.target.value)} 
-            onKeyDown={handleScannerInput} 
-            placeholder="Escanear o buscar producto..." 
-          />
+          <input ref={searchInputRef} type="text" className="w-full rounded-2xl border-0 py-4 pl-12 pr-4 ring-1 ring-gray-200 dark:ring-slate-700 dark:bg-slate-900 dark:text-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={handleScannerInput} placeholder="Buscar producto..." />
           {filteredSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-[60vh] overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
               {filteredSuggestions.map((p, idx) => (
                 <div key={p.id} onClick={() => addToCart(p)} className={`p-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/40 border-b border-gray-50 dark:border-slate-700 last:border-0 ${selectedSuggestionIndex === idx ? 'bg-blue-600 text-white' : 'text-gray-900 dark:text-gray-100'}`}>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold">{p.name}</span>
-                    <span className={`text-xs font-black ${selectedSuggestionIndex === idx ? 'text-white' : 'text-green-600'}`}>${p.price.toLocaleString()}</span>
-                  </div>
+                  <p className="font-bold">{p.name}</p>
+                  <p className={`text-xs ${selectedSuggestionIndex === idx ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>${p.price.toLocaleString()}</p>
                 </div>
               ))}
             </div>
           )}
         </div>
-        <div className="flex-1 flex flex-col items-center justify-center text-center">
-            <ShoppingCart className="w-20 h-20 text-gray-200 dark:text-slate-800 mb-4" />
-            <h3 className="text-xl font-bold dark:text-slate-700">POS MiniMercado</h3>
-            <p className="text-sm text-gray-400">Listo para facturar</p>
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-400 text-center">
+            <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-20" />
+            <h3 className="text-xl font-bold dark:text-slate-700 uppercase tracking-tighter italic">POS MiniMercado</h3>
+            <p className="text-xs">Listo para facturar</p>
         </div>
       </div>
 
-      <div className={`w-full md:w-[450px] bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 flex flex-col shadow-xl z-20 ${activeTab !== 'cart' && 'hidden md:flex'}`}>
-        <div className="p-5 border-b dark:border-slate-800 bg-gray-50 dark:bg-slate-800 flex justify-between items-center">
-          <h2 className="font-black flex items-center dark:text-white uppercase tracking-widest"><ShoppingCart className="mr-2 w-5 h-5" />{posState === 'billing' ? 'Carrito' : 'Pago'}</h2>
-          <span className="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-black">{cart.length}</span>
+      <div className={`w-full md:w-[450px] bg-white dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800 flex flex-col ${activeTab !== 'cart' && 'hidden md:flex'}`}>
+        <div className="p-5 border-b dark:border-slate-800 bg-gray-50 dark:bg-slate-800 flex justify-between items-center text-gray-900 dark:text-white">
+          <h2 className="font-black flex items-center uppercase tracking-widest"><ShoppingCart className="mr-2" />{posState === 'billing' ? 'CARRITO' : 'PAGO'}</h2>
+          <span className="bg-blue-600 text-white text-[10px] px-2 py-1 rounded-full font-black">{cart.length}</span>
         </div>
-        
         <div className="flex-1 overflow-y-auto p-4 space-y-3 dark:bg-[#0b1120]">
           {posState === 'billing' ? (
-            cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-30"><ShoppingCart className="w-12 h-12" /></div>
-            ) : cart.map((item, idx) => (
+            cart.map((item, idx) => (
               <div key={item.product.id} onClick={() => setSelectedCartIndex(idx)} className={`p-4 rounded-2xl border flex justify-between items-center transition-all ${selectedCartIndex === idx ? 'border-blue-500 bg-blue-50/20 shadow-md ring-2 ring-blue-500/20' : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900'}`}>
-                <div className="flex-1 min-w-0 pr-4">
-                  <h4 className="text-sm font-bold truncate dark:text-white uppercase tracking-tighter">{item.product.name}</h4>
+                <div className="flex-1 text-gray-900 dark:text-white">
+                  <h4 className="text-sm font-bold truncate uppercase">{item.product.name}</h4>
                   <p className="text-xs text-green-600 font-black">${item.product.price.toLocaleString()}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-xl p-1 dark:text-white">
-                    <button title="Restar" onClick={e => { e.stopPropagation(); updateQuantity(idx, item.quantity - (item.product.isWeightBased ? 0.1 : 1)); }} className="p-1 hover:text-blue-500"><Minus className="w-4 h-4" /></button>
-                    <span className="w-12 text-center text-sm font-black">{item.product.isWeightBased ? item.quantity.toFixed(3) : item.quantity}</span>
-                    <button title="Sumar" onClick={e => { e.stopPropagation(); updateQuantity(idx, item.quantity + (item.product.isWeightBased ? 0.1 : 1)); }} className="p-1 hover:text-blue-500"><Plus className="w-4 h-4" /></button>
+                  <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-xl p-1 text-gray-900 dark:text-white">
+                    <button title="Restar" onClick={e => { e.stopPropagation(); updateQuantity(idx, item.quantity - (item.product.isWeightBased ? 0.1 : 1)); }}><Minus className="w-4 h-4" /></button>
+                    <span className="w-12 text-center text-sm font-bold">{item.product.isWeightBased ? item.quantity.toFixed(3) : item.quantity}</span>
+                    <button title="Sumar" onClick={e => { e.stopPropagation(); updateQuantity(idx, item.quantity + (item.product.isWeightBased ? 0.1 : 1)); }}><Plus className="w-4 h-4" /></button>
                   </div>
-                  <button title="Eliminar" onClick={e => { e.stopPropagation(); removeFromCart(idx); }} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-5 h-5" /></button>
+                  <button title="Eliminar" onClick={e => { e.stopPropagation(); removeFromCart(idx); }} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><Trash2 className="w-5 h-5" /></button>
                 </div>
               </div>
             ))
           ) : (
-            <div className="h-full py-8 text-center px-4">
-              <Banknote className="w-16 h-16 text-blue-600 mx-auto mb-6" />
+            <div className="h-full py-8 text-center px-2">
               <div className="grid grid-cols-2 gap-4 mb-8">
-                <button onClick={() => setPaymentMethod('efectivo')} className={`p-6 border-2 rounded-3xl font-black text-sm transition-all ${paymentMethod === 'efectivo' ? 'border-blue-600 bg-blue-600 text-white shadow-lg' : 'border-gray-100 dark:border-slate-700 dark:text-gray-400'}`}>EFECTIVO</button>
-                <button onClick={() => setPaymentMethod('credito')} className={`p-6 border-2 rounded-3xl font-black text-sm transition-all ${paymentMethod === 'credito' ? 'border-blue-600 bg-blue-600 text-white shadow-lg' : 'border-gray-100 dark:border-slate-700 dark:text-gray-400'}`}>CRÉDITO</button>
+                <button onClick={() => setPaymentMethod('efectivo')} className={`p-6 border-2 rounded-3xl font-black transition-all ${paymentMethod === 'efectivo' ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-200 dark:border-slate-700 dark:text-gray-400'}`}>EFECTIVO</button>
+                <button onClick={() => setPaymentMethod('credito')} className={`p-6 border-2 rounded-3xl font-black transition-all ${paymentMethod === 'credito' ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-200 dark:border-slate-700 dark:text-gray-400'}`}>CRÉDITO</button>
               </div>
               {paymentMethod === 'efectivo' && (
-                <div className="space-y-4">
-                  <div className="bg-blue-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-blue-100 dark:border-slate-800">
-                    <span className="text-xs uppercase font-black text-blue-500 mb-2 block tracking-widest text-center">Efectivo Recibido</span>
-                    <input id="cash-received-input" type="number" className="w-full text-center text-5xl font-black bg-transparent border-none focus:ring-0 dark:text-white" value={cashReceived} onChange={e => setCashReceived(e.target.value)} placeholder="0" />
-                  </div>
+                <div className="bg-blue-50 dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-blue-100 dark:border-slate-800">
+                  <span className="text-xs uppercase font-black text-blue-500 mb-2 block tracking-widest">Efectivo Recibido</span>
+                  <input id="cash-received-input" type="number" className="w-full text-center text-4xl font-black bg-transparent border-none focus:ring-0 dark:text-white" value={cashReceived} onChange={e => setCashReceived(e.target.value)} />
                 </div>
               )}
             </div>
           )}
         </div>
-
-        <div className="p-6 border-t dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="p-6 border-t dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
           <div className="flex justify-between items-center mb-6">
-            <span className="text-gray-400 font-bold uppercase text-xs tracking-widest">Total</span>
+            <span className="text-gray-500 dark:text-gray-400 font-bold uppercase text-xs tracking-widest">Total</span>
             <span className="text-4xl font-black text-blue-600 italic tracking-tighter">${calculateTotal().toLocaleString()}</span>
           </div>
-          <button title="Completar Transacción" disabled={cart.length === 0 || isProcessing} onClick={posState === 'billing' ? handleCheckout : processSale} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-3xl font-black text-xl shadow-xl shadow-blue-600/30 active:scale-95 transition-all flex items-center justify-center gap-3">
+          <button disabled={cart.length === 0 || isProcessing} onClick={posState === 'billing' ? handleCheckout : processSale} className="w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-xl shadow-xl shadow-blue-900/30 transition-all flex items-center justify-center gap-3">
             {isProcessing ? <CloudSync className="animate-spin" /> : (posState === 'billing' ? 'COBRAR' : 'TERMINAR')}
           </button>
         </div>
       </div>
 
       {weightedProductToAdd && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-[3rem] w-full max-w-sm shadow-2xl p-8 text-center border-4 border-blue-500/20">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] w-full max-w-sm shadow-2xl p-8 text-center border dark:border-slate-800 animate-in zoom-in-95">
             <Scale className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-black dark:text-white uppercase tracking-tighter">{weightedProductToAdd.name}</h3>
-            <div className="my-8 bg-slate-950 p-10 rounded-[2.5rem] border-4 border-slate-800 group relative">
-                <span className="absolute top-4 left-0 right-0 text-[10px] text-slate-500 font-black uppercase tracking-[0.3em]">Peso Digital</span>
-                <div className="flex items-baseline justify-center">
-                   <span className={`text-7xl font-black ${scaleWeight > 0 ? 'text-green-500' : 'text-slate-800'}`}>{scaleWeight.toFixed(3)}</span>
-                   <span className="text-2xl font-bold ml-2 text-slate-600 italic">kg</span>
-                </div>
+            <h3 className="text-2xl font-black dark:text-white uppercase mb-1 tracking-tighter">{weightedProductToAdd.name}</h3>
+            <div className="my-8 bg-slate-950 p-8 rounded-3xl border-4 border-slate-800 text-center">
+              <span className="text-6xl font-black text-green-500">{scaleWeight.toFixed(3)}</span>
+              <span className="text-2xl font-bold ml-2 text-slate-500">kg</span>
             </div>
-            <input type="number" step="0.001" placeholder="Manual kg..." className="w-full bg-gray-50 dark:bg-slate-800 rounded-2xl py-4 text-center text-2xl font-black mb-6 dark:text-white border-none focus:ring-2 focus:ring-blue-600" value={manualWeight} onChange={e => { setManualWeight(e.target.value); setScaleWeight(0); }} />
+            <input type="number" step="0.001" placeholder="Manual kg..." className="w-full p-4 bg-gray-100 dark:bg-slate-800 rounded-2xl text-2xl font-black mb-6 text-center dark:text-white" value={manualWeight} onChange={e => { setManualWeight(e.target.value); setScaleWeight(0); }} />
             <div className="grid grid-cols-2 gap-4">
-                <button title="Capturar peso escala" onClick={captureScaleWeight} disabled={isReadingScale} className="bg-blue-100 text-blue-600 p-5 rounded-3xl font-black uppercase text-xs tracking-widest">{isReadingScale ? '⌛' : '🔌 Escala'}</button>
-                <button title="Confirmar peso" onClick={addWeightedProductToCart} className="bg-blue-600 text-white p-5 rounded-3xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-600/30">Confirmar</button>
+                <button title="Escala" onClick={captureScaleWeight} disabled={isReadingScale} className="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 p-5 rounded-3xl font-black uppercase text-xs tracking-widest">{isReadingScale ? '...' : '🔌 Escala'}</button>
+                <button title="Confirmar" onClick={addWeightedProductToCart} className="bg-blue-600 text-white p-5 rounded-3xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-900/30">Confirmar</button>
             </div>
-            <button title="Cancelar pesaje" onClick={() => setWeightedProductToAdd(null)} className="mt-6 text-gray-400 font-bold uppercase text-[10px] tracking-widest">Regresar</button>
+            <button onClick={() => setWeightedProductToAdd(null)} className="mt-6 text-gray-500 font-bold uppercase text-[10px] tracking-widest">Regresar</button>
           </div>
         </div>
       )}
@@ -497,7 +412,7 @@ export default function PosPage() {
       {showChangeModal && completedSale && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-blue-600 text-white p-12 text-center animate-in fade-in duration-300">
            <div className="space-y-8">
-              <div className="bg-white/20 w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-10 border-4 border-white animate-bounce"><Banknote className="w-16 h-16" /></div>
+              <Banknote className="w-24 h-24 mx-auto mb-8 animate-bounce" />
               <h2 className="text-4xl font-black uppercase tracking-widest">Entregar Cambio</h2>
               <div className="bg-black/20 backdrop-blur-xl p-10 rounded-[3rem] border-2 border-white/30 shadow-2xl">
                  <p className="text-8xl font-black italic tracking-tighter">${Math.round(completedSale.changeAmount).toLocaleString('es-CO')}</p>
@@ -506,41 +421,39 @@ export default function PosPage() {
         </div>
       )}
 
-      {/* TICKET DE IMPRESIÓN (SOLO VISIBLE AL IMPRIMIR) */}
       {completedSale && (
-        <div className="hidden print:block p-4 text-black bg-white" style={{ width: tenantData.ticketPaperSize === '58mm' ? '58mm' : '80mm', fontFamily: 'monospace' }}>
-          <div className="text-center mb-6 border-b-2 border-black pb-4">
-            <h1 className="text-xl font-black uppercase">{tenantData.name}</h1>
+        <div className="hidden print:block p-2 text-black bg-white w-full" style={{ width: tenantData.ticketPaperSize === '58mm' ? '58mm' : '80mm', fontFamily: 'monospace', fontSize: '12px' }}>
+          <div className="text-center mb-4 border-b-2 border-black pb-2">
+            <h1 className="text-lg font-black uppercase">{tenantData.name}</h1>
             <p className="text-[10px]">{tenantData.location}</p>
             <p className="text-[10px]">{tenantData.phone}</p>
           </div>
-          <p className="text-[9px] mb-2 text-center uppercase font-bold">Ticket de Venta #{completedSale.id.slice(-6).toUpperCase()}</p>
-          <p className="text-[9px] mb-4 text-center border-b border-black pb-2">{new Date().toLocaleString()}</p>
+          <p className="mb-1 text-center text-[10px]">Factura #{completedSale.id.slice(-6).toUpperCase()}</p>
+          <p className="mb-4 text-center text-[10px] border-b border-black pb-1">{new Date().toLocaleString()}</p>
           <div className="space-y-1 mb-4 border-b-2 border-black pb-4">
             {completedSale.items.map((item: any, idx: number) => (
               <div key={idx} className="flex flex-col">
-                <div className="flex justify-between font-bold text-xs uppercase leading-none">
+                <div className="flex justify-between font-bold text-xs uppercase">
                   <span>{item.product.name.slice(0, 18)}</span>
                   <span>${(item.product.price * item.quantity).toLocaleString()}</span>
                 </div>
-                <div className="text-[9px] flex justify-between opacity-80">
-                  <span>{item.product.isWeightBased ? item.quantity.toFixed(3) + ' kg' : item.quantity + ' un'} x ${item.product.price.toLocaleString()}</span>
+                <div className="text-[9px] flex justify-between">
+                  <span>Cant: {item.product.isWeightBased ? item.quantity.toFixed(3) + ' kg' : item.quantity}</span>
+                  <span>v.u: ${item.product.price.toLocaleString()}</span>
                 </div>
               </div>
             ))}
           </div>
-          <div className="space-y-2 text-sm font-black border-b border-black pb-4">
+          <div className="space-y-1 text-sm font-black border-b border-black pb-4">
             <div className="flex justify-between text-lg"><span>TOTAL</span><span>${calculateTotal().toLocaleString()}</span></div>
             <div className="flex justify-between text-[10px]"><span>RECIBIDO</span><span>${Number(completedSale.receivedAmount || 0).toLocaleString()}</span></div>
-            <div className="flex justify-between text-[10px]"><span>SU CAMBIO</span><span>${Math.round(completedSale.changeAmount || 0).toLocaleString()}</span></div>
+            <div className="flex justify-between text-[10px]"><span>CAMBIO</span><span>${Math.round(completedSale.changeAmount || 0).toLocaleString()}</span></div>
           </div>
-          <div className="mt-8 text-center space-y-2">
-            {tenantData.ticketHeaderMessage && <p className="text-[9px] font-black">{tenantData.ticketHeaderMessage}</p>}
-            <p className="text-[9px] italic">{tenantData.ticketFooterMessage || '¡Vuelva pronto!'}</p>
-            <div className="mt-6 pt-4 border-t border-black border-dotted"><p className="text-[7px] text-gray-500">POTENCIADO POR TIENDEO POS</p></div>
-          </div>
+          <div className="mt-8 text-center text-[9px] font-black uppercase italic">¡Gracias por su compra!</div>
         </div>
       )}
     </div>
   );
 }
+
+
