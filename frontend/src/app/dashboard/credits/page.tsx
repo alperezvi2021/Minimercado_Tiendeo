@@ -135,7 +135,7 @@ export default function CreditsPage() {
     doc.setFontSize(18);
     doc.text('TIENDEO POS - CUENTAS POR COBRAR', 14, 20);
     doc.setFontSize(10);
-    doc.text(`Generado: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 14, 28);
+    doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, 14, 28);
     
     const tableData = filteredCredits.map(c => [
       c.sale?.invoiceNumber || 'N/A',

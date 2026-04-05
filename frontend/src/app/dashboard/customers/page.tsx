@@ -96,7 +96,7 @@ export default function CustomersPage() {
       
       doc.setFontSize(10);
       doc.text(`TIENDEO POS - Gestión de Cobros`, 150, 22);
-      doc.text(`Generado: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 150, 28);
+      doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, 150, 28);
       doc.text(`Clientes Activos: ${fullCustomers.length}`, 150, 34);
 
       // Summary

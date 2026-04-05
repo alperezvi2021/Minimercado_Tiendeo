@@ -187,7 +187,7 @@ export default function BackupsManager() {
                       <span className="text-sm font-bold text-white">{backup.name}</span>
                     </td>
                     <td className="px-8 py-6">
-                      <span className="text-sm text-slate-400">{new Date(backup.lastModified).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                      <span className="text-sm text-slate-400">{new Date().toLocaleString('es-CO')}</span>
                     </td>
                     <td className="px-8 py-6">
                       <span className="text-sm text-slate-400">{formatSize(backup.size)}</span>

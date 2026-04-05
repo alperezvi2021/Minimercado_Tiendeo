@@ -244,7 +244,7 @@ export default function RefundsPage() {
                 <div className="text-right">
                   <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Fecha Emisión</span>
                   <span className="text-sm font-bold text-slate-600 dark:text-slate-300">
-                    {new Date(sale.createdAt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                    {new Date().toLocaleString('es-CO')}
                   </span>
                 </div>
               </div>

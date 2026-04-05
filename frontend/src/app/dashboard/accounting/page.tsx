@@ -52,7 +52,7 @@ export default function AccountingPage() {
     
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Fecha de generación: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 14, 30);
+    doc.text(`Fecha de generación: ${new Date().toLocaleString('es-CO')}`, 14, 30);
     
     // Summary Data
     autoTable(doc, {

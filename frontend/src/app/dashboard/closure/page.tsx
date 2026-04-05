@@ -194,8 +194,8 @@ export default function ClosurePage() {
     
     const summaryData = [
       ['Cajero:', status.closure.userName],
-      ['Apertura:', new Date(status.closure.openedAt).toLocaleString('es-CO', { maximumFractionDigits: 0 })],
-      ['Cierre (Generado):', new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })],
+      ['Apertura:', new Date().toLocaleString('es-CO')],
+      ['Cierre (Generado):', new Date().toLocaleString('es-CO')],
       ['Base de Caja:', `$${Number(status.openingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
       ['Ventas Efectivo:', `$${Number(status.totalCash).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
       ['Abonos Crédito:', `$${Number(status.totalPayments).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],

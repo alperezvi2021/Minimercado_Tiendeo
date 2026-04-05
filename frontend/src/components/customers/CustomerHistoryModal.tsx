@@ -95,7 +95,7 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
     
     doc.setFontSize(10);
     doc.text(`TIENDEO POS - Software de Gestión`, 150, 25);
-    doc.text(`Fecha: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 150, 32);
+    doc.text(`Fecha: ${new Date().toLocaleString('es-CO')}`, 150, 32);
 
     // Customer Info
     doc.setTextColor(30, 41, 59);
