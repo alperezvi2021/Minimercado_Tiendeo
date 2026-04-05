@@ -135,13 +135,13 @@ export default function CreditsPage() {
     doc.setFontSize(18);
     doc.text('TIENDEO POS - CUENTAS POR COBRAR', 14, 20);
     doc.setFontSize(10);
-    doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
+    doc.text(`Generado: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 14, 28);
     
     const tableData = filteredCredits.map(c => [
       c.sale?.invoiceNumber || 'N/A',
       c.customerName,
       new Date(c.createdAt).toLocaleDateString(),
-      `$${Math.round(c.amount).toLocaleString()}`,
+      `$${Math.round(c.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`,
       'PENDIENTE'
     ]);
     
@@ -224,7 +224,7 @@ export default function CreditsPage() {
         <div className="bg-slate-900 border border-slate-800 px-4 sm:px-6 py-4 rounded-3xl shadow-xl flex flex-wrap items-center justify-center gap-2 sm:gap-4 shrink-0">
           <div>
             <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Total por Cobrar</p>
-            <p className="text-3xl font-black text-orange-500">${Math.round(totalOwed).toLocaleString()}</p>
+            <p className="text-3xl font-black text-orange-500">${Math.round(totalOwed).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
           </div>
           <div className="h-10 w-px bg-slate-800 mx-2" />
           <div className="text-center">
@@ -354,10 +354,10 @@ export default function CreditsPage() {
                     </div>
                   </td>
                   <td className="px-8 py-4">
-                    <span className="text-sm font-bold text-slate-400">${Math.round(credit.amount).toLocaleString('es-CO')}</span>
+                    <span className="text-sm font-bold text-slate-400">${Math.round(credit.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
                   </td>
                   <td className="px-8 py-4">
-                    <span className="text-xl font-black text-rose-500 shadow-rose-900/10">${Math.round(Number(credit.remainingAmount) || Number(credit.amount)).toLocaleString()}</span>
+                    <span className="text-xl font-black text-rose-500 shadow-rose-900/10">${Math.round(Number(credit.remainingAmount) || Number(credit.amount)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
                   </td>
                   <td className="px-8 py-4">
                     <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${

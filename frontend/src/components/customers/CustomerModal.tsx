@@ -280,19 +280,19 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</p>
                                 <p className="font-bold text-gray-700 dark:text-slate-300">
-                                  ${Math.round(debt.amount).toLocaleString()}
+                                  ${Math.round(debt.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Abonado</p>
                                 <p className="font-bold text-emerald-600 dark:text-emerald-400">
-                                  ${Math.round(totalPaid).toLocaleString()}
+                                  ${Math.round(totalPaid).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Saldo</p>
                                 <p className="font-bold text-rose-600 dark:text-rose-500 text-lg">
-                                  ${Math.round(debt.remainingAmount).toLocaleString()}
+                                  ${Math.round(debt.remainingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                                 </p>
                               </div>
                             </div>

@@ -79,7 +79,9 @@ export default function PosPage() {
     const handleForceSync = () => fetchAllData();
     window.addEventListener('force-sync', handleForceSync);
 
-    searchInputRef.current?.focus();
+    const focusTimer = setTimeout(() => {
+      searchInputRef.current?.focus();
+    }, 100);
 
     // Identity update
     const savedName = localStorage.getItem('user_name');
@@ -115,19 +117,6 @@ export default function PosPage() {
       } else if (e.key === '-' || e.key === 'Subtract') {
         e.preventDefault();
         updateQuantity(currentIndex, item.quantity - 1);
-      }
-
-      // Teclado Numérico Directo (0-9)
-      if (/^[0-9]$/.test(e.key)) {
-        e.preventDefault();
-        const digit = parseInt(e.key);
-        // Si acabamos de pulsar un número, podríamos estar digitando una cantidad multi-cifra? 
-        // Para simplificar, si es la primera vez en un tiempo, reemplazamos, si no, añadimos.
-        // Pero el requerimiento dice "digitar la cantidad", así que permitiremos sobrescribir o acumular.
-        // Implementación simple: Reemplazar el 1 inicial si existe, o acumular si es > 1 y fue reciente.
-        // Hagamoslo simple: Si digita un número, buscamos actualizar la cantidad del item seleccionado.
-        const newQty = item.quantity === 1 ? digit : parseInt(`${item.quantity}${digit}`);
-        if (!isNaN(newQty) && newQty > 0) updateQuantity(currentIndex, newQty);
       }
 
       // Eliminar Item (Suprimir)
@@ -695,7 +684,7 @@ export default function PosPage() {
             className="block w-full rounded-2xl border-0 py-4 pl-12 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 dark:bg-slate-900 dark:text-white dark:ring-slate-800 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-lg sm:leading-6 transition-all"
             placeholder="Escanea el código de barras o busca por nombre..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value.replace(/[^\w\s\.-]/gi, ''))}
             onKeyDown={handleScannerInput}
             autoFocus
           />
@@ -727,7 +716,7 @@ export default function PosPage() {
                       <p className={`text-xs mt-0.5 truncate ${selectedSuggestionIndex === index ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'}`}>{product.barcode || 'Sin Código'}</p>
                     </div>
                     <p className={`text-sm font-semibold whitespace-nowrap ml-2 ${selectedSuggestionIndex === index ? 'text-white' : 'text-green-600 dark:text-green-400'}`}>
-                      ${Math.round(product.price).toLocaleString('es-CO')}
+                      ${Math.round(product.price).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                     </p>
                   </li>
                 ))}
@@ -814,9 +803,19 @@ export default function PosPage() {
                         <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity - 1); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
                           <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="w-8 text-center text-sm font-bold text-gray-900 dark:text-white">
-                          {item.quantity}
-                        </span>
+                        <input 
+                          type="number"
+                          className="w-12 text-center text-sm font-bold text-gray-900 dark:text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          value={item.quantity || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') updateQuantity(idx, 0); // Permite limpiar
+                            else updateQuantity(idx, parseInt(val) || 1);
+                          }}
+                          onFocus={(e) => e.target.select()}
+                        />
                         <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity + 1); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -921,7 +920,7 @@ export default function PosPage() {
                             {Number(cashReceived) >= calculateTotal() ? 'CAMBIO A DEVOLVER' : 'FALTA DINERO'}
                           </span>
                           <span className="text-xl font-black">
-                            ${Math.abs(Number(cashReceived) - calculateTotal()).toLocaleString('es-CO')}
+                            ${Math.abs(Number(cashReceived) - calculateTotal()).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                           </span>
                         </div>
                       )}
@@ -977,7 +976,7 @@ export default function PosPage() {
                       >
                         <option value="">-- Seleccionar de la lista --</option>
                         {customers.map(c => (
-                          <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${Math.round(c.totalDebt).toLocaleString()})` : ''}</option>
+                          <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${Math.round(c.totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })})` : ''}</option>
                         ))}
                       </select>
 
@@ -1020,7 +1019,7 @@ export default function PosPage() {
           <div className="flex justify-between items-center mb-6">
             <span className="text-lg font-bold text-gray-900 dark:text-white">Total</span>
             <span className="text-3xl font-black text-blue-600 dark:text-blue-400">
-              ${Math.round(calculateTotal()).toLocaleString('es-CO')}
+              ${Math.round(calculateTotal()).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
             </span>
           </div>
           
@@ -1057,7 +1056,7 @@ export default function PosPage() {
         <div className="md:hidden fixed bottom-4 left-4 right-4 bg-blue-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between z-30 animate-in slide-in-from-bottom-4 duration-300">
           <div>
             <p className="text-[10px] font-black opacity-70 uppercase">Total Carrito</p>
-            <p className="text-xl font-black">${Math.round(calculateTotal()).toLocaleString('es-CO')}</p>
+            <p className="text-xl font-black">${Math.round(calculateTotal()).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
           </div>
           <button 
             onClick={() => setActiveTab('cart')}
@@ -1141,22 +1140,22 @@ export default function PosPage() {
 
   completedSale.items.forEach((item: any) => {
     const name = item.productName || item.product.name;
-    const priceRound = Math.round((item.unitPrice || item.product.price) * item.quantity).toLocaleString('es-CO');
+    const priceRound = Math.round((item.unitPrice || item.product.price) * item.quantity).toLocaleString('es-CO', { maximumFractionDigits: 0 });
     const leftInfo = `${name.substring(0, is80mm ? 16 : 11)} x${item.quantity}`;
     lines.push(formatLine(leftInfo, priceRound));
   });
 
   lines.push('');
   lines.push(divider);
-  lines.push(formatLine('Subtotal', Math.round(completedSale.totalAmount).toLocaleString('es-CO')));
+  lines.push(formatLine('Subtotal', Math.round(completedSale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
   lines.push(formatLine('IVA (0%)', '0'));
-  lines.push(formatLine('TOTAL', Math.round(completedSale.totalAmount).toLocaleString('es-CO')));
+  lines.push(formatLine('TOTAL', Math.round(completedSale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
   lines.push(divider);
   lines.push('');
   lines.push(`Pago: ${completedSale.paymentMethod.toUpperCase()}`);
   if (completedSale.paymentMethod === 'efectivo') {
-    lines.push(formatLine('Recibido:', Math.round(completedSale.receivedAmount || 0).toLocaleString('es-CO')));
-    lines.push(formatLine('Cambio:', Math.round(completedSale.changeAmount || 0).toLocaleString('es-CO')));
+    lines.push(formatLine('Recibido:', Math.round(completedSale.receivedAmount || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
+    lines.push(formatLine('Cambio:', Math.round(completedSale.changeAmount || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
   }
   if (completedSale.paymentMethod === 'credito' && completedSale.customerName) {
     lines.push(centerText(completedSale.customerName.toUpperCase()));
@@ -1213,7 +1212,7 @@ export default function PosPage() {
             </h2>
             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border-2 border-white/20 shadow-inner">
               <p className="text-6xl md:text-8xl font-black text-white drop-shadow-lg">
-                ${Math.round(completedSale.changeAmount).toLocaleString('es-CO')}
+                ${Math.round(completedSale.changeAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
               </p>
             </div>
             <p className="mt-8 text-blue-100 text-sm font-bold animate-pulse flex items-center justify-center gap-2">

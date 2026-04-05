@@ -132,7 +132,7 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
             </h3>
             <div className="mt-6 p-6 bg-white dark:bg-slate-900 rounded-[2rem] border border-gray-200 dark:border-slate-800 shadow-sm">
                 <p className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Saldo Pendiente</p>
-                <p className="text-4xl font-black text-rose-600 dark:text-rose-500">${Math.round(remaining).toLocaleString('es-CO')}</p>
+                <p className="text-4xl font-black text-rose-600 dark:text-rose-500">${Math.round(remaining).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
                 <div className="mt-4 flex flex-col gap-2">
                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600 dark:text-slate-400">
                       <User className="w-4 h-4 text-blue-500" />
@@ -214,7 +214,7 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
               history.map((h) => (
                 <div key={h.id} className="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-3xl border border-gray-100 dark:border-slate-800 transition-all hover:shadow-lg">
                   <div className="flex justify-between items-start mb-2">
-                    <p className="text-xl font-black text-green-600 dark:text-green-500">+ ${Math.round(h.amount).toLocaleString('es-CO')}</p>
+                    <p className="text-xl font-black text-green-600 dark:text-green-500">+ ${Math.round(h.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
                     <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-slate-900 rounded-full border border-gray-200 dark:border-slate-800 shadow-sm">
                       <Calendar className="w-3 h-3 text-blue-500" />
                       <span className="text-[10px] font-black text-gray-500 dark:text-slate-400">

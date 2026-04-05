@@ -248,6 +248,8 @@ export class SalesService {
     creditSale.remainingAmount = 0;
     creditSale.paidAt = new Date();
     
+    const closure = await this.getOpenClosure(tenantId, userId);
+    
     // Si queremos que el pago completo también se registre como un abono histórico:
     const payment = this.creditPaymentsRepository.create({
       tenantId,
@@ -256,11 +258,11 @@ export class SalesService {
       paymentDate: new Date(),
       paymentMethod: 'efectivo',
       notes: 'Pago total directo',
+      closureId: closure ? closure.id : null,
     });
     await this.creditPaymentsRepository.save(payment);
 
     // Registrar en el cierre de caja actual
-    const closure = await this.getOpenClosure(tenantId, userId);
     if (closure) {
       closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(creditSale.amount);
       await this.cashClosureRepository.save(closure);
@@ -286,6 +288,8 @@ export class SalesService {
     const remaining = Number(creditSale.remainingAmount);
     if (amount > remaining) throw new BadRequestException('El abono no puede ser mayor a la deuda pendiente');
 
+    const closure = await this.getOpenClosure(tenantId, userId);
+
     const payment = this.creditPaymentsRepository.create({
       tenantId,
       creditSaleId: creditId,
@@ -293,12 +297,12 @@ export class SalesService {
       paymentDate: new Date(),
       paymentMethod: 'efectivo',
       notes,
+      closureId: closure ? closure.id : null,
     });
 
     await this.creditPaymentsRepository.save(payment);
 
     // Registrar en el cierre de caja actual
-    const closure = await this.getOpenClosure(tenantId, userId);
     if (closure) {
       closure.totalCreditPayments = Number(closure.totalCreditPayments) + Number(amount);
       await this.cashClosureRepository.save(closure);
@@ -537,5 +541,13 @@ export class SalesService {
       closure.totalExpenses = Number(closure.totalExpenses || 0) + Number(amount);
       await this.cashClosureRepository.save(closure);
     }
+  }
+
+  async getPaymentsByClosure(tenantId: string, closureId: string): Promise<CreditPayment[]> {
+    return this.creditPaymentsRepository.find({
+      where: { tenantId, closureId },
+      relations: ['creditSale', 'creditSale.sale', 'creditSale.customer'],
+      order: { paymentDate: 'ASC' }
+    });
   }
 }

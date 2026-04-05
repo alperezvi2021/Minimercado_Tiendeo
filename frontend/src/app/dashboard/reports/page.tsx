@@ -87,22 +87,22 @@ export default function ReportsPage() {
   const totalCredit = sales.filter(s => s.paymentMethod === 'credito').reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
   const totalItemsSold = sales.reduce((acc, sale) => acc + sale.items.reduce((sum, item) => sum + item.quantity, 0), 0);
 
-  const formatCurrency = (amount: number) => `$${Math.round(amount).toLocaleString('es-CO')}`;
+  const formatCurrency = (amount: number) => `$${Math.round(amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
 
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text('TIENDEO POS - REPORTE DE VENTAS', 14, 20);
     doc.setFontSize(10);
-    doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 28);
+    doc.text(`Generado: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 14, 28);
     
     const tableData = sortedSales.map(sale => [
       sale.invoiceNumber || 'S/N',
-      new Date(sale.createdAt).toLocaleString(),
+      new Date(sale.createdAt).toLocaleString('es-CO', { maximumFractionDigits: 0 }),
       sale.sellerName || sale.user?.name || 'Sistema',
       sale.paymentMethod + (sale.customerName ? ` (${sale.customerName})` : ''),
       sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
-      `$${Math.round(sale.totalAmount).toLocaleString()}`
+      `$${Math.round(sale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
     ]);
     
     autoTable(doc, {
@@ -118,7 +118,7 @@ export default function ReportsPage() {
   const exportToExcel = () => {
     const data = sortedSales.map(sale => ({
       'Factura #': sale.invoiceNumber || 'S/N',
-      Fecha: new Date(sale.createdAt).toLocaleString(),
+      Fecha: new Date(sale.createdAt).toLocaleString('es-CO', { maximumFractionDigits: 0 }),
       Vendedor: sale.sellerName || sale.user?.name || 'Sistema',
       Metodo: sale.paymentMethod,
       Cliente: sale.customerName || 'N/A',
@@ -270,7 +270,7 @@ export default function ReportsPage() {
                       {sale.invoiceNumber || 'S/N'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 font-medium">
-                      {new Date(sale.createdAt).toLocaleString('es-CO')}
+                      {new Date(sale.createdAt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">

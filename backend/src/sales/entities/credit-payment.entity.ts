@@ -12,6 +12,9 @@ export class CreditPayment {
   @Column({ name: 'tenant_id' })
   tenantId: string;
 
+  @Column({ name: 'closure_id', nullable: true })
+  closureId: string;
+
   @Column({ name: 'credit_sale_id' })
   creditSaleId: string;
 

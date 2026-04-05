@@ -95,7 +95,7 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
     
     doc.setFontSize(10);
     doc.text(`TIENDEO POS - Software de Gestión`, 150, 25);
-    doc.text(`Fecha: ${new Date().toLocaleString()}`, 150, 32);
+    doc.text(`Fecha: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 150, 32);
 
     // Customer Info
     doc.setTextColor(30, 41, 59);
@@ -117,7 +117,7 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
     doc.setTextColor(225, 29, 72); // Rose 600
     doc.setFontSize(16);
     const totalDebt = history.creditSales?.reduce((sum: number, cs: CreditSale) => sum + Number(cs.remainingAmount), 0) || 0;
-    doc.text(`$${Math.round(totalDebt).toLocaleString('es-CO')}`, 145, 65);
+    doc.text(`$${Math.round(totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 145, 65);
 
     // Invoices Table
     doc.setTextColor(30, 41, 59);
@@ -127,8 +127,8 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
     const invoiceData = history.creditSales?.map((cs: CreditSale) => [
       cs.sale?.invoiceNumber || 'S/N',
       new Date(cs.createdAt).toLocaleDateString(),
-      `$${Math.round(cs.amount).toLocaleString()}`,
-      `$${Math.round(cs.remainingAmount).toLocaleString()}`,
+      `$${Math.round(cs.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`,
+      `$${Math.round(cs.remainingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`,
       cs.status === 'PAID' ? 'PAGADO' : cs.status === 'PARTIAL' ? 'ABONADO' : 'PENDIENTE'
     ]) || [];
 
@@ -156,7 +156,7 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
         paymentData.push([
           new Date(p.paymentDate).toLocaleDateString(),
           cs.sale?.invoiceNumber || 'S/N',
-          `$${Math.round(p.amount).toLocaleString()}`,
+          `$${Math.round(p.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`,
           p.notes || '-'
         ]);
       });
@@ -227,7 +227,7 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-rose-50 dark:bg-rose-900/20 p-6 rounded-[2.5rem] border border-rose-100 dark:border-rose-900/30">
                   <p className="text-[10px] font-black text-rose-400 dark:text-rose-500 uppercase tracking-widest mb-1">Deuda Total Pendiente</p>
-                  <p className="text-3xl font-black text-rose-600 dark:text-rose-400">${Math.round(totalDebt).toLocaleString('es-CO')}</p>
+                  <p className="text-3xl font-black text-rose-600 dark:text-rose-400">${Math.round(totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
                   <TrendingDown className="w-8 h-8 text-rose-200 dark:text-rose-900/50 absolute right-8 bottom-8" />
                 </div>
                 
@@ -277,11 +277,11 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
                           <div className="flex items-center gap-8">
                             <div className="text-center">
                               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Monto Original</p>
-                              <p className="text-lg font-black text-gray-600 dark:text-slate-300">${Math.round(cs.amount).toLocaleString()}</p>
+                              <p className="text-lg font-black text-gray-600 dark:text-slate-300">${Math.round(cs.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
                             </div>
                             <div className="text-center">
                               <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Saldo Pendiente</p>
-                              <p className="text-2xl font-black text-rose-600 dark:text-rose-500">${Math.round(cs.remainingAmount).toLocaleString()}</p>
+                              <p className="text-2xl font-black text-rose-600 dark:text-rose-500">${Math.round(cs.remainingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
                             </div>
                             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase border ${
                               cs.status === 'PAID' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
@@ -304,7 +304,7 @@ export default function CustomerHistoryModal({ isOpen, onClose, customerId, cust
                               {cs.payments.map((p: Payment) => (
                                 <div key={p.id} className="p-4 bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800 flex items-center justify-between">
                                   <div>
-                                    <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">+ ${Math.round(p.amount).toLocaleString()}</p>
+                                    <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">+ ${Math.round(p.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
                                     <div className="flex items-center gap-1.5 mt-0.5 opacity-60">
                                       <Calendar className="w-3 h-3" />
                                       <span className="text-[10px] font-bold">{new Date(p.paymentDate).toLocaleDateString()}</span>

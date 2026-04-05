@@ -96,7 +96,7 @@ export default function CustomersPage() {
       
       doc.setFontSize(10);
       doc.text(`TIENDEO POS - Gestión de Cobros`, 150, 22);
-      doc.text(`Generado: ${new Date().toLocaleString()}`, 150, 28);
+      doc.text(`Generado: ${new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 150, 28);
       doc.text(`Clientes Activos: ${fullCustomers.length}`, 150, 34);
 
       // Summary
@@ -105,7 +105,7 @@ export default function CustomersPage() {
       doc.setFontSize(14);
       doc.text('RESUMEN FINANCIERO', 14, 50);
       doc.setFontSize(11);
-      doc.text(`Total Cartera por Cobrar: $${Math.round(totalCartera).toLocaleString('es-CO')}`, 14, 60);
+      doc.text(`Total Cartera por Cobrar: $${Math.round(totalCartera).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 14, 60);
 
       // Table
       const tableData = fullCustomers
@@ -115,7 +115,7 @@ export default function CustomersPage() {
           c.idNumber || 'S/I',
           c.phone || 'N/R',
           c.pendingInvoices,
-          `$${Math.round(c.totalDebt).toLocaleString('es-CO')}`
+          `$${Math.round(c.totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
         ]);
 
       autoTable(doc, {
@@ -164,10 +164,15 @@ export default function CustomersPage() {
     return 0;
   });
 
-  const filteredCustomers = sortedCustomers.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (c.idNumber && c.idNumber.includes(searchTerm))
-  );
+  const filteredCustomers = sortedCustomers.filter(c => {
+    const s = searchTerm.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(s) || 
+      (c.idNumber && c.idNumber.toLowerCase().includes(s)) ||
+      (c.phone && c.phone.toLowerCase().includes(s)) ||
+      (c.email && c.email.toLowerCase().includes(s))
+    );
+  });
 
   const totalOwedByAll = filteredCustomers.reduce((sum, c) => sum + (c.totalDebt || 0), 0);
 
@@ -195,7 +200,7 @@ export default function CustomersPage() {
           <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 px-6 py-4 rounded-3xl shadow-xl hidden md:flex items-center gap-4">
             <div>
               <p className="text-[10px] font-black uppercase text-gray-400 dark:text-slate-500 tracking-widest">Cartera Total</p>
-              <p className="text-2xl font-black text-rose-600 dark:text-rose-500">${Math.round(totalOwedByAll).toLocaleString('es-CO')}</p>
+              <p className="text-2xl font-black text-rose-600 dark:text-rose-500">${Math.round(totalOwedByAll).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
             </div>
             <div className="h-10 w-[1px] bg-gray-100 dark:bg-slate-800 mx-2" />
             <button 
@@ -232,7 +237,7 @@ export default function CustomersPage() {
             <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
             <input 
               type="text" 
-              placeholder="Buscar por nombre o ID..."
+              placeholder="Buscar por nombre, ID, teléfono o correo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-white text-black border border-gray-200 rounded-2xl pl-12 pr-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold"
@@ -312,7 +317,7 @@ export default function CustomersPage() {
                         <span className="text-xs font-black uppercase tracking-widest opacity-80 mb-1">
                           {c.totalDebt > 0 ? 'Deuda Activa' : 'Al Día'}
                         </span>
-                        <span className="text-lg font-black">${Math.round(c.totalDebt).toLocaleString('es-CO')}</span>
+                        <span className="text-lg font-black">${Math.round(c.totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
                         {c.pendingInvoices > 0 && (
                           <span className="text-[10px] font-bold mt-0.5 opacity-70">
                             {c.pendingInvoices} Facturas pendientes

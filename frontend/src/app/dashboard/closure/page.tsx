@@ -47,6 +47,7 @@ export default function ClosurePage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [closing, setClosing] = useState(false);
+  const [payments, setPayments] = useState<any[]>([]);
   const [openingAmount, setOpeningAmount] = useState<string>('');
   const [opening, setOpening] = useState(false);
 
@@ -80,9 +81,22 @@ export default function ClosurePage() {
     }
   };
 
+  const fetchPayments = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/closure/payments`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+      });
+      const data = await response.json();
+      setPayments(data);
+    } catch (error) {
+      console.error('Error fetching closure payments:', error);
+    }
+  };
+
   useEffect(() => {
     fetchStatus();
     fetchSales();
+    fetchPayments();
   }, []);
 
   const handlePayCredit = async (saleId: string) => {
@@ -180,12 +194,12 @@ export default function ClosurePage() {
     
     const summaryData = [
       ['Cajero:', status.closure.userName],
-      ['Apertura:', new Date(status.closure.openedAt).toLocaleString()],
-      ['Cierre (Generado):', new Date().toLocaleString()],
-      ['Base de Caja:', `$${Number(status.openingAmount).toLocaleString()}`],
-      ['Ventas Efectivo:', `$${Number(status.totalCash).toLocaleString()}`],
-      ['Abonos Crédito:', `$${Number(status.totalPayments).toLocaleString()}`],
-      ['TOTAL EFECTIVO A ENTREGAR:', `$${Number(status.totalToDeliver).toLocaleString()}`]
+      ['Apertura:', new Date(status.closure.openedAt).toLocaleString('es-CO', { maximumFractionDigits: 0 })],
+      ['Cierre (Generado):', new Date().toLocaleString('es-CO', { maximumFractionDigits: 0 })],
+      ['Base de Caja:', `$${Number(status.openingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
+      ['Ventas Efectivo:', `$${Number(status.totalCash).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
+      ['Abonos Crédito:', `$${Number(status.totalPayments).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
+      ['TOTAL EFECTIVO A ENTREGAR:', `$${Number(status.totalToDeliver).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`]
     ];
 
     autoTable(doc, {
@@ -205,7 +219,7 @@ export default function ClosurePage() {
       new Date(s.createdAt).toLocaleTimeString(),
       s.paymentMethod.toUpperCase(),
       s.customerName || 'Contado',
-      `$${Number(s.totalAmount).toLocaleString()}`
+      `$${Number(s.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
     ]);
 
     autoTable(doc, {
@@ -214,6 +228,26 @@ export default function ClosurePage() {
       body: salesData,
       headStyles: { fillColor: [59, 130, 246] } // Blue 500
     });
+
+    if (payments && payments.length > 0) {
+      doc.setFontSize(12);
+      doc.text('DETALLE DE ABONOS A CRÉDITOS', 14, (doc as any).lastAutoTable.finalY + 15);
+
+      const paymentsData = payments.map(p => [
+        `#${p.id.split('-')[0]}`,
+        new Date(p.paymentDate).toLocaleTimeString(),
+        (p.paymentMethod || 'efectivo').toUpperCase(),
+        p.creditSale?.customerName || 'Cliente No Ident.',
+        `$${Number(p.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
+      ]);
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 20,
+        head: [['Op. ID', 'Hora', 'Método', 'Cliente', 'Abono']],
+        body: paymentsData,
+        headStyles: { fillColor: [249, 115, 22] } // Orange 500
+      });
+    }
 
     doc.save(`Arqueo_${status.closure.userName}_${new Date().toLocaleDateString()}.pdf`);
   };
@@ -297,7 +331,7 @@ export default function ClosurePage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-blue-500/10 p-2 rounded-xl">
@@ -319,7 +353,7 @@ export default function ClosurePage() {
             </div>
             <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Base Inicial</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.openingAmount).toLocaleString()}</p>
+          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.openingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
           <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Efectivo declarado al abrir</p>
         </div>
 
@@ -328,10 +362,21 @@ export default function ClosurePage() {
             <div className="bg-green-500/10 p-2 rounded-xl">
               <CircleDollarSign className="w-5 h-5 text-green-400" />
             </div>
-            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Recaudo Turno</span>
+            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Ventas Efectivo</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${(Number(status.totalCash) + Number(status.totalPayments || 0)).toLocaleString()}</p>
-          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Ventas Efectivo + Abonos</p>
+          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.totalCash).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Pagos de Contado</p>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-orange-500/10 p-2 rounded-xl">
+              <ArrowRightLeft className="w-5 h-5 text-orange-400" />
+            </div>
+            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Abonos Créditos</span>
+          </div>
+          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.totalPayments || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Cartera Recaudada</p>
         </div>
 
         <div className="bg-blue-600 p-8 rounded-[2.5rem] shadow-2xl border border-blue-500/50 relative overflow-hidden group">
@@ -342,7 +387,7 @@ export default function ClosurePage() {
             </div>
             <span className="text-blue-100 font-black text-[10px] uppercase tracking-widest">Total a Entregar</span>
           </div>
-          <p className="text-4xl font-black text-white tracking-tighter">${Number(status.totalToDeliver).toLocaleString()}</p>
+          <p className="text-4xl font-black text-white tracking-tighter">${Number(status.totalToDeliver).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
           <p className="text-[11px] font-bold text-blue-100 mt-4 uppercase tracking-widest">DINERO REAL QUE DEBE HABER EN CAJA</p>
         </div>
       </div>
@@ -376,7 +421,7 @@ export default function ClosurePage() {
                     <p className="text-[10px] text-slate-500">{new Date(sale.createdAt).toLocaleTimeString()}</p>
                   </td>
                   <td className="px-8 py-4">
-                    <span className="text-sm font-black text-white">${Number(sale.totalAmount).toLocaleString()}</span>
+                    <span className="text-sm font-black text-white">${Number(sale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
                   </td>
                   <td className="px-8 py-4">
                     <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full ${

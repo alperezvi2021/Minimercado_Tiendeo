@@ -63,6 +63,16 @@ export class SalesController {
     return this.salesService.findByClosure(tenantId, status.closure.id);
   }
 
+  @Get('closure/payments')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  async getClosurePayments(@Request() req) {
+    const tenantId = req.user.tenantId;
+    const userId = req.user.userId;
+    const status = await this.salesService.getCurrentClosureStatus(tenantId, userId);
+    if (!status || !status.closure) return [];
+    return this.salesService.getPaymentsByClosure(tenantId, status.closure.id);
+  }
+
   @Get('credits/pending')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   findAllPendingCredits(@Request() req) {
