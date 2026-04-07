@@ -98,7 +98,7 @@ export default function ReportsPage() {
     
     const tableData = sortedSales.map(sale => [
       sale.invoiceNumber || 'S/N',
-      new Date().toLocaleString('es-CO'),
+      new Date(sale.createdAt).toLocaleString('es-CO'),
       sale.sellerName || sale.user?.name || 'Sistema',
       sale.paymentMethod + (sale.customerName ? ` (${sale.customerName})` : ''),
       sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
@@ -118,7 +118,7 @@ export default function ReportsPage() {
   const exportToExcel = () => {
     const data = sortedSales.map(sale => ({
       'Factura #': sale.invoiceNumber || 'S/N',
-      Fecha: new Date().toLocaleString('es-CO'),
+      Fecha: new Date(sale.createdAt).toLocaleString('es-CO'),
       Vendedor: sale.sellerName || sale.user?.name || 'Sistema',
       Metodo: sale.paymentMethod,
       Cliente: sale.customerName || 'N/A',
@@ -270,7 +270,7 @@ export default function ReportsPage() {
                       {sale.invoiceNumber || 'S/N'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 font-medium">
-                      {new Date().toLocaleString('es-CO')}
+                      {new Date(sale.createdAt).toLocaleString('es-CO')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
