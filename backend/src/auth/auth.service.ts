@@ -30,7 +30,9 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
-        tenant_modules: user.tenant?.modules || []
+        tenant_modules: (user.tenant?.modules && user.tenant.modules.length > 0) 
+          ? user.tenant.modules 
+          : ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']
       }
     };
   }

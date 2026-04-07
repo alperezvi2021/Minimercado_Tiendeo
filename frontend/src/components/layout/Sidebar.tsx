@@ -31,9 +31,13 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
     if (name) setUserName(name);
     if (modulesString) {
       try {
-        setTenantModules(JSON.parse(modulesString));
+        const parsed = JSON.parse(modulesString);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTenantModules(parsed);
+        } else {
+          setTenantModules(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
+        }
       } catch (e) {
-        // Fallback for old installations
         setTenantModules(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
       }
     } else {
