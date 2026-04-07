@@ -24,6 +24,7 @@ export class AdminService {
       id: t.id,
       name: t.name,
       activePlan: t.activePlan,
+      isActive: t.isActive !== false,
       modules: t.modules || ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'],
       userCount: t.users ? t.users.length : 0,
       createdAt: t.createdAt
@@ -47,6 +48,11 @@ export class AdminService {
 
   async updateTenantModules(tenantId: string, modules: string[]): Promise<Tenant> {
     await this.tenantsRepository.update(tenantId, { modules });
+    return this.tenantsRepository.findOne({ where: { id: tenantId } });
+  }
+
+  async updateTenantStatus(tenantId: string, isActive: boolean): Promise<Tenant> {
+    await this.tenantsRepository.update(tenantId, { isActive });
     return this.tenantsRepository.findOne({ where: { id: tenantId } });
   }
 }

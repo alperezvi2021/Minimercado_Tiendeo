@@ -36,6 +36,9 @@ export class Tenant {
   @Column({ nullable: true })
   location: string;
 
+  @Column({ default: true })
+  isActive: boolean;
+
   @Column({ type: 'simple-array', nullable: true })
   modules: string[];
 

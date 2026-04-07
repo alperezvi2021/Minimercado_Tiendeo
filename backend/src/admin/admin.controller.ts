@@ -30,4 +30,9 @@ export class AdminController {
   updateTenantModules(@Param('id') id: string, @Body('modules') modules: string[]) {
     return this.adminService.updateTenantModules(id, modules);
   }
+
+  @Patch('tenants/:id/status')
+  updateTenantStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+    return this.adminService.updateTenantStatus(id, isActive);
+  }
 }

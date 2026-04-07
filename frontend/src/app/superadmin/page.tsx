@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X, ToggleRight, ToggleLeft } from 'lucide-react';
+import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X, ToggleRight, ToggleLeft, Power } from 'lucide-react';
 import BackupsManager from '@/components/admin/BackupsManager';
 
 export default function SuperAdminPage() {
@@ -162,6 +162,29 @@ export default function SuperAdminPage() {
     }
   };
 
+  const handleToggleTenantStatus = async (tenantId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/tenants/${tenantId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ isActive: !currentStatus })
+      });
+
+      if (response.ok) {
+        setTenants(prev => prev.map(t => t.id === tenantId ? { ...t, isActive: !currentStatus } : t));
+      } else {
+        const err = await response.json();
+        alert(`Error al actualizar estado: ${err.message}`);
+      }
+    } catch (error) {
+      console.error('Error toggling tenant status:', error);
+      alert('Error de conexión al actualizar el estado del negocio');
+    }
+  };
+
   const logout = () => {
     localStorage.clear();
     router.push('/login');
@@ -318,10 +341,11 @@ export default function SuperAdminPage() {
               {/* ... table content remains the same ... */}
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                  <th className="px-8 py-6">ID Negocio</th>
+                  <th className="px-8 py-6">ID Sistema / Tenant</th>
                   <th className="px-8 py-6">Nombre de la Tienda</th>
                   <th className="px-8 py-6">Usuarios</th>
                   <th className="px-8 py-6">Fecha Creación</th>
+                  <th className="px-8 py-6">Estado</th>
                   <th className="px-8 py-6">Acciones</th>
                 </tr>
               </thead>
@@ -335,7 +359,22 @@ export default function SuperAdminPage() {
                     </td>
                     <td className="px-8 py-6 text-sm font-medium text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
                     <td className="px-8 py-6">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${t.isActive !== false ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]'}`}></span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${t.isActive !== false ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          {t.isActive !== false ? 'Activo' : 'Suspendido'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => handleToggleTenantStatus(t.id, t.isActive !== false)}
+                          className={`p-2 rounded-lg transition-all ${t.isActive !== false ? 'text-gray-400 hover:text-rose-500 hover:bg-rose-500/10' : 'text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10'}`}
+                          title={t.isActive !== false ? "Suspender Negocio" : "Activar Negocio"}
+                        >
+                          <Power className="w-5 h-5" />
+                        </button>
                         <button 
                           onClick={() => openModulesModal(t)}
                           className="text-blue-400 hover:text-blue-300 transition-colors p-2 hover:bg-blue-500/10 rounded-lg" 
