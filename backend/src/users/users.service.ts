@@ -13,7 +13,17 @@ export class UsersService {
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    const user = await this.usersRepository.findOne({ 
+      where: { email },
+      relations: ['tenant']
+    });
+    
+    // Ensure backward compatibility: if tenant exists but modules is null, set defaults
+    if (user?.tenant && !user.tenant.modules) {
+      user.tenant.modules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+    }
+    
+    return user;
   }
 
   async findOne(id: string, tenantId?: string): Promise<User | null> {

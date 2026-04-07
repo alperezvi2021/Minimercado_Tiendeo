@@ -5,30 +5,50 @@ import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, Clipb
 import { useState, useEffect } from 'react';
 
 const navItems = [
-  { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
-  { name: 'Cierre de Caja', href: '/dashboard/closure', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
-  { name: 'Inventario', href: '/dashboard/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
-  { name: 'Reportes', href: '/dashboard/reports', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
-  { name: 'Proveedores', href: '/dashboard/suppliers', icon: Truck, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
-  { name: 'Clientes', href: '/dashboard/customers', icon: User, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
-  { name: 'Créditos', href: '/dashboard/credits', icon: ArrowRightLeft, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
-  { name: 'Devoluciones', href: '/dashboard/sales/refunds', icon: RotateCcw, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'] },
-  { name: 'Contabilidad', href: '/dashboard/accounting', icon: Receipt, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'] },
+  { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'POS' },
+  { name: 'Cierre de Caja', href: '/dashboard/closure', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CLOSURE' },
+  { name: 'Inventario', href: '/dashboard/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'INVENTORY' },
+  { name: 'Reportes', href: '/dashboard/reports', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'REPORTS' },
+  { name: 'Proveedores', href: '/dashboard/suppliers', icon: Truck, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'SUPPLIERS' },
+  { name: 'Clientes', href: '/dashboard/customers', icon: User, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CUSTOMERS' },
+  { name: 'Créditos', href: '/dashboard/credits', icon: ArrowRightLeft, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CREDITS' },
+  { name: 'Devoluciones', href: '/dashboard/sales/refunds', icon: RotateCcw, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'REFUNDS' },
+  { name: 'Contabilidad', href: '/dashboard/accounting', icon: Receipt, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'ACCOUNTING' },
 ];
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState('CASHIER');
+  const [tenantModules, setTenantModules] = useState<string[]>([]);
   const [userName, setUserName] = useState('Usuario');
 
   useEffect(() => {
     const role = localStorage.getItem('user_role');
     const name = localStorage.getItem('user_name');
+    const modulesString = localStorage.getItem('tenant_modules');
+    
     if (role) setUserRole(role);
     if (name) setUserName(name);
+    if (modulesString) {
+      try {
+        setTenantModules(JSON.parse(modulesString));
+      } catch (e) {
+        // Fallback for old installations
+        setTenantModules(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
+      }
+    } else {
+       // SuperAdmin sees everything, others default to full for now
+       setTenantModules(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
+    }
   }, []);
 
-  const filteredItems = navItems.filter(item => item.roles.includes(userRole));
+  const filteredItems = navItems.filter(item => {
+    const hasRole = item.roles.includes(userRole);
+    // SUPER_ADMIN skips module filtering
+    if (userRole === 'SUPER_ADMIN') return hasRole;
+    const hasModule = tenantModules.includes(item.module);
+    return hasRole && hasModule;
+  });
 
   return (
     <aside className={`

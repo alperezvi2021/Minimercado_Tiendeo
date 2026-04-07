@@ -8,4 +8,5 @@ export class CreateTenantDto {
   address?: string;
   phone?: string;
   location?: string;
+  modules?: string[];
 }

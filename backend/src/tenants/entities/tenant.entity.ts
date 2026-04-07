@@ -36,6 +36,9 @@ export class Tenant {
   @Column({ nullable: true })
   location: string;
 
+  @Column({ type: 'simple-array', nullable: true })
+  modules: string[];
+
   @OneToMany(() => User, (user) => user.tenant)
   users: User[];
 

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X } from 'lucide-react';
+import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X, ToggleRight, ToggleLeft } from 'lucide-react';
 import BackupsManager from '@/components/admin/BackupsManager';
 
 export default function SuperAdminPage() {
@@ -26,6 +26,52 @@ export default function SuperAdminPage() {
   });
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newPassword, setNewPassword] = useState('');
+  const [isModulesModalOpen, setIsModulesModalOpen] = useState(false);
+  const [selectedTenantForModules, setSelectedTenantForModules] = useState<any>(null);
+  const [editingModules, setEditingModules] = useState<string[]>([]);
+  const [isSavingModules, setIsSavingModules] = useState(false);
+
+  const ALL_MODULES = [
+    { id: 'POS', name: 'Caja Registradora (POS)' },
+    { id: 'CLOSURE', name: 'Cierre de Caja' },
+    { id: 'INVENTORY', name: 'Control de Inventario' },
+    { id: 'REPORTS', name: 'Reportes y Estadísticas' },
+    { id: 'SUPPLIERS', name: 'Proveedores y Gastos' },
+    { id: 'CUSTOMERS', name: 'Base de Clientes' },
+    { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)' },
+    { id: 'REFUNDS', name: 'Devoluciones y Reembolsos' },
+    { id: 'ACCOUNTING', name: 'Módulo Contable' },
+  ];
+
+  const openModulesModal = (tenant: any) => {
+    const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+    setSelectedTenantForModules(tenant);
+    setEditingModules(tenant.modules || defaultModules);
+    setIsModulesModalOpen(true);
+  };
+
+  const handleSaveModules = async () => {
+    setIsSavingModules(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/tenants/${selectedTenantForModules.id}/modules`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ modules: editingModules })
+      });
+      if (res.ok) {
+        setIsModulesModalOpen(false);
+        fetchData(); // refresh tenant list
+        alert('Módulos actualizados correctamente');
+      } else {
+        alert('Error al actualizar módulos');
+      }
+    } catch (e) {
+      alert('Error de conexión');
+    } finally {
+      setIsSavingModules(false);
+    }
+  };
 
   useEffect(() => {
     const role = localStorage.getItem('user_role');
@@ -291,10 +337,11 @@ export default function SuperAdminPage() {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-3">
                         <button 
-                          className="text-gray-600 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg" 
-                          title="Ver detalles del negocio"
+                          onClick={() => openModulesModal(t)}
+                          className="text-blue-400 hover:text-blue-300 transition-colors p-2 hover:bg-blue-500/10 rounded-lg" 
+                          title="Configurar Módulos del Negocio"
                         >
-                          <ExternalLink className="w-5 h-5" />
+                          <ToggleRight className="w-5 h-5" />
                         </button>
                         <button 
                           onClick={() => { setSelectedTenantForReset(t); setIsMaintenanceModalOpen(true); }}
@@ -517,6 +564,64 @@ export default function SuperAdminPage() {
                   {isResettingData ? 'VACIANDO BASE DE DATOS...' : 'EJECUTAR LIMPIEZA AHORA'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modules Configuration Modal */}
+      {isModulesModalOpen && selectedTenantForModules && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0a0a1a] border border-white/10 w-full max-w-xl rounded-[40px] p-10 shadow-3xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center">
+                <ToggleRight className="w-7 h-7 text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-white">Módulos del Negocio</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{selectedTenantForModules.name}</p>
+              </div>
+            </div>
+            <p className="text-gray-500 text-sm font-medium mb-6">Activa o desactiva las funciones que este negocio puede usar. El menú lateral del negocio se actualizará en el próximo login.</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+              {ALL_MODULES.map(mod => {
+                const active = editingModules.includes(mod.id);
+                return (
+                  <button
+                    key={mod.id}
+                    onClick={() => setEditingModules(prev => active ? prev.filter(m => m !== mod.id) : [...prev, mod.id])}
+                    className={`flex items-center gap-3 p-3 rounded-2xl border-2 transition-all text-left ${
+                      active ? 'border-blue-500 bg-blue-500/10' : 'border-white/5 hover:border-white/10'
+                    }`}
+                  >
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                      active ? 'bg-blue-600 text-white' : 'bg-white/5 text-gray-600'
+                    }`}>
+                      {active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+                    </div>
+                    <span className={`text-sm font-bold ${
+                      active ? 'text-blue-400' : 'text-gray-500'
+                    }`}>{mod.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsModulesModalOpen(false)}
+                className="flex-1 px-6 py-4 rounded-2xl font-black text-gray-500 hover:bg-white/5 transition-all text-sm uppercase tracking-widest"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleSaveModules}
+                disabled={isSavingModules || editingModules.length === 0}
+                className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl font-black shadow-xl shadow-blue-500/20 transition-all text-sm uppercase tracking-widest disabled:bg-gray-800 disabled:text-gray-600"
+              >
+                {isSavingModules ? 'Guardando...' : 'Guardar Módulos'}
+              </button>
             </div>
           </div>
         </div>

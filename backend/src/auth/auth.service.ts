@@ -29,7 +29,8 @@ export class AuthService {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        tenant_modules: user.tenant?.modules || []
       }
     };
   }
@@ -40,7 +41,7 @@ export class AuthService {
       throw new Error('El correo electrónico ya está registrado');
     }
     // 1. Create Tenant
-    const tenant = await this.tenantsService.create(registerDto.storeName);
+    const tenant = await this.tenantsService.create(registerDto.storeName, registerDto.modules);
     
     // 2. Hash Password
     const saltRounds = 10;

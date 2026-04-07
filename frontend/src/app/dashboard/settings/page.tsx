@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Store, Users, User, Settings as SettingsIcon, Save, Key, Printer, Phone, Eye, EyeOff, MapPin, X, Edit2, Trash2 } from 'lucide-react';
+import { Store, Users, User, Settings as SettingsIcon, Save, Key, Printer, Phone, Eye, EyeOff, MapPin, X, Edit2, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
@@ -23,6 +23,26 @@ export default function SettingsPage() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+
+  // Modules state
+  const ALL_MODULES = [
+    { id: 'POS', name: 'Caja Registradora (POS)', description: 'Venta rápida e impresión de tickets' },
+    { id: 'CLOSURE', name: 'Cierre de Caja', description: 'Control de turnos y arqueos' },
+    { id: 'INVENTORY', name: 'Control de Inventario', description: 'Stock, categorías y alertas' },
+    { id: 'REPORTS', name: 'Reportes y Estadísticas', description: 'Análisis de ventas y ganancias' },
+    { id: 'SUPPLIERS', name: 'Proveedores y Gastos', description: 'Gestión de compras y facturas' },
+    { id: 'CUSTOMERS', name: 'Base de Datos de Clientes', description: 'Historial y fidelización' },
+    { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)', description: 'Venta a crédito y abonos' },
+    { id: 'REFUNDS', name: 'Devoluciones y Reembolsos', description: 'Gestión de cambios de productos' },
+    { id: 'ACCOUNTING', name: 'Módulo Contable', description: 'Libro de ingresos y egresos' },
+  ];
+  const [activeModules, setActiveModules] = useState<string[]>(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
+
+  const toggleModule = (id: string) => {
+    setActiveModules(prev =>
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    );
+  };
   
   // Users management state
   const [users, setUsers] = useState<any[]>([]);
@@ -66,6 +86,9 @@ export default function SettingsPage() {
           phone: data.phone || '',
           address: data.address || '',
         });
+        // Load modules from backend or fall back to all if null
+        const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+        setActiveModules(data.modules || defaultModules);
       }
     } catch (error) {
       console.error("Error fetching tenant", error);
@@ -198,13 +221,15 @@ export default function SettingsPage() {
           location: tenantData.location,
           phone: tenantData.phone,
           address: tenantData.address,
+          modules: activeModules,
         })
       });
 
       if (res.ok) {
         alert('Configuración guardada correctamente.');
-        // Update local storage for immediate UI reflected in header if needed
         localStorage.setItem('store_name', tenantData.name);
+        // Update sidebar immediately
+        localStorage.setItem('tenant_modules', JSON.stringify(activeModules));
       } else {
         alert('Error al guardar la configuración.');
       }
@@ -370,6 +395,37 @@ export default function SettingsPage() {
                     />
                   </div>
                 </div>
+
+                {/* Modules section */}
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-6">
+                  <h4 className="text-sm font-black text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                    <ToggleRight className="w-5 h-5 text-blue-500" />
+                    Módulos Activos del Negocio
+                  </h4>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Activa o desactiva las secciones que necesita tu negocio. El menú lateral se actualizará al guardar.</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {ALL_MODULES.map(mod => (
+                      <button
+                        key={mod.id}
+                        type="button"
+                        onClick={() => toggleModule(mod.id)}
+                        className={`flex items-center gap-3 text-left p-3 rounded-xl border-2 transition-all ${activeModules.includes(mod.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10' : 'border-gray-100 dark:border-slate-800 hover:border-gray-200 dark:hover:border-slate-700'}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${activeModules.includes(mod.id) ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-400'}`}>
+                          {activeModules.includes(mod.id) 
+                            ? <ToggleRight className="w-5 h-5" />
+                            : <ToggleLeft className="w-5 h-5" />
+                          }
+                        </div>
+                        <div>
+                          <p className={`text-sm font-black ${activeModules.includes(mod.id) ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}`}>{mod.name}</p>
+                          <p className="text-[10px] text-gray-400 font-medium leading-tight">{mod.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="pt-4 flex gap-3">
                   <button 
                     onClick={handleSaveBusiness}

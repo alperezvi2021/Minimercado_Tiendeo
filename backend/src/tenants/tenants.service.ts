@@ -11,8 +11,12 @@ export class TenantsService {
     private tenantsRepository: Repository<Tenant>,
   ) {}
 
-  async create(name: string): Promise<Tenant> {
-    const tenant = this.tenantsRepository.create({ name });
+  async create(name: string, modules?: string[]): Promise<Tenant> {
+    const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+    const tenant = this.tenantsRepository.create({ 
+      name, 
+      modules: modules || defaultModules 
+    });
     return this.tenantsRepository.save(tenant);
   }
 

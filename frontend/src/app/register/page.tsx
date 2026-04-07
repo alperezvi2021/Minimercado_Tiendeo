@@ -14,7 +14,29 @@ export default function RegisterPage() {
     userName: '',
     email: '',
     password: '',
+    modules: ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']
   });
+
+  const modulesList = [
+    { id: 'POS', name: 'Caja Registradora (POS)', description: 'Venta rápida e impresión de tickets' },
+    { id: 'CLOSURE', name: 'Cierre de Caja', description: 'Control de turnos y arqueos' },
+    { id: 'INVENTORY', name: 'Control de Inventario', description: 'Stock, categorías y alertas' },
+    { id: 'REPORTS', name: 'Reportes y Estadísticas', description: 'Análisis de ventas y ganancias' },
+    { id: 'SUPPLIERS', name: 'Proveedores y Gastos', description: 'Gestión de compras y facturas' },
+    { id: 'CUSTOMERS', name: 'Base de Datos de Clientes', description: 'Historial y fidelización' },
+    { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)', description: 'Venta a crédito y abonos' },
+    { id: 'REFUNDS', name: 'Devoluciones y Reembolsos', description: 'Gestión de cambios de productos' },
+    { id: 'ACCOUNTING', name: 'Módulo Contable', description: 'Libro de ingresos y egresos' },
+  ];
+
+  const toggleModule = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      modules: prev.modules.includes(id) 
+        ? prev.modules.filter(m => m !== id) 
+        : [...prev.modules, id]
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +44,6 @@ export default function RegisterPage() {
     
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      console.log('Fetching registration from:', apiUrl);
       const res = await fetch(`${apiUrl}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,10 +55,11 @@ export default function RegisterPage() {
         if (contentType && contentType.includes('application/json')) {
           const data = await res.json();
           // Guardar sesión y redirigir
-          localStorage.setItem('tenant_token', data.access_token);
+          localStorage.setItem('access_token', data.access_token);
           localStorage.setItem('user_role', data.user.role);
           localStorage.setItem('user_name', data.user.name);
-          setStep(3); // Paso de éxito
+          localStorage.setItem('tenant_modules', JSON.stringify(data.user.tenant_modules || []));
+          setStep(4); // Paso de éxito
           setTimeout(() => {
             router.push('/dashboard');
           }, 2000);
@@ -45,17 +67,15 @@ export default function RegisterPage() {
            throw new Error('Respuesta del servidor no es JSON');
         }
       } else {
+        // ... err handling remains same ...
         if (contentType && contentType.includes('application/json')) {
           const err = await res.json();
           alert(`Error: ${err.message || 'No se pudo registrar el negocio'}`);
         } else {
-          const textErr = await res.text();
-          console.error('Server HTML Error:', textErr);
           alert(`Error del Servidor: Código ${res.status}. Posible caída del Backend.`);
         }
       }
     } catch (error: any) {
-      console.error(error);
       alert('Error de conexión: ' + (error.message || 'Fallo desconocido'));
     } finally {
       setLoading(false);
@@ -75,10 +95,10 @@ export default function RegisterPage() {
         </span>
       </Link>
 
-      <div className="w-full max-w-md">
+      <div className={`w-full ${step === 3 ? 'max-w-2xl' : 'max-w-md'}`}>
         {/* Progress Bar */}
         <div className="flex justify-between mb-8 px-2">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3, 4].map(i => (
                 <div key={i} className={`h-1.5 flex-1 mx-1 rounded-full transition-all duration-500 ${step >= i ? 'bg-blue-600' : 'bg-gray-200 dark:bg-slate-800'}`} />
             ))}
         </div>
@@ -120,7 +140,7 @@ export default function RegisterPage() {
           )}
 
           {step === 2 && (
-            <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <form onSubmit={(e) => { e.preventDefault(); setStep(3); }} className="animate-in fade-in slide-in-from-right-4 duration-300">
               <div className="mb-8">
                 <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Tus Datos</h2>
                 <p className="text-gray-500 dark:text-gray-400 font-bold">Configura tu usuario para administrar.</p>
@@ -188,10 +208,9 @@ export default function RegisterPage() {
                       Atrás
                     </button>
                     <button 
-                      disabled={loading}
                       className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2"
                     >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Finalizar Registro'}
+                      Continuar a Módulos
                     </button>
                 </div>
               </div>
@@ -199,6 +218,50 @@ export default function RegisterPage() {
           )}
 
           {step === 3 && (
+             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="mb-6">
+                  <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-2">Personaliza</h2>
+                  <p className="text-gray-500 dark:text-gray-400 font-bold">¿Qué módulos necesita tu negocio hoy?</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+                  {modulesList.map(mod => (
+                    <button
+                      key={mod.id}
+                      onClick={() => toggleModule(mod.id)}
+                      className={`text-left p-4 rounded-2xl border-2 transition-all group ${formData.modules.includes(mod.id) ? 'border-blue-500 bg-blue-50/30 dark:bg-blue-500/10' : 'border-gray-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900/30'}`}
+                    >
+                      <div className="flex items-center gap-3 mb-1">
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${formData.modules.includes(mod.id) ? 'bg-blue-600 border-blue-600' : 'border-gray-300 dark:border-slate-700'}`}>
+                          {formData.modules.includes(mod.id) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className={`text-sm font-black ${formData.modules.includes(mod.id) ? 'text-blue-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>{mod.name}</span>
+                      </div>
+                      <p className="text-[10px] font-bold text-gray-400 group-hover:text-gray-500 transition-colors leading-tight">{mod.description}</p>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3">
+                    <button 
+                      type="button" 
+                      onClick={() => setStep(2)}
+                      className="px-6 py-4 rounded-2xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-200"
+                    >
+                      Atrás
+                    </button>
+                    <button 
+                      disabled={loading || formData.modules.length === 0}
+                      onClick={handleSubmit}
+                      className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2"
+                    >
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Finalizar Registro'}
+                    </button>
+                </div>
+             </div>
+          )}
+
+          {step === 4 && (
             <div className="text-center py-10 animate-in zoom-in duration-500">
                <div className="mx-auto w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6 border-8 border-green-50 dark:border-green-900/10">
                  <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
@@ -210,6 +273,7 @@ export default function RegisterPage() {
                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto opacity-20" />
             </div>
           )}
+
         </div>
         
         <p className="mt-8 text-center text-sm font-bold text-gray-500">

@@ -34,10 +34,12 @@ export default function LoginPage() {
       if (data.user) {
         localStorage.setItem('user_role', data.user.role);
         localStorage.setItem('user_name', data.user.name);
+        localStorage.setItem('tenant_modules', JSON.stringify(data.user.tenant_modules || []));
       } else {
         // Fallback: Si no vienen en data.user, intentamos sacarlos de data directamente
         localStorage.setItem('user_role', data.role || 'CASHIER');
         localStorage.setItem('user_name', data.name || 'Usuario');
+        localStorage.setItem('tenant_modules', JSON.stringify(data.tenant_modules || []));
       }
 
       router.push('/dashboard');
