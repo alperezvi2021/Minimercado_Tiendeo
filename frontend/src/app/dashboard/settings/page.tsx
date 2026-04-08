@@ -54,6 +54,7 @@ export default function SettingsPage() {
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
 
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
@@ -281,6 +282,33 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCleanupDuplicates = async () => {
+    if (!confirm('Este proceso eliminará los registros de ventas duplicados (manteniendo el más reciente). ¿Deseas continuar?')) return;
+    
+    setIsCleaning(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenance/cleanup-duplicates`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert(data.message || 'Limpieza completada correctamente.');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo realizar la limpieza'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión al realizar limpieza');
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row gap-8">
@@ -423,6 +451,34 @@ export default function SettingsPage() {
                         </div>
                       </button>
                     ))}
+                  </div>
+                </div>
+
+                {/* Maintenance Section */}
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-6">
+                  <h4 className="text-sm font-black text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                    <Edit2 className="w-5 h-5 text-orange-500" />
+                    Herramientas de Mantenimiento
+                  </h4>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Usa estas herramientas para corregir problemas de integridad o errores de datos.</p>
+                  
+                  <div className="flex flex-wrap gap-3">
+                    <button 
+                      onClick={handleCleanupDuplicates}
+                      disabled={isCleaning}
+                      className="bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 px-4 py-3 rounded-xl text-sm font-bold border border-orange-200 dark:border-orange-800/50 hover:bg-orange-100 transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      {isCleaning ? 'Limpiando...' : 'Eliminar Facturas Duplicadas'}
+                    </button>
+
+                    <button 
+                      onClick={() => setIsResetModalOpen(true)}
+                      className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm font-bold border border-red-200 dark:border-red-800/50 hover:bg-red-100 transition-all flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Reiniciar Datos del Sistema
+                    </button>
                   </div>
                 </div>
 
