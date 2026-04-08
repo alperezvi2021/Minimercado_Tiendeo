@@ -433,8 +433,8 @@ export default function InventoryPage() {
     const reader = new FileReader();
     reader.onload = async (evt) => {
       try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
+        const dataBuffer = evt.target?.result as ArrayBuffer;
+        const wb = XLSX.read(dataBuffer, { type: 'array' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws) as any[];
@@ -457,6 +457,8 @@ export default function InventoryPage() {
           };
         }).filter(p => p.name); // Solo productos con nombre
 
+        console.log("Productos a importar:", productsToImport);
+
         if (productsToImport.length > 0) {
           const token = localStorage.getItem('access_token');
           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/bulk`, {
@@ -472,15 +474,17 @@ export default function InventoryPage() {
             alert(`¡Éxito! Se importaron ${productsToImport.length} productos.`);
             fetchProducts();
           } else {
-            alert('Hubo un error al realizar la importación masiva.');
+            const errorData = await res.json().catch(() => ({}));
+            const msg = errorData.message || 'Error desconocido en el servidor';
+            alert(`Hubo un error al realizar la importación masiva:\n\n${Array.isArray(msg) ? msg.join(', ') : msg}`);
           }
         }
       } catch (error) {
         console.error("Error parsing excel", error);
-        alert('Formato de archivo inválido.');
+        alert(`Formato de archivo inválido o error de procesamiento:\n${error instanceof Error ? error.message : 'Error desconocido'}`);
       }
     };
-    reader.readAsBinaryString(file);
+    reader.readAsArrayBuffer(file);
     // Limpiar input
     e.target.value = '';
   };

@@ -83,10 +83,18 @@ export class ProductsService {
   }
 
   async createMany(tenantId: string, productsDto: CreateProductDto[]): Promise<Product[]> {
-    const products = productsDto.map(dto => this.productsRepository.create({
-      ...dto,
-      tenantId,
-    }));
-    return this.productsRepository.save(products);
+    try {
+      const products = productsDto.map(dto => this.productsRepository.create({
+        ...dto,
+        tenantId,
+      }));
+      return await this.productsRepository.save(products);
+    } catch (error) {
+      // Manejar error de duplicado (Postgres 23505)
+      if (error.code === '23505') {
+        throw new ConflictException('Uno o más productos ya existen (posible código de barras duplicado)');
+      }
+      throw error;
+    }
   }
 }
