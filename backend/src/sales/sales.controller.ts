@@ -24,25 +24,23 @@ export class SalesController {
   @Get('closure/status')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   getClosureStatus(@Request() req) {
-    const tenantId = req.user.tenantId;
-    const userId = req.user.userId;
-    return this.salesService.getCurrentClosureStatus(tenantId, userId);
+    const { tenantId, userId, role } = req.user;
+    const searchUserId = (role === Role.ADMIN || role === Role.OWNER) ? undefined : userId;
+    return this.salesService.getCurrentClosureStatus(tenantId, searchUserId);
   }
 
   @Post('closure/close')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   performClosure(@Request() req) {
-    const tenantId = req.user.tenantId;
-    const userId = req.user.userId;
+    const { tenantId, userId } = req.user;
     return this.salesService.performClosure(tenantId, userId);
   }
 
   @Post('closure/open')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   openClosure(@Request() req, @Body() body: { openingAmount: number }) {
-    const tenantId = req.user.tenantId;
-    const userId = req.user.userId;
-    const userName = req.user.name || 'Cajero';
+    const { tenantId, userId, name } = req.user;
+    const userName = name || 'Cajero';
     return this.salesService.openClosure(tenantId, userId, userName, body.openingAmount);
   }
 
@@ -56,9 +54,9 @@ export class SalesController {
   @Get('closure/sales')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   async getClosureSales(@Request() req) {
-    const tenantId = req.user.tenantId;
-    const userId = req.user.userId;
-    const status = await this.salesService.getCurrentClosureStatus(tenantId, userId);
+    const { tenantId, userId, role } = req.user;
+    const searchUserId = (role === Role.ADMIN || role === Role.OWNER) ? undefined : userId;
+    const status = await this.salesService.getCurrentClosureStatus(tenantId, searchUserId);
     if (!status || !status.closure) return [];
     return this.salesService.findByClosure(tenantId, status.closure.id);
   }
@@ -66,9 +64,9 @@ export class SalesController {
   @Get('closure/payments')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   async getClosurePayments(@Request() req) {
-    const tenantId = req.user.tenantId;
-    const userId = req.user.userId;
-    const status = await this.salesService.getCurrentClosureStatus(tenantId, userId);
+    const { tenantId, userId, role } = req.user;
+    const searchUserId = (role === Role.ADMIN || role === Role.OWNER) ? undefined : userId;
+    const status = await this.salesService.getCurrentClosureStatus(tenantId, searchUserId);
     if (!status || !status.closure) return [];
     return this.salesService.getPaymentsByClosure(tenantId, status.closure.id);
   }

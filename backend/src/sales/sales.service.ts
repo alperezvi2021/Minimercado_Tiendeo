@@ -33,9 +33,13 @@ export class SalesService {
     private dataSource: DataSource,
   ) {}
 
-  async getOpenClosure(tenantId: string, userId: string): Promise<CashClosure> {
+  async getOpenClosure(tenantId: string, userId?: string): Promise<CashClosure> {
+    const where: any = { tenantId, status: 'OPEN' };
+    if (userId) where.userId = userId;
+    
     return await this.cashClosureRepository.findOne({
-      where: { tenantId, userId, status: 'OPEN' },
+      where,
+      order: { openedAt: 'DESC' }
     });
   }
 
@@ -63,12 +67,12 @@ export class SalesService {
     if (!closure) throw new BadRequestException('Debe realizar la apertura de caja primero');
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
-      // Logic for invoice number
-      const lastSale = await transactionalEntityManager.findOne(Sale, {
-        where: { tenantId },
-        order: { createdAt: 'DESC' },
-        select: ['invoiceNumber']
-      });
+      // Logic for invoice number with pessimistic locking to prevent race conditions
+      const lastSale = await transactionalEntityManager.createQueryBuilder(Sale, 'sale')
+        .setLock('pessimistic_write')
+        .where('sale.tenantId = :tenantId', { tenantId })
+        .orderBy('sale.createdAt', 'DESC')
+        .getOne();
 
       let nextNumber = 1;
       if (lastSale && lastSale.invoiceNumber) {
@@ -116,7 +120,7 @@ export class SalesService {
 
       // Descontar inventario
       for (const item of createSaleDto.items) {
-        await this.productsService.updateStock(tenantId, item.productId, item.quantity);
+        await this.productsService.updateStock(tenantId, item.productId, item.quantity, transactionalEntityManager);
       }
 
       return savedSale;
@@ -161,7 +165,7 @@ export class SalesService {
     return this.creditSalesRepository.save(creditSale);
   }
 
-  async getCurrentClosureStatus(tenantId: string, userId: string): Promise<any> {
+  async getCurrentClosureStatus(tenantId: string, userId?: string): Promise<any> {
     const closure = await this.getOpenClosure(tenantId, userId);
 
     if (!closure) return null;
@@ -461,7 +465,7 @@ export class SalesService {
       for (const item of dto.items) {
         if (item.returnsToInventory !== false) {
           // Usamos valor negativo para SUMAR al stock (0.5 -> -0.5 => stock - (-0.5) = stock + 0.5)
-          await this.productsService.updateStock(tenantId, item.productId, -item.quantity);
+          await this.productsService.updateStock(tenantId, item.productId, -item.quantity, transactionalEntityManager);
         }
       }
 

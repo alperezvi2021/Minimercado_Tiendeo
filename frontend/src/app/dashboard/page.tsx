@@ -362,6 +362,7 @@ export default function PosPage() {
 
   const processSale = async () => {
     if (cart.length === 0 || isProcessing) return;
+    setIsProcessing(true);
     let finalCustomerId = selectedCustomerId;
     let finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
 

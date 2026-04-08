@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, EntityManager } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -71,13 +71,14 @@ export class ProductsService {
     await this.productsRepository.remove(product);
   }
 
-  async updateStock(tenantId: string, id: string, quantityToSubtract: number): Promise<void> {
-    const product = await this.productsRepository.findOne({ where: { id, tenantId } });
+  async updateStock(tenantId: string, id: string, quantityToSubtract: number, manager?: EntityManager): Promise<void> {
+    const repo = manager ? manager.getRepository(Product) : this.productsRepository;
+    const product = await repo.findOne({ where: { id, tenantId } });
     if (product) {
       // Permitimos stock negativo temporalmente para que no bloquee ventas urgentes,
       // pero actualizamos en BD.
       product.stock -= quantityToSubtract;
-      await this.productsRepository.save(product);
+      await repo.save(product);
     }
   }
 
