@@ -4,6 +4,8 @@ import { TrendingUp, TrendingDown, DollarSign, Receipt, Calculator, ArrowUpRight
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { utils, writeFile } from 'xlsx';
+import { formatCurrency as curr } from '@/utils/formatters';
+
 
 interface Summary {
   totalRevenue: number;
@@ -59,14 +61,14 @@ export default function AccountingPage() {
       startY: 40,
       head: [['Indicador', 'Valor']],
       body: [
-        ['Total Facturado (Revenue)', `$${summary.totalRevenue.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-        ['Ingresos en Efectivo/Tarjeta', `$${summary.totalCashRevenue.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-        ['Cuentas por Cobrar (Créditos)', `$${summary.accountsReceivable.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-        ['Egresos Totales (Compras)', `$${summary.totalExpenses.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-        ['Utilidad Bruta', `$${summary.grossProfit.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-        ['IVA por Pagar (Ventas 19%)', `$${Math.round(summary.totalRevenue * 0.19).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-        ['IVA a Favor (Compras)', `$${Math.round(summary.taxBalance + (summary.totalRevenue * 0.19)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-        ['Saldo IVA Neto', `${Math.round(Math.abs(summary.taxBalance)).toLocaleString('es-CO', { maximumFractionDigits: 0 })} (${summary.taxBalance >= 0 ? 'Por Pagar' : 'A Favor'})`],
+        ['Total Facturado (Revenue)', `$${curr(summary.totalRevenue)}`],
+        ['Ingresos en Efectivo/Tarjeta', `$${curr(summary.totalCashRevenue)}`],
+        ['Cuentas por Cobrar (Créditos)', `$${curr(summary.accountsReceivable)}`],
+        ['Egresos Totales (Compras)', `$${curr(summary.totalExpenses)}`],
+        ['Utilidad Bruta', `$${curr(summary.grossProfit)}`],
+        ['IVA por Pagar (Ventas 19%)', `$${curr(summary.totalRevenue * 0.19)}`],
+        ['IVA a Favor (Compras)', `$${curr(summary.taxBalance + (summary.totalRevenue * 0.19))}`],
+        ['Saldo IVA Neto', `${curr(Math.abs(summary.taxBalance))} (${summary.taxBalance >= 0 ? 'Por Pagar' : 'A Favor'})`],
       ],
       theme: 'striped',
       headStyles: { fillColor: [37, 99, 235] }
@@ -140,7 +142,7 @@ export default function AccountingPage() {
           </div>
           <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Facturado</p>
           <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-            ${Math.round(summary.totalRevenue).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            ${curr(summary.totalRevenue)}
           </h3>
         </div>
 
@@ -155,7 +157,7 @@ export default function AccountingPage() {
           </div>
           <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ingresos Efectivo</p>
           <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-            ${Math.round(summary.totalCashRevenue).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            ${curr(summary.totalCashRevenue)}
           </h3>
         </div>
 
@@ -170,7 +172,7 @@ export default function AccountingPage() {
           </div>
           <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cuentas por Cobrar</p>
           <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-            ${Math.round(summary.accountsReceivable).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            ${curr(summary.accountsReceivable)}
           </h3>
         </div>
 
@@ -185,7 +187,7 @@ export default function AccountingPage() {
           </div>
           <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Egresos Totales (Compras)</p>
           <h3 className="text-3xl font-black text-slate-900 dark:text-white mt-1">
-            ${Math.round(summary.totalExpenses).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            ${curr(summary.totalExpenses)}
           </h3>
           <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase">{summary.purchasesCount} facturas de proveedores</p>
         </div>
@@ -199,7 +201,7 @@ export default function AccountingPage() {
           </div>
           <p className="text-sm font-bold text-emerald-100 uppercase tracking-wider">Utilidad Bruta</p>
           <h3 className="text-3xl font-black text-white mt-1">
-            ${Math.round(summary.grossProfit).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+            ${curr(summary.grossProfit)}
           </h3>
           <p className="text-[10px] text-white/60 mt-2 font-bold uppercase">Rentabilidad calculada</p>
         </div>
@@ -214,16 +216,16 @@ export default function AccountingPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl">
               <span className="text-sm font-bold text-slate-600 dark:text-slate-400">IVA por Pagar (Ventas 19%)</span>
-              <span className="text-sm font-black text-rose-600">${Math.round(summary.totalRevenue * 0.19).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+              <span className="text-sm font-black text-rose-600">${curr(summary.totalRevenue * 0.19)}</span>
             </div>
             <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl">
               <span className="text-sm font-bold text-slate-600 dark:text-slate-400">IVA a Favor (Compras)</span>
-              <span className="text-sm font-black text-emerald-600">${Math.round(summary.taxBalance + (summary.totalRevenue * 0.19)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+              <span className="text-sm font-black text-emerald-600">${curr(summary.taxBalance + (summary.totalRevenue * 0.19))}</span>
             </div>
             <div className="pt-4 flex justify-between items-center">
               <span className="text-md font-extrabold text-slate-900 dark:text-white uppercase tracking-widest">Saldo IVA Neto</span>
               <span className={`text-xl font-black ${summary.taxBalance >= 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                ${Math.round(Math.abs(summary.taxBalance)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                ${curr(Math.abs(summary.taxBalance))}
                 <span className="text-[10px] ml-1 uppercase">{summary.taxBalance >= 0 ? 'por pagar' : 'a favor'}</span>
               </span>
             </div>

@@ -24,6 +24,8 @@ import CustomerHistoryModal from '@/components/customers/CustomerHistoryModal';
 import { useOfflineStore } from '@/store/useOfflineStore';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatCurrency as curr } from '@/utils/formatters';
+
 
 export default function CustomersPage() {
   const { isOnline, customers: cachedCustomers, setCache } = useOfflineStore();
@@ -105,7 +107,7 @@ export default function CustomersPage() {
       doc.setFontSize(14);
       doc.text('RESUMEN FINANCIERO', 14, 50);
       doc.setFontSize(11);
-      doc.text(`Total Cartera por Cobrar: $${Math.round(totalCartera).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`, 14, 60);
+      doc.text(`Total Cartera por Cobrar: $${curr(totalCartera)}`, 14, 60);
 
       // Table
       const tableData = fullCustomers
@@ -115,7 +117,7 @@ export default function CustomersPage() {
           c.idNumber || 'S/I',
           c.phone || 'N/R',
           c.pendingInvoices,
-          `$${Math.round(c.totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
+          `$${curr(c.totalDebt)}`
         ]);
 
       autoTable(doc, {
@@ -200,7 +202,7 @@ export default function CustomersPage() {
           <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 px-6 py-4 rounded-3xl shadow-xl hidden md:flex items-center gap-4">
             <div>
               <p className="text-[10px] font-black uppercase text-gray-400 dark:text-slate-500 tracking-widest">Cartera Total</p>
-              <p className="text-2xl font-black text-rose-600 dark:text-rose-500">${Math.round(totalOwedByAll).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+              <p className="text-2xl font-black text-rose-600 dark:text-rose-500">${curr(totalOwedByAll)}</p>
             </div>
             <div className="h-10 w-[1px] bg-gray-100 dark:bg-slate-800 mx-2" />
             <button 
@@ -317,7 +319,7 @@ export default function CustomersPage() {
                         <span className="text-xs font-black uppercase tracking-widest opacity-80 mb-1">
                           {c.totalDebt > 0 ? 'Deuda Activa' : 'Al Día'}
                         </span>
-                        <span className="text-lg font-black">${Math.round(c.totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                        <span className="text-lg font-black">${curr(c.totalDebt)}</span>
                         {c.pendingInvoices > 0 && (
                           <span className="text-[10px] font-bold mt-0.5 opacity-70">
                             {c.pendingInvoices} Facturas pendientes

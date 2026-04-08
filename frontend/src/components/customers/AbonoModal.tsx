@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, FileText, Loader2, ArrowDownCircle, History, User } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
+import { formatCurrency, parseCurrency } from '@/utils/formatters';
+
 
 interface AbonoModalProps {
   isOpen: boolean;
@@ -47,14 +49,14 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || parseFloat(amount) <= 0) return;
+    const amountVal = parseCurrency(amount);
+    if (!amount || amountVal <= 0) return;
     
     setLoading(true);
     try {
       if (!isOnline) {
         const uuid = crypto.randomUUID();
         const localId = `temp-pay-${uuid}`;
-        const amountVal = parseFloat(amount);
         
         const newPayment = {
           localId,
@@ -93,7 +95,7 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ 
-          amount: parseFloat(amount),
+          amount: amountVal,
           notes 
         })
       });
@@ -132,7 +134,7 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
             </h3>
             <div className="mt-6 p-6 bg-white dark:bg-slate-900 rounded-[2rem] border border-gray-200 dark:border-slate-800 shadow-sm">
                 <p className="text-xs font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-1">Saldo Pendiente</p>
-                <p className="text-4xl font-black text-rose-600 dark:text-rose-500">${Math.round(remaining).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+                <p className="text-4xl font-black text-rose-600 dark:text-rose-500">${formatCurrency(remaining)}</p>
                 <div className="mt-4 flex flex-col gap-2">
                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600 dark:text-slate-400">
                       <User className="w-4 h-4 text-blue-500" />
@@ -153,12 +155,11 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
                 <DollarSign className="absolute left-6 top-5 w-6 h-6 text-blue-600" />
                 <input
                   required
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
+                  type="text"
+                  placeholder="0"
                   className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-3xl pl-16 pr-6 py-5 text-2xl font-black text-gray-900 dark:text-white focus:border-blue-500 outline-none transition-all"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  value={formatCurrency(amount)}
+                  onChange={(e) => setAmount(parseCurrency(e.target.value).toString())}
                   autoFocus
                 />
               </div>
@@ -214,7 +215,7 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
               history.map((h) => (
                 <div key={h.id} className="p-6 bg-gray-50 dark:bg-slate-800/50 rounded-3xl border border-gray-100 dark:border-slate-800 transition-all hover:shadow-lg">
                   <div className="flex justify-between items-start mb-2">
-                    <p className="text-xl font-black text-green-600 dark:text-green-500">+ ${Math.round(h.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+                    <p className="text-xl font-black text-green-600 dark:text-green-500">+ ${formatCurrency(h.amount)}</p>
                     <div className="flex items-center gap-1.5 px-3 py-1 bg-white dark:bg-slate-900 rounded-full border border-gray-200 dark:border-slate-800 shadow-sm">
                       <Calendar className="w-3 h-3 text-blue-500" />
                       <span className="text-[10px] font-black text-gray-500 dark:text-slate-400">

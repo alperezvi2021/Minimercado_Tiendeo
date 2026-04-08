@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { X, User, Phone, Mail, MapPin, CreditCard, Loader2, Banknote, ArrowDownCircle } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
 import AbonoModal from './AbonoModal';
+import { formatCurrency, parseCurrency } from '@/utils/formatters';
+
 
 interface CustomerModalProps {
   isOpen: boolean;
@@ -234,11 +236,11 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                   <span className="text-xs font-black uppercase tracking-widest">Añadir Saldo Pendiente (Opcional)</span>
                 </div>
                 <input
-                  type="number"
-                  placeholder="Ej: 50000"
+                  type="text"
+                  placeholder="Ej: 50.000"
                   className="w-full bg-white dark:bg-slate-900 text-black dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/50 outline-none transition-all font-black text-lg"
-                  value={formData.initialDebt}
-                  onChange={(e) => setFormData({ ...formData, initialDebt: e.target.value })}
+                  value={formatCurrency(formData.initialDebt)}
+                  onChange={(e) => setFormData({ ...formData, initialDebt: parseCurrency(e.target.value).toString() })}
                 />
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 italic">* Use este campo para registrar deudas de cuadernos externos.</p>
               </div>
@@ -280,19 +282,19 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total</p>
                                 <p className="font-bold text-gray-700 dark:text-slate-300">
-                                  ${Math.round(debt.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                                  ${formatCurrency(debt.amount)}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Abonado</p>
                                 <p className="font-bold text-emerald-600 dark:text-emerald-400">
-                                  ${Math.round(totalPaid).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                                  ${formatCurrency(totalPaid)}
                                 </p>
                               </div>
                               <div className="text-right">
                                 <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Saldo</p>
                                 <p className="font-bold text-rose-600 dark:text-rose-500 text-lg">
-                                  ${Math.round(debt.remainingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                                  ${formatCurrency(debt.remainingAmount)}
                                 </p>
                               </div>
                             </div>

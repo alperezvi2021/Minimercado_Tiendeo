@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft, AlertCircle } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
+import { formatCurrency, parseCurrency } from '@/utils/formatters';
 
 interface Product {
   id: string;
@@ -317,9 +318,7 @@ export default function PosPage() {
       }));
       return;
     }
-
-    const price = parseFloat(newPrice);
-    if (isNaN(price)) return;
+    const price = parseCurrency(newPrice);
     
     setCart(prev => prev.map(item => {
       if (item.product.id === productId) {
@@ -905,23 +904,23 @@ export default function PosPage() {
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-black text-blue-300">$</span>
                         <input
-                          type="number"
+                          type="text"
                           id="cash-received-input"
-                          value={cashReceived}
-                          onChange={(e) => setCashReceived(e.target.value)}
+                          value={formatCurrency(cashReceived)}
+                          onChange={(e) => setCashReceived(parseCurrency(e.target.value).toString())}
                           placeholder="0"
                           className="w-full bg-white dark:bg-slate-900 border-none rounded-2xl pl-10 pr-4 py-3 text-2xl font-black text-gray-900 dark:text-white focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
                           onFocus={(e) => e.target.select()}
                         />
                       </div>
 
-                      {Number(cashReceived) > 0 && (
-                        <div className={`mt-1 p-3 rounded-2xl flex justify-between items-center ${Number(cashReceived) >= calculateTotal() ? 'bg-green-600 text-white' : 'bg-rose-600 text-white'}`}>
+                      {parseCurrency(cashReceived) > 0 && (
+                        <div className={`mt-1 p-3 rounded-2xl flex justify-between items-center ${parseCurrency(cashReceived) >= calculateTotal() ? 'bg-green-600 text-white' : 'bg-rose-600 text-white'}`}>
                           <span className="text-[10px] font-black uppercase tracking-wider">
-                            {Number(cashReceived) >= calculateTotal() ? 'CAMBIO A DEVOLVER' : 'FALTA DINERO'}
+                            {parseCurrency(cashReceived) >= calculateTotal() ? 'CAMBIO A DEVOLVER' : 'FALTA DINERO'}
                           </span>
                           <span className="text-xl font-black">
-                            ${Math.abs(Number(cashReceived) - calculateTotal()).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                            ${formatCurrency(Math.abs(parseCurrency(cashReceived) - calculateTotal()))}
                           </span>
                         </div>
                       )}
@@ -977,7 +976,7 @@ export default function PosPage() {
                       >
                         <option value="">-- Seleccionar de la lista --</option>
                         {customers.map(c => (
-                          <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${Math.round(c.totalDebt).toLocaleString('es-CO', { maximumFractionDigits: 0 })})` : ''}</option>
+                          <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${formatCurrency(c.totalDebt)})` : ''}</option>
                         ))}
                       </select>
 
@@ -1020,7 +1019,7 @@ export default function PosPage() {
           <div className="flex justify-between items-center mb-6">
             <span className="text-lg font-bold text-gray-900 dark:text-white">Total</span>
             <span className="text-3xl font-black text-blue-600 dark:text-blue-400">
-              ${Math.round(calculateTotal()).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+              ${formatCurrency(calculateTotal())}
             </span>
           </div>
           
@@ -1057,7 +1056,7 @@ export default function PosPage() {
         <div className="md:hidden fixed bottom-4 left-4 right-4 bg-blue-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between z-30 animate-in slide-in-from-bottom-4 duration-300">
           <div>
             <p className="text-[10px] font-black opacity-70 uppercase">Total Carrito</p>
-            <p className="text-xl font-black">${Math.round(calculateTotal()).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+            <p className="text-xl font-black">${formatCurrency(calculateTotal())}</p>
           </div>
           <button 
             onClick={() => setActiveTab('cart')}
@@ -1141,22 +1140,22 @@ export default function PosPage() {
 
   completedSale.items.forEach((item: any) => {
     const name = item.productName || item.product.name;
-    const priceRound = Math.round((item.unitPrice || item.product.price) * item.quantity).toLocaleString('es-CO', { maximumFractionDigits: 0 });
+    const priceRound = formatCurrency(Math.round((item.unitPrice || item.product.price) * item.quantity));
     const leftInfo = `${name.substring(0, is80mm ? 16 : 11)} x${item.quantity}`;
     lines.push(formatLine(leftInfo, priceRound));
   });
 
   lines.push('');
   lines.push(divider);
-  lines.push(formatLine('Subtotal', Math.round(completedSale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
+  lines.push(formatLine('Subtotal', formatCurrency(completedSale.totalAmount)));
   lines.push(formatLine('IVA (0%)', '0'));
-  lines.push(formatLine('TOTAL', Math.round(completedSale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
+  lines.push(formatLine('TOTAL', formatCurrency(completedSale.totalAmount)));
   lines.push(divider);
   lines.push('');
   lines.push(`Pago: ${completedSale.paymentMethod.toUpperCase()}`);
   if (completedSale.paymentMethod === 'efectivo') {
-    lines.push(formatLine('Recibido:', Math.round(completedSale.receivedAmount || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
-    lines.push(formatLine('Cambio:', Math.round(completedSale.changeAmount || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })));
+    lines.push(formatLine('Recibido:', formatCurrency(completedSale.receivedAmount || 0)));
+    lines.push(formatLine('Cambio:', formatCurrency(completedSale.changeAmount || 0)));
   }
   if (completedSale.paymentMethod === 'credito' && completedSale.customerName) {
     lines.push(centerText(completedSale.customerName.toUpperCase()));
@@ -1213,7 +1212,7 @@ export default function PosPage() {
             </h2>
             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border-2 border-white/20 shadow-inner">
               <p className="text-6xl md:text-8xl font-black text-white drop-shadow-lg">
-                ${Math.round(completedSale.changeAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                ${formatCurrency(completedSale.changeAmount)}
               </p>
             </div>
             <p className="mt-8 text-blue-100 text-sm font-bold animate-pulse flex items-center justify-center gap-2">

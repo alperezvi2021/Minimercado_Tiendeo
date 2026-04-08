@@ -4,6 +4,8 @@ import { BarChart3, TrendingUp, Calendar, CreditCard, Banknote, Receipt, Tag, Fi
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { utils, writeFile } from 'xlsx';
+import { formatCurrency as formatCurrencyUtil } from '@/utils/formatters';
+
 
 interface SaleItem {
   id: string;
@@ -87,7 +89,7 @@ export default function ReportsPage() {
   const totalCredit = sales.filter(s => s.paymentMethod === 'credito').reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
   const totalItemsSold = sales.reduce((acc, sale) => acc + sale.items.reduce((sum, item) => sum + item.quantity, 0), 0);
 
-  const formatCurrency = (amount: number) => `$${Math.round(amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
+  const formatCurrency = (amount: number) => `$${formatCurrencyUtil(amount)}`;
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -102,7 +104,7 @@ export default function ReportsPage() {
       sale.sellerName || sale.user?.name || 'Sistema',
       sale.paymentMethod + (sale.customerName ? ` (${sale.customerName})` : ''),
       sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', '),
-      `$${Math.round(sale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
+      `$${formatCurrencyUtil(sale.totalAmount)}`
     ]);
     
     autoTable(doc, {

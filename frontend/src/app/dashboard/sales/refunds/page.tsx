@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Search, RotateCcw, Package, AlertCircle, CheckCircle2, Hash, Trash2 } from 'lucide-react';
+import { formatCurrency as curr } from '@/utils/formatters';
+
 
 export default function RefundsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,7 +216,7 @@ export default function RefundsPage() {
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(s.createdAt).toLocaleDateString()}</span>
               </div>
               <h3 className="font-extrabold text-xl dark:text-white mb-1 uppercase tracking-tight">{s.invoiceNumber}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mb-4">${Math.round(s.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold mb-4">${curr(s.totalAmount)}</p>
               <div className="space-y-1">
                 {s.items.slice(0, 2).map((item: any, i: number) => (
                   <p key={i} className="text-xs text-slate-400 truncate tracking-tight">• {item.productName}</p>
@@ -291,7 +293,7 @@ export default function RefundsPage() {
                             </div>
                           </td>
                           <td className="py-6 text-right font-black text-slate-900 dark:text-white text-lg">
-                            ${Number(item.unitPrice).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                            ${curr(item.unitPrice)}
                           </td>
                           <td className="py-6 text-center">
                             <button
@@ -341,7 +343,7 @@ export default function RefundsPage() {
                   <span className="block text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-2">Total Ajuste</span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-5xl font-black text-white">
-                      ${calculateTotalRefund().toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                      ${curr(calculateTotalRefund())}
                     </span>
                   </div>
                 </div>

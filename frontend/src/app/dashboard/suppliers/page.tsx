@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Plus, Search, Truck, Receipt, Eye, Edit3, Trash2, Calendar, User, FileText, CheckCircle2, Clock, Wallet, CalendarDays, DollarSign, CreditCard } from 'lucide-react';
+import { formatCurrency, parseCurrency } from '@/utils/formatters';
+
 
 interface Supplier {
   id: string;
@@ -574,7 +576,7 @@ export default function SuppliersPage() {
                     <td className="px-6 py-4 font-mono text-sm font-bold text-blue-600">{inv.invoiceNumber}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(inv.date).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">{inv.supplier?.name}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-emerald-600">${Math.round(inv.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-emerald-600">${formatCurrency(inv.totalAmount)}</td>
                     <td className="px-6 py-4">
                       {inv.isPaid ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
@@ -599,7 +601,7 @@ export default function SuppliersPage() {
                   <tr key={exp.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(exp.date).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">{exp.description}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-orange-600">${Math.round(exp.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-orange-600">${formatCurrency(exp.amount)}</td>
                     <td className="px-6 py-4 text-right">
                       <button onClick={async () => {
                         if(confirm('¿Eliminar gasto?')) {
@@ -619,7 +621,7 @@ export default function SuppliersPage() {
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{new Date(sch.date).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">{sch.supplier?.name}</td>
                     <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{sch.description}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-indigo-600">${Math.round(sch.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-indigo-600">${formatCurrency(sch.totalAmount)}</td>
                     <td className="px-6 py-4 text-xs font-bold uppercase">{sch.paymentType}</td>
                     <td className="px-6 py-4 text-xs">
                       <span className={`px-2 py-0.5 rounded-full ${sch.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
@@ -645,11 +647,11 @@ export default function SuppliersPage() {
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Compras Brutas</p>
-                          <p className="text-3xl font-black text-slate-900 dark:text-white">${Math.round(invoices.reduce((s: number, i: any) => s + i.totalAmount, 0)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+                          <p className="text-3xl font-black text-slate-900 dark:text-white">${formatCurrency(invoices.reduce((s: number, i: any) => s + i.totalAmount, 0))}</p>
                        </div>
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Impuestos</p>
-                          <p className="text-3xl font-black text-blue-600">${Math.round(invoices.reduce((s: number, i: any) => s + i.totalTax, 0)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+                          <p className="text-3xl font-black text-blue-600">${formatCurrency(invoices.reduce((s: number, i: any) => s + i.totalTax, 0))}</p>
                        </div>
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Facturas Pendientes</p>
@@ -680,7 +682,7 @@ export default function SuppliersPage() {
                                     <p className="text-[10px] text-slate-500">{s.taxId || 'N/A'}</p>
                                   </td>
                                   <td className="px-6 py-4 text-center font-bold text-slate-600 dark:text-slate-400">{supInvoices.length}</td>
-                                  <td className="px-6 py-4 text-right font-black text-emerald-600">${Math.round(total).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</td>
+                                  <td className="px-6 py-4 text-right font-black text-emerald-600">${formatCurrency(total)}</td>
                                 </tr>
                               );
                             })}
@@ -746,7 +748,7 @@ export default function SuppliersPage() {
               </h3>
               <div className="text-right">
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Total Factura</p>
-                <p className="text-2xl font-black text-emerald-600">${Math.round(calculateInvoiceTotals().total).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+                <p className="text-2xl font-black text-emerald-600">${formatCurrency(calculateInvoiceTotals().total)}</p>
               </div>
             </div>
             
@@ -808,12 +810,12 @@ export default function SuppliersPage() {
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">V. Neto Unid.</label>
                         <input 
-                          type="number" 
+                          type="text" 
                           required 
                           placeholder="0"
                           className="w-full p-2.5 rounded-lg bg-white dark:bg-slate-700 text-black dark:text-white text-sm border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold" 
-                          value={item.unitNetValue === 0 ? '' : item.unitNetValue} 
-                          onChange={e => updateItem(idx, 'unitNetValue', parseFloat(e.target.value) || 0)} 
+                          value={formatCurrency(item.unitNetValue)} 
+                          onChange={e => updateItem(idx, 'unitNetValue', parseCurrency(e.target.value))} 
                         />
                       </div>
                       <div className="col-span-2">
@@ -827,7 +829,7 @@ export default function SuppliersPage() {
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">V. Total</label>
                         <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 text-sm font-bold border-none h-[38px] flex items-center">
-                          ${Math.round((item.quantity * item.unitNetValue) * (1 + item.taxRate / 100)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                          ${formatCurrency((item.quantity * item.unitNetValue) * (1 + item.taxRate / 100))}
                         </div>
                       </div>
                       <div className="col-span-1 flex justify-center">
@@ -845,27 +847,27 @@ export default function SuppliersPage() {
                 <div className="w-full max-w-xs space-y-2 bg-slate-50 dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500 font-bold">Subtotal Neto:</span>
-                    <span className="text-slate-900 dark:text-white font-black">${Math.round(calculateInvoiceTotals().net).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-slate-900 dark:text-white font-black">${formatCurrency(calculateInvoiceTotals().net)}</span>
                   </div>
                   <div className="flex justify-between text-sm text-rose-500">
                     <span className="font-bold">Desc. por Cambio:</span>
                     <div className="flex items-center gap-1">
                       <span>$-</span>
                       <input 
-                        type="number" 
+                        type="text" 
                         className="w-20 bg-transparent border-b border-rose-300 outline-none text-right font-black"
-                        value={invDiscount} 
-                        onChange={e => setInvDiscount(parseFloat(e.target.value) || 0)} 
+                        value={formatCurrency(invDiscount)} 
+                        onChange={e => setInvDiscount(parseCurrency(e.target.value))} 
                       />
                     </div>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500 font-bold">Impuestos (IVA):</span>
-                    <span className="text-slate-900 dark:text-white font-black">${Math.round(calculateInvoiceTotals().tax).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-slate-900 dark:text-white font-black">${formatCurrency(calculateInvoiceTotals().tax)}</span>
                   </div>
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-600 flex justify-between">
                     <span className="text-slate-900 dark:text-white font-extrabold text-lg uppercase">TOTAL:</span>
-                    <span className="text-emerald-600 font-black text-xl">${Math.round(calculateInvoiceTotals().total).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-emerald-600 font-black text-xl">${formatCurrency(calculateInvoiceTotals().total)}</span>
                   </div>
                 </div>
               </div>
@@ -900,7 +902,7 @@ export default function SuppliersPage() {
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase">Valor *</label>
-                <input type="number" required placeholder="0" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-orange-500 font-bold" value={expAmount} onChange={e => setExpAmount(e.target.value)} />
+                <input type="text" required placeholder="0" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-orange-500 font-bold" value={formatCurrency(expAmount)} onChange={e => setExpAmount(parseCurrency(e.target.value).toString())} />
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 uppercase">Fecha *</label>
@@ -940,7 +942,7 @@ export default function SuppliersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Valor Estimado *</label>
-                  <input type="number" required placeholder="0" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={schAmount} onChange={e => setSchAmount(e.target.value)} />
+                  <input type="text" required placeholder="0" className="w-full mt-1 p-3 rounded-xl bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-slate-100 dark:border-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 font-bold" value={formatCurrency(schAmount)} onChange={e => setSchAmount(parseCurrency(e.target.value).toString())} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-500 uppercase">Tipo de Pago *</label>

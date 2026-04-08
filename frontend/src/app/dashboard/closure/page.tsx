@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatCurrency, parseCurrency } from '@/utils/formatters';
 
 interface Sale {
   id: string;
@@ -123,7 +124,8 @@ export default function ClosurePage() {
 
   const handleOpenBox = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!openingAmount || parseFloat(openingAmount) < 0) return;
+    const amountNum = parseCurrency(openingAmount);
+    if (!openingAmount || amountNum < 0) return;
 
     setOpening(true);
     try {
@@ -133,7 +135,7 @@ export default function ClosurePage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         },
-        body: JSON.stringify({ openingAmount: parseFloat(openingAmount) })
+        body: JSON.stringify({ openingAmount: amountNum })
       });
 
       if (response.ok) {
@@ -196,10 +198,10 @@ export default function ClosurePage() {
       ['Cajero:', status.closure.userName],
       ['Apertura:', new Date().toLocaleString('es-CO')],
       ['Cierre (Generado):', new Date().toLocaleString('es-CO')],
-      ['Base de Caja:', `$${Number(status.openingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-      ['Ventas Efectivo:', `$${Number(status.totalCash).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-      ['Abonos Crédito:', `$${Number(status.totalPayments).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`],
-      ['TOTAL EFECTIVO A ENTREGAR:', `$${Number(status.totalToDeliver).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`]
+      ['Base de Caja:', `$${formatCurrency(status.openingAmount)}`],
+      ['Ventas Efectivo:', `$${formatCurrency(status.totalCash)}`],
+      ['Abonos Crédito:', `$${formatCurrency(status.totalPayments)}`],
+      ['TOTAL EFECTIVO A ENTREGAR:', `$${formatCurrency(status.totalToDeliver)}`]
     ];
 
     autoTable(doc, {
@@ -219,7 +221,7 @@ export default function ClosurePage() {
       new Date(s.createdAt).toLocaleTimeString(),
       s.paymentMethod.toUpperCase(),
       s.customerName || 'Contado',
-      `$${Number(s.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
+      `$${formatCurrency(s.totalAmount)}`
     ]);
 
     autoTable(doc, {
@@ -238,7 +240,7 @@ export default function ClosurePage() {
         new Date(p.paymentDate).toLocaleTimeString(),
         (p.paymentMethod || 'efectivo').toUpperCase(),
         p.creditSale?.customerName || 'Cliente No Ident.',
-        `$${Number(p.amount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`
+        `$${formatCurrency(p.amount)}`
       ]);
 
       autoTable(doc, {
@@ -277,12 +279,11 @@ export default function ClosurePage() {
               <CircleDollarSign className="absolute left-6 top-5 w-6 h-6 text-blue-500" />
               <input
                 required
-                type="number"
-                step="0.01"
-                placeholder="0.00"
+                type="text"
+                placeholder="0"
                 className="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl pl-16 pr-6 py-5 text-3xl font-black text-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-800"
-                value={openingAmount}
-                onChange={(e) => setOpeningAmount(e.target.value)}
+                value={formatCurrency(openingAmount)}
+                onChange={(e) => setOpeningAmount(parseCurrency(e.target.value).toString())}
                 autoFocus
               />
             </div>
@@ -353,7 +354,7 @@ export default function ClosurePage() {
             </div>
             <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Base Inicial</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.openingAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+          <p className="text-3xl font-black text-white tracking-tighter">${formatCurrency(status.openingAmount)}</p>
           <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Efectivo declarado al abrir</p>
         </div>
 
@@ -364,7 +365,7 @@ export default function ClosurePage() {
             </div>
             <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Ventas Efectivo</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.totalCash).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+          <p className="text-3xl font-black text-white tracking-tighter">${formatCurrency(status.totalCash)}</p>
           <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Pagos de Contado</p>
         </div>
 
@@ -375,7 +376,7 @@ export default function ClosurePage() {
             </div>
             <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Abonos Créditos</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${Number(status.totalPayments || 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+          <p className="text-3xl font-black text-white tracking-tighter">${formatCurrency(status.totalPayments || 0)}</p>
           <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Cartera Recaudada</p>
         </div>
 
@@ -387,7 +388,7 @@ export default function ClosurePage() {
             </div>
             <span className="text-blue-100 font-black text-[10px] uppercase tracking-widest">Total a Entregar</span>
           </div>
-          <p className="text-4xl font-black text-white tracking-tighter">${Number(status.totalToDeliver).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</p>
+          <p className="text-4xl font-black text-white tracking-tighter">${formatCurrency(status.totalToDeliver)}</p>
           <p className="text-[11px] font-bold text-blue-100 mt-4 uppercase tracking-widest">DINERO REAL QUE DEBE HABER EN CAJA</p>
         </div>
       </div>
@@ -421,7 +422,7 @@ export default function ClosurePage() {
                     <p className="text-[10px] text-slate-500">{new Date(sale.createdAt).toLocaleTimeString()}</p>
                   </td>
                   <td className="px-8 py-4">
-                    <span className="text-sm font-black text-white">${Number(sale.totalAmount).toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span>
+                    <span className="text-sm font-black text-white">${formatCurrency(sale.totalAmount)}</span>
                   </td>
                   <td className="px-8 py-4">
                     <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full ${

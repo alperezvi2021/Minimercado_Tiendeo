@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Search, Edit2, Trash2, Barcode, Download, Upload, FileSpreadsheet, CloudSync, Wifi, WifiOff } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useOfflineStore } from '@/store/useOfflineStore';
+import { formatCurrency, parseCurrency } from '@/utils/formatters';
 
 interface Category {
   id: string;
@@ -149,25 +150,26 @@ export default function InventoryPage() {
   };
 
   // Autocalculador: Cuando cambia el Costo, calcular el Precio de Venta Sugerido (Costo / 0.8)
-  const handleCostChange = (newCost: string) => {
-    setCost(newCost);
+  const handleCostChange = (newCostValue: string) => {
+    const c = parseCurrency(newCostValue);
+    setCost(c.toString());
     
-    const c = parseFloat(newCost);
-    if (!isNaN(c) && c >= 0) {
+    if (c >= 0) {
       // Precio sugerido = Costo / 0.8 (Markup del 25% sobre costo / 20% margen sobre venta)
       const calculatedPrice = c / 0.8;
       setPrice(Math.round(calculatedPrice).toString());
       
-      // Margen = ((Precio - Costo) / Costo) * 100
-      const calculatedMargin = ((calculatedPrice - c) / c) * 100;
+      // Margen = ((calculatedPrice - c) / c) * 100
+      const calculatedMargin = c > 0 ? ((calculatedPrice - c) / c) * 100 : 0;
       setProfitMargin(Math.round(calculatedMargin).toString());
     }
   };
 
+
   // Cuando cambian utilidad manualmente
   const handleMarginChange = (newMargin: string) => {
     setProfitMargin(newMargin);
-    const c = parseFloat(cost);
+    const c = parseCurrency(cost);
     const m = parseFloat(newMargin);
     if (!isNaN(c) && !isNaN(m)) {
       const calculatedPrice = c * (1 + (m / 100));
@@ -176,13 +178,13 @@ export default function InventoryPage() {
   };
 
   // Autocalculador inverso: Si cambian el Precio de Venta directamente, ajustar el Margen
-  const handlePriceChange = (newPrice: string) => {
-    setPrice(newPrice);
+  const handlePriceChange = (newPriceValue: string) => {
+    const p = parseCurrency(newPriceValue);
+    setPrice(p.toString());
     
-    const p = parseFloat(newPrice);
-    const c = parseFloat(cost);
+    const c = parseCurrency(cost);
     
-    if (!isNaN(p) && !isNaN(c) && c > 0) {
+    if (p >= 0 && c > 0) {
       // Margen = ((Precio - Costo) / Costo) * 100
       const calculatedMargin = ((p - c) / c) * 100;
       setProfitMargin(Math.round(calculatedMargin).toString());
@@ -196,8 +198,8 @@ export default function InventoryPage() {
       const payload = {
         name,
         barcode: barcode || null,
-        price: parseFloat(price),
-        cost: cost ? parseFloat(cost) : null,
+        price: parseCurrency(price),
+        cost: cost ? parseCurrency(cost) : null,
         profitMargin: profitMargin ? parseFloat(profitMargin) : null,
         stock: parseFloat(stock),
         lowStockThreshold: parseInt(lowStockThreshold),
@@ -658,7 +660,7 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-medium">
-                        ${Math.round(Number(product.price)).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
+                        ${formatCurrency(product.price)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className={`px-2 py-1 rounded-full font-bold ${
@@ -727,7 +729,15 @@ export default function InventoryPage() {
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <span className="text-gray-500 sm:text-sm">$</span>
                       </div>
-                      <input id="cost" title="Precio de compra" type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-2 pl-7 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all" value={cost} onChange={e => handleCostChange(e.target.value)} />
+                      <input
+                        id="cost"
+                        title="Precio de compra"
+                        type="text"
+                        placeholder="0"
+                        className="block w-full rounded-lg border-0 py-2 pl-7 pr-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-900 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm transition-all"
+                        value={formatCurrency(cost)}
+                        onChange={e => handleCostChange(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div>
@@ -746,7 +756,16 @@ export default function InventoryPage() {
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <span className="text-gray-500 text-lg font-bold">$</span>
                     </div>
-                    <input id="price" title="Precio de venta final" required type="number" step="1" placeholder="0" className="block w-full rounded-lg border-0 py-3 pl-8 pr-3 text-xl font-bold text-gray-900 bg-white ring-2 ring-inset ring-blue-500 dark:bg-slate-950 dark:text-white dark:ring-blue-500 focus:ring-2 focus:ring-blue-600 sm:leading-6 transition-all" value={price} onChange={e => handlePriceChange(e.target.value)} />
+                    <input
+                      id="price"
+                      title="Precio de venta final"
+                      required
+                      type="text"
+                      placeholder="0"
+                      className="block w-full rounded-lg border-0 py-3 pl-8 pr-3 text-xl font-bold text-gray-900 bg-white ring-2 ring-inset ring-blue-500 dark:bg-slate-950 dark:text-white dark:ring-blue-500 focus:ring-2 focus:ring-blue-600 sm:leading-6 transition-all"
+                      value={formatCurrency(price)}
+                      onChange={e => handlePriceChange(e.target.value)}
+                    />
                   </div>
                 </div>
               </div>
