@@ -86,4 +86,30 @@ export class MaintenanceService {
       return { success: true, message };
     });
   }
+
+  async cleanupDuplicateInvoices() {
+    return await this.dataSource.transaction(async (manager) => {
+      // Find and delete sales keeping only the newest one for each (tenant_id, invoice_number)
+      // We use a subquery with ROW_NUMBER() which works in PostgreSQL
+      const result = await manager.query(`
+        DELETE FROM sales
+        WHERE id IN (
+          SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (
+              PARTITION BY tenant_id, invoice_number 
+              ORDER BY created_at DESC, id DESC
+            ) as row_num
+            FROM sales
+            WHERE invoice_number IS NOT NULL
+          ) sub
+          WHERE row_num > 1
+        )
+      `);
+
+      return { 
+        success: true, 
+        message: 'Limpieza de facturas duplicadas completada. Ahora es seguro activar la restricción de integridad.' 
+      };
+    });
+  }
 }

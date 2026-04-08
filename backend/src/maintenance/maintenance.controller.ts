@@ -31,4 +31,10 @@ export class MaintenanceController {
     
     return this.maintenanceService.resetTenantData(tenantId, resetOptions);
   }
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.OWNER, Role.SUPER_ADMIN)
+  @Post('cleanup-duplicates')
+  async cleanupDuplicates() {
+    return this.maintenanceService.cleanupDuplicateInvoices();
+  }
 }
