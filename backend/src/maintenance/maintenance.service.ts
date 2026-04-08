@@ -87,10 +87,17 @@ export class MaintenanceService {
     });
   }
 
-  async cleanupDuplicateInvoices() {
+  async cleanupDuplicateInvoices(tenantId?: string) {
     return await this.dataSource.transaction(async (manager) => {
+      // Build the WHERE clause
+      let whereClause = 'WHERE invoice_number IS NOT NULL';
+      let params = [];
+      if (tenantId) {
+        whereClause += ' AND tenant_id = $1';
+        params.push(tenantId);
+      }
+
       // Find and delete sales keeping only the newest one for each (tenant_id, invoice_number)
-      // We use a subquery with ROW_NUMBER() which works in PostgreSQL
       const result = await manager.query(`
         DELETE FROM sales
         WHERE id IN (
@@ -100,11 +107,11 @@ export class MaintenanceService {
               ORDER BY created_at DESC, id DESC
             ) as row_num
             FROM sales
-            WHERE invoice_number IS NOT NULL
+            ${whereClause}
           ) sub
           WHERE row_num > 1
         )
-      `);
+      `, params);
 
       return { 
         success: true, 

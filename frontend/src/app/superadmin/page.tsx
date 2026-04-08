@@ -24,6 +24,7 @@ export default function SuperAdminPage() {
     cleanRefunds: true,
     cleanSupplierInvoices: false
   });
+  const [isCleaningData, setIsCleaningData] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [newPassword, setNewPassword] = useState('');
   const [isModulesModalOpen, setIsModulesModalOpen] = useState(false);
@@ -159,6 +160,33 @@ export default function SuperAdminPage() {
       alert('Error de conexión');
     } finally {
       setIsResettingData(false);
+    }
+  };
+
+  const handleAdminCleanupDuplicates = async () => {
+    if (!confirm(`Este proceso eliminará los registros de ventas duplicados para ${selectedTenantForReset?.name} (manteniendo el más reciente). ¿Deseas continuar?`)) return;
+    
+    setIsCleaningData(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/maintenance/admin-cleanup-duplicates/${selectedTenantForReset.id}`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert(data.message || 'Limpieza completada con éxito');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo realizar la limpieza'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión');
+    } finally {
+      setIsCleaningData(false);
     }
   };
 
@@ -595,12 +623,21 @@ export default function SuperAdminPage() {
                 >
                   Mejor No, Cancelar
                 </button>
+                
+                <button 
+                  onClick={handleAdminCleanupDuplicates}
+                  disabled={isCleaningData || isResettingData}
+                  className="flex-1 bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 border border-orange-500/20 px-6 py-4 rounded-2xl font-black transition-all text-xs uppercase tracking-widest disabled:opacity-50"
+                >
+                  {isCleaningData ? 'Limpiando...' : 'Limpiar Duplicados'}
+                </button>
+
                 <button 
                   onClick={handleAdminResetData}
-                  disabled={isResettingData || adminResetConfirmText !== 'REINICIAR_SISTEMA_GLOBAL' || Object.values(resetOptions).every(v => !v)}
+                  disabled={isResettingData || isCleaningData || adminResetConfirmText !== 'REINICIAR_SISTEMA_GLOBAL' || Object.values(resetOptions).every(v => !v)}
                   className="flex-[2] bg-rose-600 hover:bg-rose-700 text-white px-6 py-4 rounded-2xl font-black shadow-2xl shadow-rose-600/30 transition-all text-sm uppercase tracking-widest disabled:bg-gray-800 disabled:text-gray-600 disabled:shadow-none"
                 >
-                  {isResettingData ? 'VACIANDO BASE DE DATOS...' : 'EJECUTAR LIMPIEZA AHORA'}
+                  {isResettingData ? 'VACIANDO BASE DE DATOS...' : 'EJECUTAR REINICIO'}
                 </button>
               </div>
             </div>

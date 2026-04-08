@@ -3,6 +3,7 @@ import { SaleItem } from './sale-item.entity';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('sales')
+@Unique(['tenantId', 'invoiceNumber'])
 export class Sale {
   @PrimaryGeneratedColumn('uuid')
   id: string;

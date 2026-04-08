@@ -37,4 +37,11 @@ export class MaintenanceController {
   async cleanupDuplicates() {
     return this.maintenanceService.cleanupDuplicateInvoices();
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @Post('admin-cleanup-duplicates/:tenantId')
+  async adminCleanupDuplicates(@Param('tenantId') tenantId: string) {
+    return this.maintenanceService.cleanupDuplicateInvoices(tenantId);
+  }
 }
