@@ -471,7 +471,8 @@ export default function InventoryPage() {
           });
 
           if (res.ok) {
-            alert(`¡Éxito! Se importaron ${productsToImport.length} productos.`);
+            const summary = await res.json();
+            alert(`¡Éxito! Importación finalizada:\n\n- Total procesados: ${summary.total}\n- Nuevos importados: ${summary.imported}\n- Omitidos (ya existían): ${summary.skipped}`);
             fetchProducts();
           } else {
             const errorData = await res.json().catch(() => ({}));

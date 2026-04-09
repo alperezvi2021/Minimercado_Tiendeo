@@ -82,18 +82,61 @@ export class ProductsService {
     }
   }
 
-  async createMany(tenantId: string, productsDto: CreateProductDto[]): Promise<Product[]> {
+  async createMany(tenantId: string, productsDto: CreateProductDto[]): Promise<any> {
     try {
-      const products = productsDto.map(dto => this.productsRepository.create({
-        ...dto,
-        tenantId,
-      }));
-      return await this.productsRepository.save(products);
-    } catch (error) {
-      // Manejar error de duplicado (Postgres 23505)
-      if (error.code === '23505') {
-        throw new ConflictException('Uno o más productos ya existen (posible código de barras duplicado)');
+      // 1. Obtener productos existentes para este tenant (solo campos necesarios para comparar)
+      const existingProducts = await this.productsRepository.find({
+        where: { tenantId, isActive: true },
+        select: ['barcode', 'name']
+      });
+
+      // 2. Crear sets para búsqueda rápida
+      const existingBarcodes = new Set(
+        existingProducts
+          .map(p => p.barcode)
+          .filter(b => b && b !== '')
+      );
+      const existingNames = new Set(
+        existingProducts.map(p => p.name.toLowerCase().trim())
+      );
+
+      const toImport = [];
+      let skipped = 0;
+
+      // 3. Filtrar los productos del DTO
+      for (const dto of productsDto) {
+        const barcode = dto.barcode?.trim();
+        const nameNormalized = dto.name?.toLowerCase().trim();
+
+        const existsByBarcode = barcode && existingBarcodes.has(barcode);
+        const existsByName = nameNormalized && existingNames.has(nameNormalized);
+
+        if (existsByBarcode || existsByName) {
+          skipped++;
+        } else {
+          toImport.push(this.productsRepository.create({
+            ...dto,
+            tenantId,
+          }));
+          
+          // Añadir al set temporalmente para evitar duplicados dentro del mismo archivo Excel
+          if (barcode) existingBarcodes.add(barcode);
+          if (nameNormalized) existingNames.add(nameNormalized);
+        }
       }
+
+      // 4. Guardar los que no existían
+      if (toImport.length > 0) {
+        await this.productsRepository.save(toImport);
+      }
+
+      return {
+        total: productsDto.length,
+        imported: toImport.length,
+        skipped: skipped
+      };
+    } catch (error) {
+      console.error("Error en importación masiva:", error);
       throw error;
     }
   }
