@@ -474,10 +474,15 @@ export default function InventoryPage() {
             const summary = await res.json();
             alert(`¡Éxito! Importación finalizada:\n\n- Total procesados: ${summary.total}\n- Nuevos importados: ${summary.imported}\n- Omitidos (ya existían): ${summary.skipped}`);
             fetchProducts();
-          } else {
-            const errorData = await res.json().catch(() => ({}));
-            const msg = errorData.message || 'Error desconocido en el servidor';
-            alert(`Hubo un error al realizar la importación masiva:\n\n${Array.isArray(msg) ? msg.join(', ') : msg}`);
+            const responseText = await res.text().catch(() => '');
+            let errorMsg = 'Error desconocido en el servidor';
+            try {
+              const errorData = JSON.parse(responseText);
+              errorMsg = Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message;
+            } catch {
+              errorMsg = responseText || 'El servidor no respondió con un formato de error válido.';
+            }
+            alert(`Hubo un error al realizar la importación masiva:\n\n${errorMsg}`);
           }
         }
       } catch (error) {

@@ -125,9 +125,11 @@ export class ProductsService {
         }
       }
 
-      // 4. Guardar los que no existían
-      if (toImport.length > 0) {
-        await this.productsRepository.save(toImport);
+      // 4. Guardar los que no existían (en bloques de 100 para evitar saturación/timeouts)
+      const BATCH_SIZE = 100;
+      for (let i = 0; i < toImport.length; i += BATCH_SIZE) {
+        const batch = toImport.slice(i, i + BATCH_SIZE);
+        await this.productsRepository.save(batch);
       }
 
       return {
@@ -136,8 +138,10 @@ export class ProductsService {
         skipped: skipped
       };
     } catch (error) {
-      console.error("Error en importación masiva:", error);
-      throw error;
+      console.error("CRITICAL_ERROR_BULK_IMPORT:", error);
+      // Intentar devolver un mensaje más descriptivo si es de TypeORM
+      const message = error.message || 'Error interno al procesar el lote de productos';
+      throw new Error(message);
     }
   }
 }
