@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft, Database, RotateCcw } from 'lucide-react';
+import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft, Database, RotateCcw, Utensils, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const navItems = [
   { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'POS' },
+  { name: 'Servicio a Mesas', href: '/dashboard/restaurant', icon: Utensils, roles: ['OWNER', 'ADMIN', 'CASHIER', 'WAITER', 'SUPER_ADMIN'], module: 'RESTAURANT' },
   { name: 'Cierre de Caja', href: '/dashboard/closure', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CLOSURE' },
   { name: 'Inventario', href: '/dashboard/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'INVENTORY' },
   { name: 'Reportes', href: '/dashboard/reports', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'REPORTS' },
@@ -14,6 +15,7 @@ const navItems = [
   { name: 'Créditos', href: '/dashboard/credits', icon: ArrowRightLeft, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CREDITS' },
   { name: 'Devoluciones', href: '/dashboard/sales/refunds', icon: RotateCcw, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'REFUNDS' },
   { name: 'Contabilidad', href: '/dashboard/accounting', icon: Receipt, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'ACCOUNTING' },
+  { name: 'Gestionar Meseros', href: '/dashboard/restaurant/waiters', icon: Users, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'RESTAURANT' },
 ];
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) {

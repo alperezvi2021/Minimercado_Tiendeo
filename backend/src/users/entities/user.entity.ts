@@ -22,8 +22,11 @@ export class User {
   @Column()
   passwordHash: string;
 
-  @Column({ default: 'CASHIER' }) // Roles: OWNER, ADMIN, CASHIER
+  @Column({ default: 'CASHIER' }) // Roles: OWNER, ADMIN, CASHIER, WAITER
   role: string;
+
+  @Column({ nullable: true, length: 4 })
+  pin: string;
 
   @CreateDateColumn()
   createdAt: Date;

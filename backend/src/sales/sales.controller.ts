@@ -142,4 +142,39 @@ export class SalesController {
     const userName = req.user.name || 'Cajero';
     return this.salesService.createRefund(tenantId, userId, userName, createRefundDto);
   }
+
+  // --- RESTAURANT MODULE ENDPOINTS ---
+
+  @Get('restaurant/open')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
+  findOpenTables(@Request() req) {
+    return this.salesService.findAll(req.user.tenantId, 'OPEN');
+  }
+
+  @Post('restaurant/order')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
+  createTableOrder(@Request() req, @Body() body: { tableName: string, items: any[] }) {
+    const waiterId = req.user.userId;
+    return this.salesService.createTableOrder(req.user.tenantId, waiterId, body);
+  }
+
+  @Post('restaurant/order/:id/items')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
+  addItemsToTable(@Request() req, @Param('id') id: string, @Body() body: { items: any[] }) {
+    return this.salesService.addItemsToTable(req.user.tenantId, id, body.items);
+  }
+
+  @Post('restaurant/order/:id/close')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  closeTableOrder(@Request() req, @Param('id') id: string, @Body() body: { paymentMethod: string }) {
+    const userId = req.user.userId;
+    const userName = req.user.name || 'Cajero';
+    return this.salesService.closeTableOrder(req.user.tenantId, userId, userName, id, body.paymentMethod);
+  }
+
+  @Delete('restaurant/order/:id')
+  @Roles(Role.ADMIN, Role.OWNER)
+  cancelTableOrder(@Request() req, @Param('id') id: string) {
+    return this.salesService.cancelTableOrder(req.user.tenantId, id);
+  }
 }

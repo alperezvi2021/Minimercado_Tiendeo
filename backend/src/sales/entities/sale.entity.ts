@@ -36,6 +36,19 @@ export class Sale {
   @Column({ name: 'closure_id', nullable: true })
   closureId: string;
 
+  @Column({ default: 'PAID' }) // 'OPEN', 'PAID', 'CANCELLED'
+  status: string;
+
+  @Column({ name: 'table_name', nullable: true })
+  tableName: string; // Alias o nombre de la mesa/barra
+
+  @Column({ name: 'waiter_id', nullable: true })
+  waiterId: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'waiter_id' })
+  waiter: User;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

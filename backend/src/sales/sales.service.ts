@@ -127,11 +127,142 @@ export class SalesService {
     });
   }
 
-  async findAll(tenantId: string): Promise<Sale[]> {
+  async findAll(tenantId: string, status?: string): Promise<Sale[]> {
+    const where: any = { tenantId };
+    if (status) where.status = status;
+    
     return this.salesRepository.find({
-      where: { tenantId },
-      relations: ['items', 'user'],
+      where,
+      relations: ['items', 'user', 'waiter'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async createTableOrder(tenantId: string, waiterId: string, dto: { tableName: string, items?: any[] }): Promise<Sale> {
+    const items = dto.items || [];
+    
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      // Calcular total inicial
+      const totalAmount = items.reduce((sum, item) => sum + (Number(item.unitPrice) * Number(item.quantity)), 0);
+
+      const sale = transactionalEntityManager.create(Sale, {
+        tenantId,
+        waiterId,
+        tableName: dto.tableName,
+        status: 'OPEN',
+        totalAmount,
+        paymentMethod: 'efectivo',
+        items: items.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal: Number(item.unitPrice) * Number(item.quantity),
+        })),
+      });
+
+      const savedSale = await transactionalEntityManager.save<Sale>(sale);
+
+      // Descontar inventario inmediatamente si hay items
+      for (const item of items) {
+        await this.productsService.updateStock(tenantId, item.productId, item.quantity, transactionalEntityManager);
+      }
+
+      return savedSale;
+    });
+  }
+
+  async addItemsToTable(tenantId: string, saleId: string, newItems: any[]): Promise<Sale> {
+    const sale = await this.salesRepository.findOne({
+      where: { id: saleId, tenantId, status: 'OPEN' },
+      relations: ['items']
+    });
+
+    if (!sale) throw new NotFoundException('Mesa no encontrada o ya está cerrada');
+
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      // 1. Añadir los nuevos items
+      for (const item of newItems) {
+        const subtotal = Number(item.unitPrice) * Number(item.quantity);
+        
+        const saleItem = transactionalEntityManager.create('SaleItem', {
+          saleId: sale.id,
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          subtotal,
+        });
+        
+        await transactionalEntityManager.save('SaleItem', saleItem);
+        
+        // Descontar inventario
+        await this.productsService.updateStock(tenantId, item.productId, item.quantity, transactionalEntityManager);
+        
+        // Actualizar total de la venta
+        sale.totalAmount = Number(sale.totalAmount) + subtotal;
+      }
+
+      return await transactionalEntityManager.save(Sale, sale);
+    });
+  }
+
+  async closeTableOrder(tenantId: string, userId: string, userName: string, saleId: string, paymentMethod: string): Promise<Sale> {
+    const sale = await this.salesRepository.findOne({
+      where: { id: saleId, tenantId, status: 'OPEN' },
+      relations: ['items']
+    });
+
+    if (!sale) throw new NotFoundException('Mesa no encontrada o ya cerrada');
+
+    const closure = await this.getOpenClosure(tenantId, userId);
+    if (!closure) throw new BadRequestException('Debe abrir la caja para procesar el pago');
+
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      // Asignar número de factura final al momento del pago
+      const lastSale = await transactionalEntityManager.createQueryBuilder(Sale, 'sale')
+        .setLock('pessimistic_write')
+        .where('sale.tenantId = :tenantId', { tenantId })
+        .andWhere('sale.status = :status', { status: 'PAID' })
+        .orderBy('sale.invoiceNumber', 'DESC')
+        .getOne();
+
+      let nextNumber = 1;
+      if (lastSale && lastSale.invoiceNumber) {
+        const parts = lastSale.invoiceNumber.split('-');
+        if (parts.length > 1) {
+          const lastNum = parseInt(parts[1]);
+          if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+        }
+      }
+      const invoiceNumber = `POS-${nextNumber.toString().padStart(4, '0')}`;
+
+      sale.status = 'PAID';
+      sale.paymentMethod = paymentMethod;
+      sale.invoiceNumber = invoiceNumber;
+      sale.userId = userId;
+      sale.sellerName = userName;
+      sale.closureId = closure.id;
+
+      return await transactionalEntityManager.save(Sale, sale);
+    });
+  }
+
+  async cancelTableOrder(tenantId: string, saleId: string): Promise<void> {
+    const sale = await this.salesRepository.findOne({
+      where: { id: saleId, tenantId, status: 'OPEN' },
+      relations: ['items']
+    });
+
+    if (!sale) throw new NotFoundException('Mesa no encontrada');
+
+    await this.dataSource.transaction(async transactionalEntityManager => {
+      // DEVOLVER STOCK (según preferencia usuario)
+      for (const item of sale.items) {
+        await this.productsService.updateStock(tenantId, item.productId, -item.quantity, transactionalEntityManager);
+      }
+
+      await transactionalEntityManager.remove(sale);
     });
   }
 

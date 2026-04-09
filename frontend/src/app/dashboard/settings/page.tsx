@@ -35,6 +35,7 @@ export default function SettingsPage() {
     { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)', description: 'Venta a crédito y abonos' },
     { id: 'REFUNDS', name: 'Devoluciones y Reembolsos', description: 'Gestión de cambios de productos' },
     { id: 'ACCOUNTING', name: 'Módulo Contable', description: 'Libro de ingresos y egresos' },
+    { id: 'RESTAURANT', name: 'Servicio a Mesas', description: 'Atención por mesas, barra y PIN para meseros' },
   ];
   const [activeModules, setActiveModules] = useState<string[]>(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
 
