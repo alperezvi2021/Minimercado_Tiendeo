@@ -71,6 +71,7 @@ export class SalesService {
       const lastSale = await transactionalEntityManager.createQueryBuilder(Sale, 'sale')
         .setLock('pessimistic_write')
         .where('sale.tenantId = :tenantId', { tenantId })
+        .andWhere('sale.invoiceNumber IS NOT NULL')
         .orderBy('sale.createdAt', 'DESC')
         .getOne();
 
