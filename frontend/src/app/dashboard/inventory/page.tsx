@@ -442,24 +442,22 @@ export default function InventoryPage() {
         // Mapear datos a CreateProductDto
         const productsToImport = data.map((row: any) => {
           // Buscar categoría por nombre
-          const catName = row['Categoría'];
-          const category = categories.find((c: Category) => c.name.toLowerCase() === (catName || '').toString().toLowerCase());
+          const catName = row['Categoría'] || row['Categoria'];
+          const category = categories.find((c: Category) => c.name.toLowerCase() === String(catName || '').toLowerCase().trim());
           
           // Limpiar puntos de miles si existen para que parseFloat no los tome como decimales
-          const cleanCost = row['Precio Compra']?.toString().replace(/\./g, '').replace(/,/g, '.') || '0';
-          const cleanPrice = row['Precio Venta']?.toString().replace(/\./g, '').replace(/,/g, '.') || '0';
-          const cleanStock = row['Stock Actual']?.toString().replace(/\./g, '') || '0';
-          const cleanProfit = row['Utilidad (%)']?.toString().replace(/\./g, '').replace(/,/g, '.') || '0';
-          const cleanThreshold = row['Mínimo Stock']?.toString().replace(/\./g, '') || '5';
+          const rawPrice = row['Precio de Venta'] || row['Precio Venta'] || '0';
+          const rawStock = row['Stock'] || row['Stock Actual'] || '0';
+          const rawBarcode = row['Código'] || row['Código de Barras'] || row['Codigo'];
+
+          const cleanPrice = String(rawPrice).replace(/\./g, '').replace(/,/g, '.') || '0';
+          const cleanStock = String(rawStock).replace(/\./g, '') || '0';
 
           return {
-            name: row['Nombre'],
-            barcode: row['Código de Barras'] === 'Manual' ? null : row['Código de Barras']?.toString(),
-            cost: row['Precio Compra'] ? parseFloat(cleanCost) : null,
-            profitMargin: row['Utilidad (%)'] ? parseFloat(cleanProfit) : null,
-            price: row['Precio Venta'] ? parseFloat(cleanPrice) : 0,
-            stock: row['Stock Actual'] ? parseFloat(cleanStock) : 0,
-            lowStockThreshold: row['Mínimo Stock'] ? parseInt(cleanThreshold) : 5,
+            name: String(row['Producto'] || row['Nombre'] || '').trim(),
+            barcode: (rawBarcode === 'Manual' || !rawBarcode) ? null : String(rawBarcode).trim(),
+            price: parseFloat(cleanPrice) || 0,
+            stock: parseFloat(cleanStock) || 0,
             categoryId: category?.id || null,
           };
         }).filter(p => p.name); // Solo productos con nombre

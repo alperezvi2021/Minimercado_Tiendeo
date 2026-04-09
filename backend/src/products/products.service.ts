@@ -105,8 +105,10 @@ export class ProductsService {
 
       // 3. Filtrar los productos del DTO
       for (const dto of productsDto) {
-        const barcode = dto.barcode?.trim();
-        const nameNormalized = dto.name?.toLowerCase().trim();
+        // Asegurar que nombre y barcode sean strings
+        const nameStr = String(dto.name || '').trim();
+        const barcode = dto.barcode ? String(dto.barcode).trim() : null;
+        const nameNormalized = nameStr.toLowerCase();
 
         // Validar integridad de datos básicos
         if (!nameNormalized) {
@@ -126,6 +128,8 @@ export class ProductsService {
 
           toImport.push(this.productsRepository.create({
             ...dto,
+            name: nameStr,
+            barcode: barcode,
             price: cleanPrice,
             stock: cleanStock,
             tenantId,
