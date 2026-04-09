@@ -445,14 +445,21 @@ export default function InventoryPage() {
           const catName = row['Categoría'];
           const category = categories.find((c: Category) => c.name.toLowerCase() === (catName || '').toString().toLowerCase());
           
+          // Limpiar puntos de miles si existen para que parseFloat no los tome como decimales
+          const cleanCost = row['Precio Compra']?.toString().replace(/\./g, '').replace(/,/g, '.') || '0';
+          const cleanPrice = row['Precio Venta']?.toString().replace(/\./g, '').replace(/,/g, '.') || '0';
+          const cleanStock = row['Stock Actual']?.toString().replace(/\./g, '') || '0';
+          const cleanProfit = row['Utilidad (%)']?.toString().replace(/\./g, '').replace(/,/g, '.') || '0';
+          const cleanThreshold = row['Mínimo Stock']?.toString().replace(/\./g, '') || '5';
+
           return {
             name: row['Nombre'],
             barcode: row['Código de Barras'] === 'Manual' ? null : row['Código de Barras']?.toString(),
-            cost: row['Precio Compra'] ? parseFloat(row['Precio Compra']) : null,
-            profitMargin: row['Utilidad (%)'] ? parseFloat(row['Utilidad (%)']) : null,
-            price: row['Precio Venta'] ? parseFloat(row['Precio Venta']) : 0,
-            stock: row['Stock Actual'] ? parseFloat(row['Stock Actual']) : 0,
-            lowStockThreshold: row['Mínimo Stock'] ? parseInt(row['Mínimo Stock']) : 5,
+            cost: row['Precio Compra'] ? parseFloat(cleanCost) : null,
+            profitMargin: row['Utilidad (%)'] ? parseFloat(cleanProfit) : null,
+            price: row['Precio Venta'] ? parseFloat(cleanPrice) : 0,
+            stock: row['Stock Actual'] ? parseFloat(cleanStock) : 0,
+            lowStockThreshold: row['Mínimo Stock'] ? parseInt(cleanThreshold) : 5,
             categoryId: category?.id || null,
           };
         }).filter(p => p.name); // Solo productos con nombre

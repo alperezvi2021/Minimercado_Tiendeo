@@ -84,16 +84,16 @@ export class ProductsService {
 
   async createMany(tenantId: string, productsDto: CreateProductDto[]): Promise<any> {
     try {
-      // 1. Obtener productos existentes para este tenant (solo campos necesarios para comparar)
+      // 1. Obtener TODOS los productos (incluyendo inactivos) para evitar violar la clave única de barcode
       const existingProducts = await this.productsRepository.find({
-        where: { tenantId, isActive: true },
+        where: { tenantId },
         select: ['barcode', 'name']
       });
 
-      // 2. Crear sets para búsqueda rápida
+      // 2. Crear sets para búsqueda rápida (normalizados)
       const existingBarcodes = new Set(
         existingProducts
-          .map(p => p.barcode)
+          .map(p => p.barcode?.trim())
           .filter(b => b && b !== '')
       );
       const existingNames = new Set(
@@ -108,20 +108,32 @@ export class ProductsService {
         const barcode = dto.barcode?.trim();
         const nameNormalized = dto.name?.toLowerCase().trim();
 
+        // Validar integridad de datos básicos
+        if (!nameNormalized) {
+          skipped++;
+          continue;
+        }
+
         const existsByBarcode = barcode && existingBarcodes.has(barcode);
         const existsByName = nameNormalized && existingNames.has(nameNormalized);
 
         if (existsByBarcode || existsByName) {
           skipped++;
         } else {
+          // Asegurar que los números sean válidos y no NaN
+          const cleanPrice = isFinite(Number(dto.price)) ? Number(dto.price) : 0;
+          const cleanStock = isFinite(Number(dto.stock)) ? Number(dto.stock) : 0;
+
           toImport.push(this.productsRepository.create({
             ...dto,
+            price: cleanPrice,
+            stock: cleanStock,
             tenantId,
           }));
           
-          // Añadir al set temporalmente para evitar duplicados dentro del mismo archivo Excel
+          // Prevenir duplicados dentro del mismo archivo excel
           if (barcode) existingBarcodes.add(barcode);
-          if (nameNormalized) existingNames.add(nameNormalized);
+          existingNames.add(nameNormalized);
         }
       }
 
@@ -139,9 +151,7 @@ export class ProductsService {
       };
     } catch (error) {
       console.error("CRITICAL_ERROR_BULK_IMPORT:", error);
-      // Intentar devolver un mensaje más descriptivo si es de TypeORM
-      const message = error.message || 'Error interno al procesar el lote de productos';
-      throw new Error(message);
+      throw error;
     }
   }
 }
