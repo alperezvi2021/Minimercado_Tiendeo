@@ -474,6 +474,7 @@ export default function InventoryPage() {
             const summary = await res.json();
             alert(`¡Éxito! Importación finalizada:\n\n- Total procesados: ${summary.total}\n- Nuevos importados: ${summary.imported}\n- Omitidos (ya existían): ${summary.skipped}`);
             fetchProducts();
+          } else {
             const responseText = await res.text().catch(() => '');
             let errorMsg = 'Error desconocido en el servidor';
             try {
