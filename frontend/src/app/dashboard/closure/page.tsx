@@ -498,7 +498,6 @@ export default function ClosurePage() {
             </tbody>
           </table>
         </div>
-        </div>
       </div>
     </div>
   );
