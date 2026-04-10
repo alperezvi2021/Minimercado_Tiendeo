@@ -73,9 +73,10 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
 
       if (res.ok) {
         setIsSuccess(true);
-        // Simular impresión si está activo
         if (shouldPrint) {
-          console.log("Simulando impresión de factura final...");
+          setTimeout(() => {
+            window.print();
+          }, 500);
         }
         setTimeout(() => router.push('/dashboard/restaurant'), 2000);
       }
@@ -124,8 +125,6 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
                     { id: 'efectivo', icon: DollarSign, label: 'Efectivo' },
-                    { id: 'tarjeta', icon: CreditCard, label: 'Tarjeta' },
-                    { id: 'transferencia', icon: ChevronRight, label: 'Transf.' },
                     { id: 'credito', icon: User, label: 'Crédito' }
                   ].map((method) => (
                     <button

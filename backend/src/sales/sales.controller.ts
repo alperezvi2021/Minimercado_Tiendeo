@@ -153,8 +153,8 @@ export class SalesController {
 
   @Post('restaurant/order')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
-  createTableOrder(@Request() req, @Body() body: { tableName: string, items: any[] }) {
-    const waiterId = req.user.userId;
+  createTableOrder(@Request() req, @Body() body: { tableName: string, waiterId?: string, items: any[] }) {
+    const waiterId = body.waiterId || req.user.userId;
     return this.salesService.createTableOrder(req.user.tenantId, waiterId, body);
   }
 

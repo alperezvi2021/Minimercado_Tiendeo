@@ -160,6 +160,7 @@ export class SalesService {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           subtotal: Number(item.unitPrice) * Number(item.quantity),
+          sale: { id: undefined } // Se vinculará al guardar la venta
         })),
       });
 
@@ -188,7 +189,7 @@ export class SalesService {
         const subtotal = Number(item.unitPrice) * Number(item.quantity);
         
         const saleItem = transactionalEntityManager.create(SaleItem, {
-          saleId: sale.id,
+          sale: { id: sale.id },
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
@@ -431,7 +432,7 @@ export class SalesService {
   async findOne(tenantId: string, id: string): Promise<Sale> {
     const sale = await this.salesRepository.findOne({
       where: { id, tenantId },
-      relations: ['items'],
+      relations: ['items', 'waiter'],
     });
     if (!sale) throw new NotFoundException('Venta no encontrada');
     return sale;

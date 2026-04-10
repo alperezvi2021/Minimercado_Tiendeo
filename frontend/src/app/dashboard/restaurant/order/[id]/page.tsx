@@ -180,13 +180,15 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
     <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)] bg-[#0f172a] overflow-hidden">
       {/* Sidebar: Current Ticket */}
       <div className="w-full lg:w-[400px] border-r border-slate-800 flex flex-col bg-slate-900/50 backdrop-blur-md">
-        <div className="p-6 border-b border-slate-800">
-           <button onClick={() => router.push('/dashboard/restaurant')} className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-4 text-sm font-bold">
-             <ChevronLeft className="w-4 h-4" /> Volver al Dashboard
-           </button>
-           <h2 className="text-3xl font-black text-white truncate">{sale.tableName}</h2>
-           <p className="text-blue-500 text-sm font-black uppercase tracking-wider mt-1">Mesero: {sale.waiter?.name}</p>
-        </div>
+         <div className="p-6 border-b border-slate-800">
+            <button onClick={() => router.push('/dashboard/restaurant')} className="flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-4 text-sm font-bold">
+              <ChevronLeft className="w-4 h-4" /> Volver al Dashboard
+            </button>
+            <h2 className="text-3xl font-black text-white truncate">{sale.tableName}</h2>
+            <p className="text-blue-500 text-sm font-black uppercase tracking-wider mt-1">
+              Mesero: {sale.waiter?.name || <span className="text-slate-600 italic">No asignado</span>}
+            </p>
+         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
            {(sale.items || []).map((item) => (
@@ -287,23 +289,30 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
               />
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {search && filteredProducts.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedProduct(p)}
-                  className="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-6 text-left hover:border-blue-500 hover:bg-slate-800 transition-all group scale-100 active:scale-95"
-                >
-                   <div className="flex justify-between items-start mb-2">
-                      <div className="bg-blue-500/10 p-3 rounded-2xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                        <Plus className="w-5 h-5" />
-                      </div>
-                      <span className="text-xl font-black text-white">${formatCurrency(p.price)}</span>
-                   </div>
-                   <h4 className="text-lg font-bold text-slate-300 group-hover:text-white truncate">{p.name}</h4>
-                </button>
-              ))}
-           </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {search && filteredProducts.map((p) => (
+                 <button
+                   key={p.id}
+                   onClick={() => setSelectedProduct(p)}
+                   className="bg-slate-800/40 border border-slate-700/50 rounded-3xl p-6 text-left hover:border-blue-500 hover:bg-slate-800 transition-all group scale-100 active:scale-95 animate-in fade-in zoom-in-95"
+                 >
+                    <div className="flex justify-between items-start mb-2">
+                       <div className="bg-blue-500/10 p-3 rounded-2xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                         <Plus className="w-5 h-5" />
+                       </div>
+                       <span className="text-xl font-black text-white">${formatCurrency(p.price)}</span>
+                    </div>
+                    <h4 className="text-lg font-bold text-slate-300 group-hover:text-white truncate">{p.name}</h4>
+                 </button>
+               ))}
+               
+               {search && filteredProducts.length === 0 && (
+                 <div className="col-span-full py-12 text-center bg-slate-800/20 border border-dashed border-slate-700 rounded-3xl">
+                    <Search className="w-10 h-10 mx-auto mb-3 text-slate-700" />
+                    <p className="text-slate-500 font-bold">No se encontraron productos con "{search}"</p>
+                 </div>
+               )}
+            </div>
 
            {/* Quick Quantity and Add Modal Overlay */}
            {selectedProduct && (

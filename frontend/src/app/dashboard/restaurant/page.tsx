@@ -90,7 +90,7 @@ export default function RestaurantDashboard() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}` 
         },
-        body: JSON.stringify({ tableName: newAlias, items: [] })
+        body: JSON.stringify({ tableName: newAlias, waiterId: selectedWaiterId, items: [] })
       });
 
       if (resCreate.ok) {
