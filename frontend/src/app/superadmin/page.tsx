@@ -42,6 +42,7 @@ export default function SuperAdminPage() {
     { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)' },
     { id: 'REFUNDS', name: 'Devoluciones y Reembolsos' },
     { id: 'ACCOUNTING', name: 'Módulo Contable' },
+    { id: 'RESTAURANT', name: 'Servicio a Mesas (Restaurante)' },
   ];
 
   const openModulesModal = (tenant: any) => {

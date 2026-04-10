@@ -135,7 +135,7 @@ export default function RestaurantDashboard() {
             />
           </div>
           <button
-            onClick={() => setShowOpenModal(true)}
+            onClick={() => { setNewAlias(''); setSelectedWaiterId(''); setWaiterPin(''); setError(''); setShowOpenModal(true); }}
             className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-900/30 active:scale-95"
           >
             <Plus className="w-6 h-6" />
@@ -193,7 +193,7 @@ export default function RestaurantDashboard() {
                <Utensils className="w-20 h-20 mb-6 opacity-20" />
                <p className="text-xl font-bold">No hay mesas activas en este momento</p>
                <button 
-                onClick={() => setShowOpenModal(true)}
+                onClick={() => { setNewAlias(''); setSelectedWaiterId(''); setWaiterPin(''); setError(''); setShowOpenModal(true); }}
                 className="mt-4 text-blue-500 hover:text-blue-400 font-bold transition-colors"
                >
                  Abrir mi primera mesa del turno

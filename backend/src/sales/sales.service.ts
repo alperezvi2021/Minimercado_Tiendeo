@@ -360,7 +360,7 @@ export class SalesService {
     return this.salesRepository.find({
       where: { tenantId, closureId },
       relations: ['items'],
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' }, // Most recent first
     });
   }
 

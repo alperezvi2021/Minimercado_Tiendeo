@@ -228,10 +228,10 @@ export default function SettingsPage() {
       });
 
       if (res.ok) {
-        alert('Configuración guardada correctamente.');
         localStorage.setItem('store_name', tenantData.name);
-        // Update sidebar immediately
         localStorage.setItem('tenant_modules', JSON.stringify(activeModules));
+        // Reload so the sidebar reflects module changes immediately
+        window.location.reload();
       } else {
         alert('Error al guardar la configuración.');
       }

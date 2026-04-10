@@ -101,7 +101,8 @@ export class SalesController {
   @Roles(Role.ADMIN, Role.OWNER)
   findAll(@Request() req) {
     const tenantId = req.user.tenantId;
-    return this.salesService.findAll(tenantId);
+    // Only return PAID/CANCELLED sales (exclude OPEN restaurant tables)
+    return this.salesService.findAll(tenantId, 'PAID');
   }
 
   @Post('sync-credits')

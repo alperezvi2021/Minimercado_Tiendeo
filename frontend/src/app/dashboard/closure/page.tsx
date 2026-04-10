@@ -51,6 +51,26 @@ export default function ClosurePage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [openingAmount, setOpeningAmount] = useState<string>('');
   const [opening, setOpening] = useState(false);
+  const [sortKey, setSortKey] = useState<string>('createdAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
+
+  const sortedSales = [...sales].sort((a: any, b: any) => {
+    let av = a[sortKey];
+    let bv = b[sortKey];
+    if (sortKey === 'totalAmount') { av = Number(av); bv = Number(bv); }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   const fetchStatus = async () => {
     try {
@@ -403,19 +423,32 @@ export default function ClosurePage() {
             En Tiempo Real
           </span>
         </div>
-        <div className="overflow-x-auto">
+          <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-800/50">
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Ticket / Hora</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Monto</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Método</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente / Deuda</th>
+                {([
+                  { key: 'createdAt', label: 'Ticket / Hora' },
+                  { key: 'totalAmount', label: 'Monto' },
+                  { key: 'paymentMethod', label: 'Método' },
+                  { key: 'customerName', label: 'Cliente / Deuda' },
+                ] as { key: string; label: string }[]).map(col => (
+                  <th
+                    key={col.key}
+                    onClick={() => handleSort(col.key)}
+                    className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-blue-400 hover:bg-slate-800/30 select-none transition-colors"
+                  >
+                    {col.label}{' '}
+                    <span className="text-slate-600">
+                      {sortKey === col.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+                    </span>
+                  </th>
+                ))}
                 <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
-              {sales.map((sale) => (
+              {sortedSales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-slate-800/30 transition-colors group">
                   <td className="px-8 py-4">
                     <p className="text-sm font-bold text-white uppercase tracking-tighter">#{sale.id.split('-')[0]}</p>
@@ -464,6 +497,7 @@ export default function ClosurePage() {
               )}
             </tbody>
           </table>
+        </div>
         </div>
       </div>
     </div>
