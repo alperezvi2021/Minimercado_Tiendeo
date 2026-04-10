@@ -84,74 +84,86 @@ export class ProductsService {
 
   async createMany(tenantId: string, productsDto: CreateProductDto[]): Promise<any> {
     try {
-      // 1. Obtener TODOS los productos (incluyendo inactivos) para evitar violar la clave única de barcode
+      // 1. Obtener TODOS los productos (incluyendo inactivos) del tenant
       const existingProducts = await this.productsRepository.find({
-        where: { tenantId },
-        select: ['barcode', 'name']
+        where: { tenantId }
       });
 
-      // 2. Crear sets para búsqueda rápida (normalizados)
-      const existingBarcodes = new Set(
-        existingProducts
-          .map(p => p.barcode?.trim())
-          .filter(b => b && b !== '')
-      );
-      const existingNames = new Set(
-        existingProducts.map(p => p.name.toLowerCase().trim())
-      );
+      // 2. Crear mapas para búsqueda rápida (normalizados)
+      const barcodeMap = new Map<string, Product>();
+      const nameMap = new Map<string, Product>();
 
-      const toImport = [];
-      let skipped = 0;
+      existingProducts.forEach(p => {
+        if (p.barcode && p.barcode.trim() !== '') {
+          barcodeMap.set(p.barcode.trim(), p);
+        }
+        nameMap.set(p.name.toLowerCase().trim(), p);
+      });
 
-      // 3. Filtrar los productos del DTO
+      const toSave: Product[] = [];
+      let imported = 0;
+      let updated = 0;
+
+      // 3. Procesar cada producto del DTO
       for (const dto of productsDto) {
-        // Asegurar que nombre y barcode sean strings
         const nameStr = String(dto.name || '').trim();
         const barcode = dto.barcode ? String(dto.barcode).trim() : null;
         const nameNormalized = nameStr.toLowerCase();
 
-        // Validar integridad de datos básicos
-        if (!nameNormalized) {
-          skipped++;
-          continue;
-        }
+        if (!nameNormalized) continue;
 
-        const existsByBarcode = barcode && existingBarcodes.has(barcode);
-        const existsByName = nameNormalized && existingNames.has(nameNormalized);
+        // Intentar encontrar el producto existente por barcode o por nombre
+        let product = (barcode && barcodeMap.get(barcode)) || nameMap.get(nameNormalized);
 
-        if (existsByBarcode || existsByName) {
-          skipped++;
+        if (product) {
+          // MODO ACTUALIZACIÓN (UPSERT)
+          // Actualizamos campos básicos si vienen en el DTO
+          product.name = nameStr;
+          product.barcode = barcode;
+          
+          if (dto.price !== undefined) product.price = Number(dto.price);
+          if (dto.cost !== undefined) product.cost = dto.cost !== null ? Number(dto.cost) : null;
+          if (dto.stock !== undefined) product.stock = Number(dto.stock);
+          if (dto.profitMargin !== undefined) product.profitMargin = dto.profitMargin !== null ? Number(dto.profitMargin) : null;
+          if (dto.categoryId !== undefined) product.categoryId = dto.categoryId;
+          if (dto.lowStockThreshold !== undefined) product.lowStockThreshold = Number(dto.lowStockThreshold);
+          
+          product.isActive = true; // Si estaba inactivo, lo reactivamos al importar
+          
+          toSave.push(product);
+          updated++;
         } else {
-          // Asegurar que los números sean válidos y no NaN
-          const cleanPrice = isFinite(Number(dto.price)) ? Number(dto.price) : 0;
-          const cleanStock = isFinite(Number(dto.stock)) ? Number(dto.stock) : 0;
-
-          toImport.push(this.productsRepository.create({
+          // MODO CREACIÓN
+          const newProduct = this.productsRepository.create({
             ...dto,
             name: nameStr,
             barcode: barcode,
-            price: cleanPrice,
-            stock: cleanStock,
             tenantId,
-          }));
+            price: isFinite(Number(dto.price)) ? Number(dto.price) : 0,
+            stock: isFinite(Number(dto.stock)) ? Number(dto.stock) : 0,
+          });
           
-          // Prevenir duplicados dentro del mismo archivo excel
-          if (barcode) existingBarcodes.add(barcode);
-          existingNames.add(nameNormalized);
+          toSave.push(newProduct);
+          imported++;
+          
+          // Registrar en los mapas para evitar duplicados dento del mismo archivo Excel
+          if (barcode) barcodeMap.set(barcode, newProduct);
+          nameMap.set(nameNormalized, newProduct);
         }
       }
 
-      // 4. Guardar los que no existían (en bloques de 100 para evitar saturación/timeouts)
+      // 4. Guardar en bloques (BATCH_SIZE) para optimización
       const BATCH_SIZE = 100;
-      for (let i = 0; i < toImport.length; i += BATCH_SIZE) {
-        const batch = toImport.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < toSave.length; i += BATCH_SIZE) {
+        const batch = toSave.slice(i, i + BATCH_SIZE);
         await this.productsRepository.save(batch);
       }
 
       return {
         total: productsDto.length,
-        imported: toImport.length,
-        skipped: skipped
+        imported: imported,
+        updated: updated,
+        totalProcessed: toSave.length
       };
     } catch (error) {
       console.error("CRITICAL_ERROR_BULK_IMPORT:", error);
