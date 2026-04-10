@@ -11,6 +11,7 @@ import { Customer } from '../customers/entities/customer.entity';
 import { Refund } from './entities/refund.entity';
 import { RefundItem } from './entities/refund-item.entity';
 import { CreateRefundDto } from './dto/create-refund.dto';
+import { SaleItem } from './entities/sale-item.entity';
 
 @Injectable()
 export class SalesService {
@@ -186,7 +187,7 @@ export class SalesService {
       for (const item of newItems) {
         const subtotal = Number(item.unitPrice) * Number(item.quantity);
         
-        const saleItem = transactionalEntityManager.create('SaleItem', {
+        const saleItem = transactionalEntityManager.create(SaleItem, {
           saleId: sale.id,
           productId: item.productId,
           productName: item.productName,
@@ -195,7 +196,7 @@ export class SalesService {
           subtotal,
         });
         
-        await transactionalEntityManager.save('SaleItem', saleItem);
+        await transactionalEntityManager.save(SaleItem, saleItem);
         
         // Descontar inventario
         await this.productsService.updateStock(tenantId, item.productId, item.quantity, transactionalEntityManager);
@@ -208,10 +209,72 @@ export class SalesService {
     });
   }
 
-  async closeTableOrder(tenantId: string, userId: string, userName: string, saleId: string, paymentMethod: string): Promise<Sale> {
+  async removeItemFromTable(tenantId: string, saleId: string, itemId: string): Promise<Sale> {
     const sale = await this.salesRepository.findOne({
       where: { id: saleId, tenantId, status: 'OPEN' },
       relations: ['items']
+    });
+
+    if (!sale) throw new NotFoundException('Mesa no encontrada');
+
+    const item = await this.dataSource.getRepository(SaleItem).findOne({
+      where: { id: itemId, sale: { id: saleId } }
+    });
+
+    if (!item) throw new NotFoundException('Producto no encontrado en la mesa');
+
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      // 1. Devolver stock
+      await this.productsService.updateStock(tenantId, item.productId, -item.quantity, transactionalEntityManager);
+
+      // 2. Descontar del total de la venta
+      sale.totalAmount = Number(sale.totalAmount) - Number(item.subtotal);
+
+      // 3. Eliminar el item
+      await transactionalEntityManager.remove(SaleItem, item);
+
+      return await transactionalEntityManager.save(Sale, sale);
+    });
+  }
+
+  async updateItemQuantity(tenantId: string, saleId: string, itemId: string, newQuantity: number): Promise<Sale> {
+    const sale = await this.salesRepository.findOne({
+      where: { id: saleId, tenantId, status: 'OPEN' },
+      relations: ['items']
+    });
+
+    if (!sale) throw new NotFoundException('Mesa no encontrada');
+
+    const item = await this.dataSource.getRepository(SaleItem).findOne({
+      where: { id: itemId, sale: { id: saleId } }
+    });
+
+    if (!item) throw new NotFoundException('Producto no encontrado en la mesa');
+
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      const diff = newQuantity - item.quantity;
+      
+      // 1. Ajustar inventario (si diff es +0.5, descuenta 0.5; si es -0.5, suma 0.5)
+      await this.productsService.updateStock(tenantId, item.productId, diff, transactionalEntityManager);
+
+      // 2. Ajustar totales
+      const oldSubtotal = Number(item.subtotal);
+      item.quantity = newQuantity;
+      item.subtotal = Number(item.unitPrice) * newQuantity;
+      const newSubtotal = item.subtotal;
+
+      sale.totalAmount = Number(sale.totalAmount) - oldSubtotal + newSubtotal;
+
+      // 3. Guardar cambios
+      await transactionalEntityManager.save(SaleItem, item);
+      return await transactionalEntityManager.save(Sale, sale);
+    });
+  }
+
+  async closeTableOrder(tenantId: string, userId: string, userName: string, saleId: string, dto: { paymentMethod: string, customerId?: string, customerName?: string }): Promise<Sale> {
+    const sale = await this.salesRepository.findOne({
+      where: { id: saleId, tenantId, status: 'OPEN' },
+      relations: ['items', 'waiter']
     });
 
     if (!sale) throw new NotFoundException('Mesa no encontrada o ya cerrada');
@@ -224,8 +287,8 @@ export class SalesService {
       const lastSale = await transactionalEntityManager.createQueryBuilder(Sale, 'sale')
         .setLock('pessimistic_write')
         .where('sale.tenantId = :tenantId', { tenantId })
-        .andWhere('sale.status = :status', { status: 'PAID' })
-        .orderBy('sale.invoiceNumber', 'DESC')
+        .andWhere('sale.invoiceNumber IS NOT NULL') // Fixed query logic from previous turn
+        .orderBy('sale.createdAt', 'DESC')
         .getOne();
 
       let nextNumber = 1;
@@ -238,14 +301,35 @@ export class SalesService {
       }
       const invoiceNumber = `POS-${nextNumber.toString().padStart(4, '0')}`;
 
+      // Formato solicitado por el usuario: "Cajero (Mesero: Nombre)"
+      const waiterName = sale.waiter?.name || 'Varios';
+      const sellerDisplayName = `${userName} (Mesero: ${waiterName})`;
+
       sale.status = 'PAID';
-      sale.paymentMethod = paymentMethod;
+      sale.paymentMethod = dto.paymentMethod;
       sale.invoiceNumber = invoiceNumber;
       sale.userId = userId;
-      sale.sellerName = userName;
+      sale.sellerName = sellerDisplayName;
+      sale.customerName = dto.customerName || sale.customerName;
       sale.closureId = closure.id;
 
-      return await transactionalEntityManager.save(Sale, sale);
+      const savedSale = await transactionalEntityManager.save(Sale, sale);
+
+      // Soporte para Ventas a Crédito (Igual que en POS normal)
+      if (dto.paymentMethod === 'credito') {
+        const creditSale = transactionalEntityManager.create(CreditSale, {
+          tenantId,
+          saleId: savedSale.id,
+          customerName: dto.customerName || 'Cliente Restaurante',
+          customerId: dto.customerId,
+          amount: savedSale.totalAmount,
+          remainingAmount: savedSale.totalAmount,
+          status: 'PENDING',
+        });
+        await transactionalEntityManager.save(CreditSale, creditSale);
+      }
+
+      return savedSale;
     });
   }
 

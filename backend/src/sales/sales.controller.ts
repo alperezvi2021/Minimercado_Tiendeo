@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Param, Delete, Patch } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { CreateRefundDto } from './dto/create-refund.dto';
@@ -164,12 +164,37 @@ export class SalesController {
     return this.salesService.addItemsToTable(req.user.tenantId, id, body.items);
   }
 
+  @Patch('restaurant/order/:id/items/:itemId')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
+  updateItemQuantity(
+    @Request() req, 
+    @Param('id') id: string, 
+    @Param('itemId') itemId: string, 
+    @Body() body: { quantity: number }
+  ) {
+    return this.salesService.updateItemQuantity(req.user.tenantId, id, itemId, body.quantity);
+  }
+
+  @Delete('restaurant/order/:id/items/:itemId')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
+  removeItemFromTable(
+    @Request() req, 
+    @Param('id') id: string, 
+    @Param('itemId') itemId: string
+  ) {
+    return this.salesService.removeItemFromTable(req.user.tenantId, id, itemId);
+  }
+
   @Post('restaurant/order/:id/close')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
-  closeTableOrder(@Request() req, @Param('id') id: string, @Body() body: { paymentMethod: string }) {
+  closeTableOrder(
+    @Request() req, 
+    @Param('id') id: string, 
+    @Body() body: { paymentMethod: string, customerId?: string, customerName?: string }
+  ) {
     const userId = req.user.userId;
     const userName = req.user.name || 'Cajero';
-    return this.salesService.closeTableOrder(req.user.tenantId, userId, userName, id, body.paymentMethod);
+    return this.salesService.closeTableOrder(req.user.tenantId, userId, userName, id, body);
   }
 
   @Delete('restaurant/order/:id')

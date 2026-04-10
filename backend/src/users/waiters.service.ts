@@ -52,6 +52,22 @@ export class WaitersService {
     return this.usersRepository.save(waiter);
   }
 
+  async update(tenantId: string, id: string, dto: { name?: string, pin?: string }): Promise<User> {
+    const waiter = await this.usersRepository.findOne({
+      where: { id, tenantId, role: 'WAITER' }
+    });
+
+    if (!waiter) throw new NotFoundException('Mesero no encontrado');
+
+    if (dto.name) waiter.name = dto.name;
+    if (dto.pin) {
+      if (dto.pin.length !== 4) throw new BadRequestException('El PIN debe tener 4 dígitos');
+      waiter.pin = dto.pin;
+    }
+
+    return this.usersRepository.save(waiter);
+  }
+
   async delete(tenantId: string, waiterId: string): Promise<void> {
     const result = await this.usersRepository.delete({ id: waiterId, tenantId, role: 'WAITER' });
     if (result.affected === 0) throw new NotFoundException('Mesero no encontrado');
