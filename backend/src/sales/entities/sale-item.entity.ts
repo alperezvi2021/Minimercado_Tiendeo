@@ -10,8 +10,6 @@ export class SaleItem {
   @JoinColumn({ name: 'sale_id' })
   sale: Sale;
 
-  @Column({ name: 'sale_id' })
-  saleId: string;
 
   @Column({ name: 'product_id' })
   productId: string;

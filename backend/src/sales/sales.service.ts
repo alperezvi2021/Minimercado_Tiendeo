@@ -188,7 +188,7 @@ export class SalesService {
         const subtotal = Number(item.unitPrice) * Number(item.quantity);
         
         const saleItem = transactionalEntityManager.create(SaleItem, {
-          saleId: sale.id,
+          sale: { id: sale.id },
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
