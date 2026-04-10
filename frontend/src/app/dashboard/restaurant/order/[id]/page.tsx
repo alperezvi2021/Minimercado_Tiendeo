@@ -290,7 +290,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-               {filteredProducts.map((p) => (
+               {search && filteredProducts.map((p) => (
                  <button
                    key={p.id}
                    onClick={() => setSelectedProduct(p)}
