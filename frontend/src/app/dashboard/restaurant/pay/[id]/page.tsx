@@ -94,24 +94,21 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
 
   if (!sale) return <div className="p-10 text-center text-slate-500">Cargando datos de cobro...</div>;
 
-  if (isSuccess) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full space-y-6 animate-in zoom-in-95 duration-500">
-        <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center shadow-2xl shadow-green-900/40">
-           <CheckCircle2 className="w-14 h-14 text-white" />
-        </div>
-        <div className="text-center">
-          <h2 className="text-4xl font-black text-white">¡Pago Exitoso!</h2>
-          <p className="text-slate-400 mt-2">La mesa {sale.tableName} ha sido cerrada correctamente.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
     <div className="p-6 h-full flex items-center justify-center bg-[#0f172a] print:hidden">
-      <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl">
+      {isSuccess ? (
+        <div className="flex flex-col items-center justify-center h-full space-y-6 animate-in zoom-in-95 duration-500">
+          <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center shadow-2xl shadow-green-900/40">
+             <CheckCircle2 className="w-14 h-14 text-white" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-4xl font-black text-white">¡Pago Exitoso!</h2>
+            <p className="text-slate-400 mt-2">La mesa {sale.tableName} ha sido cerrada correctamente.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl">
         <div className="p-10 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
            <div>
               <h1 className="text-3xl font-black text-white">Cerrar Cuenta</h1>
@@ -230,6 +227,7 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
            </div>
         </div>
       </div>
+      )}
     </div>
 
     {/* TICKET DE IMPRESIÓN (Solo visible al imprimir) */}
