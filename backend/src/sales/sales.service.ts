@@ -187,14 +187,13 @@ export class SalesService {
       for (const item of newItems) {
         const subtotal = Number(item.unitPrice) * Number(item.quantity);
         
-        const saleItem = transactionalEntityManager.create(SaleItem, {
-          sale: { id: sale.id },
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          subtotal,
-        });
+        const saleItem = new SaleItem();
+        saleItem.sale = sale;
+        saleItem.productId = item.productId;
+        saleItem.productName = item.productName;
+        saleItem.quantity = item.quantity;
+        saleItem.unitPrice = item.unitPrice;
+        saleItem.subtotal = subtotal;
         
         await transactionalEntityManager.save(SaleItem, saleItem);
         
