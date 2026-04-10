@@ -9,6 +9,11 @@ interface Sale {
   tableName: string;
   totalAmount: number;
   waiter?: { name: string };
+  items?: {
+    quantity: number;
+    productName: string;
+    subtotal: number;
+  }[];
 }
 
 export default function RestaurantPayPage({ params }: { params: Promise<{ id: string }> }) {
