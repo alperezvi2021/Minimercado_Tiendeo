@@ -15,7 +15,7 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const { id } = use(params);
   const [sale, setSale] = useState<Sale | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia'>('efectivo');
+  const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'tarjeta' | 'transferencia' | 'credito'>('efectivo');
   const [shouldPrint, setShouldPrint] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
