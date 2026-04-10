@@ -159,8 +159,7 @@ export class SalesService {
           productName: item.productName,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          subtotal: Number(item.unitPrice) * Number(item.quantity),
-          sale: { id: undefined } // Se vinculará al guardar la venta
+          subtotal: Number(item.unitPrice) * Number(item.quantity)
         })),
       });
 
@@ -189,7 +188,7 @@ export class SalesService {
         const subtotal = Number(item.unitPrice) * Number(item.quantity);
         
         const saleItem = transactionalEntityManager.create(SaleItem, {
-          sale: { id: sale.id },
+          saleId: sale.id,
           productId: item.productId,
           productName: item.productName,
           quantity: item.quantity,
@@ -206,7 +205,13 @@ export class SalesService {
         sale.totalAmount = Number(sale.totalAmount) + subtotal;
       }
 
-      return await transactionalEntityManager.save(Sale, sale);
+      await transactionalEntityManager.save(Sale, sale);
+      
+      // Recargar con items para que el frontend vea todo al momento
+      return await transactionalEntityManager.findOne(Sale, {
+        where: { id: sale.id },
+        relations: ['items', 'waiter']
+      });
     });
   }
 

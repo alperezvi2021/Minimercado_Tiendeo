@@ -104,7 +104,8 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
   }
 
   return (
-    <div className="p-6 h-full flex items-center justify-center bg-[#0f172a]">
+    <>
+    <div className="p-6 h-full flex items-center justify-center bg-[#0f172a] print:hidden">
       <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl">
         <div className="p-10 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
            <div>
@@ -225,5 +226,47 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
     </div>
+
+    {/* TICKET DE IMPRESIÓN (Solo visible al imprimir) */}
+    <div id="printable-receipt" className="hidden print:block text-black bg-white p-4 font-mono text-sm leading-tight w-[58mm]">
+      <div className="text-center mb-4">
+        <h2 className="font-bold text-lg border-b border-black pb-2 mb-2 z-10 relative">Servicio a Mesas</h2>
+        <p className="font-bold border border-black rounded inline-block px-2 mb-2">{sale.tableName}</p>
+        <p className="text-xs">Atiende: {sale.waiter?.name || 'Varios'}</p>
+        <p className="text-xs">{new Date().toLocaleString('es-CO')}</p>
+      </div>
+
+      <div className="border-b border-black border-dashed pb-2 mb-2 text-xs">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="border-b border-black">
+              <th className="w-8 pb-1">Cant</th>
+              <th className="pb-1">Prod</th>
+              <th className="text-right pb-1">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(sale.items || []).map((item, idx) => (
+              <tr key={idx}>
+                <td className="align-top font-bold">{item.quantity}</td>
+                <td className="align-top truncate">{item.productName}</td>
+                <td className="text-right align-top">${Number(item.subtotal).toLocaleString('es-CO')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="text-right pb-2 border-b border-black border-dashed">
+        <p className="font-bold text-lg tracking-tight">TOTAL: ${Number(sale.totalAmount).toLocaleString('es-CO')}</p>
+        <p className="text-xs mt-1">PAGO EN: {paymentMethod.toUpperCase()}</p>
+      </div>
+      
+      <div className="text-center mt-4 text-[10px]">
+        <p className="font-bold">¡Gracias por su visita!</p>
+        <p className="mt-1">Sistema POS Tiendeo</p>
+      </div>
+    </div>
+    </>
   );
 }
