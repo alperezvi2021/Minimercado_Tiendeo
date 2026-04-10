@@ -437,7 +437,9 @@ export default function InventoryPage() {
         const wb = XLSX.read(dataBuffer, { type: 'array' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json(ws) as any[];
+        // Forzamos raw: false para obtener el texto formateado (ej: "$ 3,000" como string)
+        // en lugar de dejar que XLSX lo convierta a número basándose en locale (que convertiría 3,000 a 3)
+        const data = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' }) as any[];
 
         // Mapear datos a CreateProductDto
         const productsToImport = data.map((row: any) => {
@@ -448,17 +450,18 @@ export default function InventoryPage() {
           // Helper para limpiar números (moneda, stock, etc.)
           const cleanNumeric = (val: any, isDecimal = false) => {
             if (val === undefined || val === null || val === '') return null;
-            // Convertir a string y quitar símbolos de moneda y espacios
-            let s = String(val).replace(/[$\s]/g, '');
+            // Convertir a string y quitar símbolos de moneda, espacios y letras
+            let s = String(val).replace(/[$\sA-Za-z]/g, '');
             
-            if (isDecimal) {
-              // Para decimales (Utilidad), quitamos comas (miles) y dejamos el punto
-              return parseFloat(s.replace(/,/g, '')) || 0;
-            } else {
-              // Para precios y stock (Enteros), quitamos tanto puntos como comas
-              // Así manejamos 4.800 y 4,800 como 4800
-              return parseFloat(s.replace(/\./g, '').replace(/,/g, '')) || 0;
-            }
+            // Si tiene decimales ".00" o ",00" al final, los quitamos antes de procesar miles
+            // para evitar que "25.00" se convierta en "2500"
+            s = s.replace(/[,.]00$/, '');
+
+            // Tal como solicita el usuario: Comma o Punto son MILES, no decimales.
+            // Por lo tanto, eliminamos ambos para obtener el número limpio.
+            // 3,000 -> 3000 | 3.000 -> 3000
+            const cleanString = s.replace(/\./g, '').replace(/,/g, '');
+            return parseFloat(cleanString) || 0;
           };
 
           const rawBarcode = row['Código'] || row['Código de Barras'] || row['Codigo'];
