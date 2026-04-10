@@ -445,19 +445,32 @@ export default function InventoryPage() {
           const catName = row['Categoría'] || row['Categoria'];
           const category = categories.find((c: Category) => c.name.toLowerCase() === String(catName || '').toLowerCase().trim());
           
-          // Limpiar puntos de miles si existen para que parseFloat no los tome como decimales
-          const rawPrice = row['Precio de Venta'] || row['Precio Venta'] || '0';
-          const rawStock = row['Stock'] || row['Stock Actual'] || '0';
-          const rawBarcode = row['Código'] || row['Código de Barras'] || row['Codigo'];
+          // Helper para limpiar números (moneda, stock, etc.)
+          const cleanNumeric = (val: any, isDecimal = false) => {
+            if (val === undefined || val === null || val === '') return null;
+            // Convertir a string y quitar símbolos de moneda y espacios
+            let s = String(val).replace(/[$\s]/g, '');
+            
+            if (isDecimal) {
+              // Para decimales (Utilidad), quitamos comas (miles) y dejamos el punto
+              return parseFloat(s.replace(/,/g, '')) || 0;
+            } else {
+              // Para precios y stock (Enteros), quitamos tanto puntos como comas
+              // Así manejamos 4.800 y 4,800 como 4800
+              return parseFloat(s.replace(/\./g, '').replace(/,/g, '')) || 0;
+            }
+          };
 
-          const cleanPrice = String(rawPrice).replace(/\./g, '').replace(/,/g, '.') || '0';
-          const cleanStock = String(rawStock).replace(/\./g, '') || '0';
+          const rawBarcode = row['Código'] || row['Código de Barras'] || row['Codigo'];
 
           return {
             name: String(row['Producto'] || row['Nombre'] || '').trim(),
             barcode: (rawBarcode === 'Manual' || !rawBarcode) ? null : String(rawBarcode).trim(),
-            price: parseFloat(cleanPrice) || 0,
-            stock: parseFloat(cleanStock) || 0,
+            price: cleanNumeric(row['Precio Venta'] || row['Precio de Venta']) || 0,
+            cost: cleanNumeric(row['Precio Compra'] || row['Precio de Compra']),
+            profitMargin: cleanNumeric(row['Utilidad (%)'] || row['Utilidad'], true),
+            stock: cleanNumeric(row['Stock Actual'] || row['Stock']) || 0,
+            lowStockThreshold: parseInt(String(row['Mínimo Stock'] || row['Minimo Stock'] || '5')),
             categoryId: category?.id || null,
           };
         }).filter(p => p.name); // Solo productos con nombre
