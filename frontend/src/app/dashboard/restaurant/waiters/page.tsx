@@ -189,6 +189,7 @@ export default function WaitersPage() {
               Todavía no has creado ningún mesero.
             </div>
           )}
+        </div>
       )}
 
       {/* Modal Agregar Mesero */}
