@@ -59,6 +59,25 @@ export class SalesService {
     return await this.cashClosureRepository.save(closure);
   }
 
+  private async generateNextInvoiceNumber(tenantId: string, transactionalEntityManager: any): Promise<string> {
+    const lastSale = await transactionalEntityManager.createQueryBuilder(Sale, 'sale')
+      .setLock('pessimistic_write')
+      .where('sale.tenantId = :tenantId', { tenantId })
+      .andWhere('sale.invoiceNumber LIKE :prefix', { prefix: 'POS-%' })
+      .orderBy('sale.invoiceNumber', 'DESC')
+      .getOne();
+
+    let nextNumber = 1;
+    if (lastSale && lastSale.invoiceNumber) {
+      const parts = lastSale.invoiceNumber.split('-');
+      if (parts.length > 1) {
+        const lastNum = parseInt(parts[1]);
+        if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+      }
+    }
+    return `POS-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
   async create(tenantId: string, userId: string, userName: string, createSaleDto: CreateSaleDto): Promise<Sale> {
     if (!createSaleDto.items || createSaleDto.items.length === 0) {
       throw new BadRequestException('El ticket no puede estar vacío');
@@ -68,23 +87,7 @@ export class SalesService {
     if (!closure) throw new BadRequestException('Debe realizar la apertura de caja primero');
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
-      // Logic for invoice number with pessimistic locking to prevent race conditions
-      const lastSale = await transactionalEntityManager.createQueryBuilder(Sale, 'sale')
-        .setLock('pessimistic_write')
-        .where('sale.tenantId = :tenantId', { tenantId })
-        .andWhere('sale.invoiceNumber IS NOT NULL')
-        .orderBy('sale.createdAt', 'DESC')
-        .getOne();
-
-      let nextNumber = 1;
-      if (lastSale && lastSale.invoiceNumber) {
-        const parts = lastSale.invoiceNumber.split('-');
-        if (parts.length > 1) {
-          const lastNum = parseInt(parts[1]);
-          if (!isNaN(lastNum)) nextNumber = lastNum + 1;
-        }
-      }
-      const invoiceNumber = `POS-${nextNumber.toString().padStart(4, '0')}`;
+      const invoiceNumber = await this.generateNextInvoiceNumber(tenantId, transactionalEntityManager);
 
       const sale = transactionalEntityManager.create(Sale, {
         tenantId,
@@ -94,7 +97,7 @@ export class SalesService {
         totalAmount: createSaleDto.totalAmount,
         paymentMethod: createSaleDto.paymentMethod || 'efectivo',
         invoiceNumber,
-        customerName: createSaleDto.customerName, // FIX: Save customer name to Sale entity
+        customerName: createSaleDto.customerName, 
         items: createSaleDto.items.map(item => ({
           productId: item.productId,
           productName: item.productName,
@@ -106,21 +109,19 @@ export class SalesService {
 
       const savedSale = await transactionalEntityManager.save<Sale>(sale);
 
-      // Si es crédito, crear la entrada en la tabla de créditos inmediatamente
       if (createSaleDto.paymentMethod === 'credito') {
         const creditSale = transactionalEntityManager.create(CreditSale, {
           tenantId,
           saleId: savedSale.id,
           customerName: createSaleDto.customerName || 'Cliente Genérico',
-          customerId: createSaleDto.customerId, // Link to customer if provided
+          customerId: createSaleDto.customerId,
           amount: savedSale.totalAmount,
-          remainingAmount: savedSale.totalAmount, // Initially full amount
+          remainingAmount: savedSale.totalAmount,
           status: 'PENDING',
         });
         await transactionalEntityManager.save<CreditSale>(creditSale);
       }
 
-      // Descontar inventario
       for (const item of createSaleDto.items) {
         await this.productsService.updateStock(tenantId, item.productId, item.quantity, transactionalEntityManager);
       }
@@ -289,22 +290,7 @@ export class SalesService {
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
       // Asignar número de factura final al momento del pago
-      const lastSale = await transactionalEntityManager.createQueryBuilder(Sale, 'sale')
-        .setLock('pessimistic_write')
-        .where('sale.tenantId = :tenantId', { tenantId })
-        .andWhere('sale.invoiceNumber IS NOT NULL') // Fixed query logic from previous turn
-        .orderBy('sale.createdAt', 'DESC')
-        .getOne();
-
-      let nextNumber = 1;
-      if (lastSale && lastSale.invoiceNumber) {
-        const parts = lastSale.invoiceNumber.split('-');
-        if (parts.length > 1) {
-          const lastNum = parseInt(parts[1]);
-          if (!isNaN(lastNum)) nextNumber = lastNum + 1;
-        }
-      }
-      const invoiceNumber = `POS-${nextNumber.toString().padStart(4, '0')}`;
+      const invoiceNumber = await this.generateNextInvoiceNumber(tenantId, transactionalEntityManager);
 
       // Formato solicitado por el usuario: "Cajero (Mesero: Nombre)"
       const waiterName = sale.waiter?.name || 'Varios';

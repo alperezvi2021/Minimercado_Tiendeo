@@ -84,9 +84,13 @@ export default function RestaurantPayPage({ params }: { params: Promise<{ id: st
           }, 500);
         }
         setTimeout(() => router.push('/dashboard/restaurant'), 2000);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Error al procesar la venta: ${errorData.message || 'Error desconocido en el servidor'}`);
       }
     } catch (err) {
       console.error(err);
+      alert('Error de conexión al intentar cerrar la cuenta');
     } finally {
       setIsProcessing(false);
     }
