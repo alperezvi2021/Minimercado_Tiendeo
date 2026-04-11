@@ -59,11 +59,22 @@ input, textarea, select {
   font-weight: 700 !important; /* Texto en negrita en toda la app */
 }
 
+/* Manejo de Autofill en navegadores para evitar fondo blanco en modo oscuro */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--background) inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
 /* En modo oscuro, asegurar texto blanco en inputs que NO tengan fondo blanco explícito */
-.dark input:not(.bg-white), 
-.dark textarea:not(.bg-white), 
-.dark select:not(.bg-white) {
+.dark input:not(.bg-white):not(.bg-slate-50), 
+.dark textarea:not(.bg-white):not(.bg-slate-50), 
+.dark select:not(.bg-white):not(.bg-slate-50) {
   color: #ffffff !important;
+  background-color: rgba(30, 41, 59, 0.5); /* Fondo slate-800/50 por defecto */
 }
 
 .dark input::placeholder, 

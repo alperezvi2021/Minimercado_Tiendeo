@@ -162,11 +162,11 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           <Bell className="w-5 h-5" />
         </button>
         
-        <div className="flex items-center space-x-3 pl-4 border-l border-gray-200 dark:border-slate-700">
-          <div className="h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
-             <User className="h-5 w-5" />
+        <div className="flex items-center space-x-2 md:space-x-3 pl-2 md:pl-4 border-l border-gray-200 dark:border-slate-700">
+          <div className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
+             <User className="h-4 w-4 md:h-5 md:w-5" />
           </div>
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-none">{userName}</p>
             <div className="mt-1 flex items-center justify-end">
                {userRole === 'SUPER_ADMIN' ? (
@@ -180,10 +180,10 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           </div>
           <button 
             onClick={handleLogout}
-            className="ml-2 h-9 w-9 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors"
+            className="h-8 w-8 md:h-9 md:w-9 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400 transition-colors flex-shrink-0"
             title="Cerrar sesión"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
       </div>
