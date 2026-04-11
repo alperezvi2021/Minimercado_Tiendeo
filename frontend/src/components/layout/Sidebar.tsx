@@ -56,6 +56,15 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
     return hasRole && hasModule;
   });
 
+  const router = useRouter();
+
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('user_name');
+    router.push('/login');
+  };
+
   return (
     <aside className={`
       fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-64 md:flex md:shadow-xl
@@ -116,17 +125,26 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
         </div>
 
         {/* Profile Summary at Bottom */}
-        <div className="mt-4 p-4 border-t border-gray-100 dark:border-slate-800">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/50">
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl">
-              <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div className="mt-4 p-4 border-t border-slate-800">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-slate-800/50">
+            <div className="flex items-center gap-3 overflow-hidden">
+               <div className="bg-blue-900/30 p-2 rounded-xl flex-shrink-0">
+                 <User className="w-5 h-5 text-blue-400" />
+               </div>
+               <div className="overflow-hidden">
+                 <p className="text-sm font-bold text-white truncate">{userName}</p>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+                   {userRole === 'SUPER_ADMIN' ? 'Super Admin' : userRole === 'OWNER' ? 'Dueño' : userRole === 'ADMIN' ? 'Admin' : 'Cajero'}
+                 </p>
+               </div>
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{userName}</p>
-              <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">
-                {userRole === 'SUPER_ADMIN' ? 'Super Admin' : userRole === 'OWNER' ? 'Dueño' : userRole === 'ADMIN' ? 'Admin' : 'Cajero'}
-              </p>
-            </div>
+            <button 
+              onClick={handleLogout}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/30 text-slate-400 hover:text-rose-400 transition-all"
+              title="Cerrar sesión"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>

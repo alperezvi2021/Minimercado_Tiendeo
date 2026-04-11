@@ -147,14 +147,14 @@ export default function ReportsPage() {
         <div className="flex gap-3">
           <button 
             onClick={exportToPDF}
-            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-700 transition-all active:scale-95 shadow-sm"
           >
             <FileText className="w-4 h-4 text-rose-500" />
             Ventas PDF
           </button>
           <button 
             onClick={exportToExcel}
-            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800/50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl font-bold border border-slate-200 dark:border-slate-700 transition-all active:scale-95 shadow-sm"
           >
             <Download className="w-4 h-4 text-emerald-500" />
             Ventas Excel
