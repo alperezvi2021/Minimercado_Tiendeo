@@ -50,12 +50,19 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     };
   }, [setIsOnline]);
 
+  useEffect(() => {
+    const handleSyncFinished = () => {
+      setIsSyncing(false);
+    };
+
+    window.addEventListener('sync-finished', handleSyncFinished);
+    return () => window.removeEventListener('sync-finished', handleSyncFinished);
+  }, []);
+
   const handleManualSync = () => {
     if (totalPending > 0) {
       setIsSyncing(true);
       window.dispatchEvent(new Event('manual-sync'));
-      // Simular final de sync hasta que conectemos la lógica del backend
-      setTimeout(() => setIsSyncing(false), 2000);
     }
   };
 

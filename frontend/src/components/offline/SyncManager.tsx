@@ -44,6 +44,12 @@ export default function SyncManager() {
     setIsSyncing(true);
     console.log('Iniciando sincronización manual...');
 
+    // Resumen de resultados
+    const results = {
+      success: [] as string[],
+      failed: [] as string[]
+    };
+
     try {
       const token = localStorage.getItem('access_token');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -65,8 +71,14 @@ export default function SyncManager() {
             const savedCat = await res.json();
             if (cat.localId && savedCat.id) categoryIdMapping[cat.localId] = savedCat.id;
             removePendingCategory(cat.localId);
+            results.success.push(`Categoría: ${cat.name}`);
+          } else {
+            results.failed.push(`Categoría: ${cat.name} (Error servidor)`);
           }
-        } catch (e) { console.error('Error sincronizando categoría', e); }
+        } catch (e) { 
+          results.failed.push(`Categoría: ${cat.name} (Error conexión)`);
+          console.error('Error sincronizando categoría', e); 
+        }
       }
 
       // 2. Sincronizar Productos
@@ -81,8 +93,16 @@ export default function SyncManager() {
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify(productsToSync)
           });
-          if (res.ok) clearPendingProducts();
-        } catch (e) { console.error('Error sincronizando productos', e); }
+          if (res.ok) {
+            results.success.push(`${pendingProducts.length} Productos sincronizados`);
+            clearPendingProducts();
+          } else {
+            results.failed.push(`Lote de productos (${pendingProducts.length})`);
+          }
+        } catch (e) { 
+          results.failed.push(`Lote de productos (Error conexión)`);
+          console.error('Error sincronizando productos', e); 
+        }
       }
 
       // 3. Sincronizar Clientes
@@ -97,6 +117,7 @@ export default function SyncManager() {
               phone: cust.phone,
               email: cust.email,
               address: cust.address,
+              initialDebt: cust.initialDebt, // Campo corregido: se envía deuda inicial
               localId: cust.localId
             })
           });
@@ -104,15 +125,27 @@ export default function SyncManager() {
             const savedCust = await res.json();
             if (cust.localId && savedCust.id) customerIdMapping[cust.localId] = savedCust.id;
             removePendingCustomer(cust.localId);
+            results.success.push(`Cliente: ${cust.name}`);
+          } else {
+            results.failed.push(`Cliente: ${cust.name} (Error servidor)`);
           }
-        } catch (e) { console.error('Error sincronizando cliente', e); }
+        } catch (e) { 
+          results.failed.push(`Cliente: ${cust.name} (Error conexión)`);
+          console.error('Error sincronizando cliente', e); 
+        }
       }
 
       // 4. Sincronizar Ventas
       for (const sale of pendingSales) {
         try {
-          // Ajustar customerId si era un cliente temporal
-          const finalCustomerId = sale.customerId && customerIdMapping[sale.customerId] ? customerIdMapping[sale.customerId] : sale.customerId;
+          const isTempCustomer = sale.customerId?.startsWith('temp-cust-');
+          const finalCustomerId = isTempCustomer ? customerIdMapping[sale.customerId] : sale.customerId;
+
+          // Si el cliente era temporal y NO se pudo sincronizar, saltamos esta venta para evitar error de FK
+          if (isTempCustomer && !finalCustomerId) {
+            results.failed.push(`Venta: $${sale.total} (Cliente no sincronizado)`);
+            continue;
+          }
           
           const res = await fetch(`${apiUrl}/sales`, {
             method: 'POST',
@@ -121,20 +154,29 @@ export default function SyncManager() {
           });
           if (res.ok) {
             const savedSale = await res.json();
-            // Si la venta generó un crédito, necesitamos su ID para los abonos
             if (sale.paymentMethod === 'credito' && savedSale.creditSale?.id) {
                salesCreditIdMapping[sale.localId] = savedSale.creditSale.id;
             }
             removePendingSale(sale.localId);
+            results.success.push(`Venta: $${sale.total}`);
+          } else {
+            results.failed.push(`Venta: $${sale.total} (Error servidor)`);
           }
-        } catch (e) { console.error('Error sincronizando venta', e); }
+        } catch (e) { 
+          results.failed.push(`Venta: $${sale.total} (Error conexión)`);
+          console.error('Error sincronizando venta', e); 
+        }
       }
 
       // 5. Sincronizar Abonos
       for (const pay of pendingPayments) {
         try {
-          // Si el pago era para una venta de crédito recién creada offline
           const finalCreditId = pay.creditSaleId && salesCreditIdMapping[pay.creditSaleId] ? salesCreditIdMapping[pay.creditSaleId] : pay.creditSaleId;
+
+          if (pay.creditSaleId?.startsWith('temp-') && !finalCreditId) {
+             results.failed.push(`Abono: $${pay.amount} (Crédito original no sincronizado)`);
+             continue;
+          }
 
           const res = await fetch(`${apiUrl}/sales/credits/${finalCreditId}/partial-payment`, {
             method: 'POST',
@@ -143,16 +185,39 @@ export default function SyncManager() {
           });
           if (res.ok) {
             removePendingPayment(pay.localId);
+            results.success.push(`Abono: $${pay.amount}`);
+          } else {
+            results.failed.push(`Abono: $${pay.amount} (Error servidor)`);
           }
-        } catch (e) { console.error('Error sincronizando abono', e); }
+        } catch (e) { 
+          results.failed.push(`Abono: $${pay.amount} (Error conexión)`);
+          console.error('Error sincronizando abono', e); 
+        }
       }
 
       console.log('Sincronización completa finalizada.');
-      alert('Sincronización completada exitosamente.');
+      
+      // Mostrar resumen detallado
+      let summary = 'PROCESO DE SINCRONIZACIÓN FINALIZADO\n\n';
+      if (results.success.length > 0) {
+        summary += `✅ ÉXITOS (${results.success.length}):\n- ${results.success.join('\n- ')}\n\n`;
+      }
+      if (results.failed.length > 0) {
+        summary += `❌ FALLOS (${results.failed.length}):\n- ${results.failed.join('\n- ')}\n\n`;
+        summary += 'Los elementos fallidos permanecerán marcados como "Pendiente" para intentarlo más tarde.';
+      } else {
+        summary += '¡Todos los datos se sincronizaron correctamente!';
+      }
+      
+      alert(summary);
+
     } catch (error) {
       console.error('Error general en sincronización', error);
+      alert('Error inesperado durante la sincronización. Por favor intente de nuevo.');
     } finally {
       setIsSyncing(false);
+      // Notificar a otros componentes que la sincronización terminó
+      window.dispatchEvent(new Event('sync-finished'));
     }
   };
 
