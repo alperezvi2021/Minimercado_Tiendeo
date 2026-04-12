@@ -138,8 +138,8 @@ export default function SyncManager() {
       // 4. Sincronizar Ventas
       for (const sale of pendingSales) {
         try {
-          const isTempCustomer = sale.customerId?.startsWith('temp-cust-');
-          const finalCustomerId = isTempCustomer ? customerIdMapping[sale.customerId] : sale.customerId;
+          const isTempCustomer = !!sale.customerId?.startsWith('temp-cust-');
+          const finalCustomerId = isTempCustomer ? customerIdMapping[sale.customerId as string] : sale.customerId;
 
           // Si el cliente era temporal y NO se pudo sincronizar, saltamos esta venta para evitar error de FK
           if (isTempCustomer && !finalCustomerId) {
@@ -171,7 +171,7 @@ export default function SyncManager() {
       // 5. Sincronizar Abonos
       for (const pay of pendingPayments) {
         try {
-          const finalCreditId = pay.creditSaleId && salesCreditIdMapping[pay.creditSaleId] ? salesCreditIdMapping[pay.creditSaleId] : pay.creditSaleId;
+          const finalCreditId = (pay.creditSaleId && salesCreditIdMapping[pay.creditSaleId as string]) ? salesCreditIdMapping[pay.creditSaleId as string] : pay.creditSaleId;
 
           if (pay.creditSaleId?.startsWith('temp-') && !finalCreditId) {
              results.failed.push(`Abono: $${pay.amount} (Crédito original no sincronizado)`);
