@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
-    container_name: tiendeo-db
+    container_name: ${COMPOSE_PROJECT_NAME:-tiendeo}-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
@@ -17,7 +17,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: tiendeo-redis
+    container_name: ${COMPOSE_PROJECT_NAME:-tiendeo}-redis
     # Se eliminan los 'ports' para no chocar con el Redis de Chatwoot (6379)
     volumes:
       - redisdata:/data
@@ -27,13 +27,13 @@ services:
 
   minio:
     image: minio/minio
-    container_name: tiendeo-minio
+    container_name: ${COMPOSE_PROJECT_NAME:-tiendeo}-minio
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
       - miniodata:/data
     command: server /data --console-address ":9001"
@@ -45,10 +45,10 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
-    container_name: tiendeo-backend
+    container_name: ${COMPOSE_PROJECT_NAME:-tiendeo}-backend
     restart: unless-stopped
     ports:
-      - "3051:3001"
+      - "${BACKEND_PORT:-3051}:3001"
     environment:
       - DATABASE_URL=postgresql://postgres:password123@db:5432/tiendeo?schema=public
       - DB_HOST=db
@@ -77,10 +77,10 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://tiendeopos.grupodksoluciones.com/api}
-    container_name: tiendeo-frontend
+    container_name: ${COMPOSE_PROJECT_NAME:-tiendeo}-frontend
     restart: unless-stopped
     ports:
-      - "3050:3000"
+      - "${FRONTEND_PORT:-3050}:3000"
 
     depends_on:
       - backend
