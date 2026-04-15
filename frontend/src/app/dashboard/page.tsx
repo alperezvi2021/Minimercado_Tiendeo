@@ -286,6 +286,11 @@ export default function PosPage() {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : 0);
+    } else if (e.key === 'Tab') {
+      if (filteredSuggestions.length > 0) {
+        e.preventDefault();
+        setSelectedSuggestionIndex(0);
+      }
     } else if (e.key === 'Enter') {
       if (selectedSuggestionIndex >= 0 && filteredSuggestions[selectedSuggestionIndex]) {
         e.preventDefault();
@@ -318,10 +323,7 @@ export default function PosPage() {
   };
 
   const updateQuantity = (index: number, newQty: number) => {
-    if (newQty <= 0 && !isNaN(newQty)) {
-      removeFromCart(index);
-      return;
-    }
+    // Ya no borramos automáticamente al llegar a <= 0 para evitar errores de teclado
     setCart(prev => prev.map((item, i) => i === index ? { ...item, quantity: newQty } : item));
   };
 
@@ -352,7 +354,9 @@ export default function PosPage() {
   const removeFromCart = (index: number) => {
     setCart(prev => {
       const newCart = prev.filter((_, i) => i !== index);
-      if (selectedCartIndex >= newCart.length && newCart.length > 0) {
+      if (newCart.length === 0) {
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      } else if (selectedCartIndex >= newCart.length) {
         setSelectedCartIndex(newCart.length - 1);
       }
       return newCart;
@@ -839,15 +843,17 @@ export default function PosPage() {
                                 e.preventDefault();
                                 searchInputRef.current?.focus();
                               }
+                              if (e.key === 'Delete' || e.key === 'Backspace') {
+                                // No dejamos que el evento llegue al listener global que borra el item
+                                e.stopPropagation();
+                                if (e.key === 'Delete') updateQuantity(idx, 0);
+                              }
                             }}
                             onChange={(e) => {
                               const val = e.target.value;
-                              if (val === '') updateQuantity(idx, 0); // Permite limpiar
-                              else {
-                                const product = item.product;
-                                const parsed = product.sellByWeight ? parseFloat(val) : parseInt(val);
-                                updateQuantity(idx, parsed || 0);
-                              }
+                              const product = item.product;
+                              const parsed = product.sellByWeight ? parseFloat(val) : parseInt(val);
+                              updateQuantity(idx, isNaN(parsed) ? 0 : parsed);
                             }}
                             onFocus={(e) => e.target.select()}
                           />
