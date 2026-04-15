@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -121,7 +123,7 @@ export default function LoginPage() {
             </button>
           </div>
   
-          <div className="text-center">
+          <div className="text-center space-y-4">
             <button
               type="button"
               onClick={() => setError('Por favor contacta al administrador para restablecer tu contraseña.')}
@@ -129,6 +131,15 @@ export default function LoginPage() {
             >
               ¿Olvidaste tu contraseña?
             </button>
+            <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
+              <Link
+                href="/"
+                className="text-sm font-bold text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors flex items-center justify-center gap-2 group"
+              >
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                Volver al inicio
+              </Link>
+            </div>
           </div>
         </form>
       </div>

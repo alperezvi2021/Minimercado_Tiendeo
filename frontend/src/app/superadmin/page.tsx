@@ -274,6 +274,18 @@ export default function SuperAdminPage() {
             <Database className="w-5 h-5" />
             Respaldos Globales
           </button>
+
+          <div className="pt-4 mt-4 border-t border-white/5">
+            <a 
+              href="https://wa.me/573004516713"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl font-black transition-all bg-rose-600 text-white shadow-2xl shadow-rose-600/30 hover:bg-rose-500 hover:scale-[1.02] active:scale-95"
+            >
+              <Plus className="w-6 h-6" />
+              CREAR NEGOCIO
+            </a>
+          </div>
         </nav>
 
         <button 
