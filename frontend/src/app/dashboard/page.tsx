@@ -141,6 +141,10 @@ export default function PosPage() {
       
       // Ir a Pago (Enter)
       if (e.key === 'Enter' && cart.length > 0 && posState === 'billing') {
+        const target = e.target as HTMLElement;
+        // Solo ir a pago si NO está en el buscador con texto (para no interferir con añadir productos)
+        if (target === searchInputRef.current && searchTerm.trim() !== '') return;
+        
         e.preventDefault();
         setPosState('payment');
       }
@@ -260,7 +264,17 @@ export default function PosPage() {
     });
     setSelectedCartIndex(0); // Enfocar el nuevo item o el actualizado
     setSearchTerm(''); // Clear scanner input
-    searchInputRef.current?.focus();
+    
+    // Foco Inteligente: Si es fruver, saltar al cuadro de peso
+    if (product.sellByWeight) {
+      setTimeout(() => {
+        const input = document.getElementById(`cart-item-input-0`) as HTMLInputElement;
+        input?.focus();
+        input?.select();
+      }, 50);
+    } else {
+      searchInputRef.current?.focus();
+    }
   };
 
   const handleScannerInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -812,13 +826,20 @@ export default function PosPage() {
                             <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tighter">Peso</span>
                           )}
                           <input 
+                            id={`cart-item-input-${idx}`}
                             type="number"
                             step="any"
                             className="w-16 text-center text-base font-black text-gray-900 dark:text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             placeholder="0.00"
                             value={item.quantity || ''}
                             onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                searchInputRef.current?.focus();
+                              }
+                            }}
                             onChange={(e) => {
                               const val = e.target.value;
                               if (val === '') updateQuantity(idx, 0); // Permite limpiar
