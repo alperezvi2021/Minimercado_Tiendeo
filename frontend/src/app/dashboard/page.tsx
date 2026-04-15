@@ -11,6 +11,8 @@ interface Product {
   barcode: string | null;
   price: number;
   stock: number;
+  sellByWeight?: boolean;
+  unit?: string;
 }
 
 interface CartItem {
@@ -114,10 +116,12 @@ export default function PosPage() {
       // Atajos de Cantidad (+ / -)
       if (e.key === '+' || e.key === 'Add') {
         e.preventDefault();
-        updateQuantity(currentIndex, item.quantity + 1);
+        const increment = item.product.sellByWeight ? 0.1 : 1;
+        updateQuantity(currentIndex, item.quantity + increment);
       } else if (e.key === '-' || e.key === 'Subtract') {
         e.preventDefault();
-        updateQuantity(currentIndex, item.quantity - 1);
+        const decrement = item.product.sellByWeight ? 0.1 : 1;
+        updateQuantity(currentIndex, item.quantity - decrement);
       }
 
       // Eliminar Item (Suprimir)
@@ -300,7 +304,7 @@ export default function PosPage() {
   };
 
   const updateQuantity = (index: number, newQty: number) => {
-    if (newQty <= 0) {
+    if (newQty <= 0 && !isNaN(newQty)) {
       removeFromCart(index);
       return;
     }
@@ -812,17 +816,26 @@ export default function PosPage() {
                           onChange={(e) => {
                             const val = e.target.value;
                             if (val === '') updateQuantity(idx, 0); // Permite limpiar
-                            else updateQuantity(idx, parseInt(val) || 1);
+                            else {
+                              const product = item.product;
+                              const parsed = product.sellByWeight ? parseFloat(val) : parseInt(val);
+                              updateQuantity(idx, parsed || 0);
+                            }
                           }}
                           onFocus={(e) => e.target.select()}
                         />
-                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity + 1); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
+                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity + (item.product.sellByWeight ? 0.1 : 1)); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); removeFromCart(idx); }} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex flex-col items-center">
+                        <button onClick={(e) => { e.stopPropagation(); removeFromCart(idx); }} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        {item.product.sellByWeight && (
+                          <span className="text-[10px] font-black text-gray-400 uppercase">{item.product.unit}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

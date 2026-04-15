@@ -52,6 +52,12 @@ export class Product {
   @Column({ default: false })
   isService: boolean;
 
+  @Column({ name: 'sell_by_weight', default: false })
+  sellByWeight: boolean;
+
+  @Column({ default: 'UND' })
+  unit: string; // UND, KG, LB, GM
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

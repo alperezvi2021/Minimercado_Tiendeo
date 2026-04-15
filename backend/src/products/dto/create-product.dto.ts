@@ -8,5 +8,7 @@ export class CreateProductDto {
   lowStockThreshold?: number;
   categoryId?: string;
   isService?: boolean;
+  sellByWeight?: boolean;
+  unit?: string;
   localId?: string;
 }

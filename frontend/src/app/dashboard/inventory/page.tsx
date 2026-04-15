@@ -22,6 +22,8 @@ interface Product {
   categoryId: string | null;
   category?: Category;
   isActive: boolean;
+  sellByWeight: boolean;
+  unit: string;
 }
 
 export default function InventoryPage() {
@@ -55,6 +57,8 @@ export default function InventoryPage() {
   const [stock, setStock] = useState('0');
   const [categoryId, setCategoryId] = useState('');
   const [lowStockThreshold, setLowStockThreshold] = useState('5');
+  const [sellByWeight, setSellByWeight] = useState(false);
+  const [unit, setUnit] = useState('UND');
 
   // Estado para el modal de categorías
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -204,6 +208,8 @@ export default function InventoryPage() {
         stock: parseFloat(stock),
         lowStockThreshold: parseInt(lowStockThreshold),
         categoryId: categoryId || null,
+        sellByWeight,
+        unit,
       };
 
       const url = editingId ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products/${editingId}` : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/products`;
@@ -224,6 +230,7 @@ export default function InventoryPage() {
         setIsModalOpen(false);
         setEditingId(null); setName(''); setBarcode(''); setCost(''); setProfitMargin(''); setPrice(''); setStock('0');
         setCategoryId(''); setLowStockThreshold('5');
+        setSellByWeight(false); setUnit('UND');
         return;
       }
 
@@ -246,6 +253,7 @@ export default function InventoryPage() {
         // Reset
         setEditingId(null); setName(''); setBarcode(''); setCost(''); setProfitMargin(''); setPrice(''); setStock('0');
         setCategoryId(''); setLowStockThreshold('5');
+        setSellByWeight(false); setUnit('UND');
         fetchProducts();
       } else {
         const err = await res.json();
@@ -266,6 +274,8 @@ export default function InventoryPage() {
     setStock(product.stock.toString());
     setCategoryId(product.categoryId || '');
     setLowStockThreshold(product.lowStockThreshold?.toString() || '5');
+    setSellByWeight(product.sellByWeight || false);
+    setUnit(product.unit || 'UND');
     setIsModalOpen(true);
   };
 
@@ -292,6 +302,7 @@ export default function InventoryPage() {
     setEditingId(null);
     setName(''); setBarcode(''); setCost(''); setProfitMargin(''); setPrice(''); setStock('0');
     setCategoryId(''); setLowStockThreshold('5');
+    setSellByWeight(false); setUnit('UND');
     setIsModalOpen(true);
   };
 
@@ -691,8 +702,11 @@ export default function InventoryPage() {
                           {product.category?.name || 'Sin Categoría'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-black">
                         ${formatCurrency(product.price)}
+                        {product.sellByWeight && (
+                          <span className="text-[10px] text-gray-400 ml-1 font-bold uppercase">/ {product.unit}</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <span className={`px-2 py-1 rounded-full font-bold ${
@@ -700,7 +714,7 @@ export default function InventoryPage() {
                             ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-pulse' 
                             : 'text-gray-900 dark:text-gray-300'
                         }`}>
-                          {product.stock}
+                          {product.stock} {product.sellByWeight ? product.unit : ''}
                         </span>
                         {(product as any).localId && (
                           <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black rounded uppercase tracking-tighter self-center">
@@ -748,6 +762,32 @@ export default function InventoryPage() {
                   <label htmlFor="barcode" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Código de Barras</label>
                   <input id="barcode" title="Código de barras" type="text" placeholder="Pistolea aquí o deja en blanco" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={barcode} onChange={e => setBarcode(e.target.value)} />
                 </div>
+
+                <div className="md:col-span-1 flex items-center gap-3 bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-200 dark:border-slate-800">
+                  <button 
+                    type="button"
+                    onClick={() => setSellByWeight(!sellByWeight)}
+                    className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${sellByWeight ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-700'}`}
+                  >
+                    <div className={`bg-white w-4 h-4 rounded-full shadow-sm transition-transform ${sellByWeight ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                  <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Venta por Peso</span>
+                </div>
+
+                {sellByWeight && (
+                  <div className="md:col-span-1 animate-in zoom-in-95 duration-200">
+                    <select 
+                      title="Unidad de medida"
+                      value={unit} 
+                      onChange={e => setUnit(e.target.value)}
+                      className="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all font-bold"
+                    >
+                      <option value="KG">Kilogramos (KG)</option>
+                      <option value="LB">Libras (LB)</option>
+                      <option value="GM">Gramos (GM)</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <hr className="border-gray-200 dark:border-slate-800" />

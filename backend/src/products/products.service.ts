@@ -127,6 +127,8 @@ export class ProductsService {
           if (dto.profitMargin !== undefined) product.profitMargin = dto.profitMargin !== null ? Number(dto.profitMargin) : null;
           if (dto.categoryId !== undefined) product.categoryId = dto.categoryId;
           if (dto.lowStockThreshold !== undefined) product.lowStockThreshold = Number(dto.lowStockThreshold);
+          if (dto.sellByWeight !== undefined) product.sellByWeight = dto.sellByWeight;
+          if (dto.unit !== undefined) product.unit = dto.unit;
           
           product.isActive = true; // Si estaba inactivo, lo reactivamos al importar
           
