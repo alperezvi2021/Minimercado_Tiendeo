@@ -58,7 +58,7 @@ export default function InventoryPage() {
   const [categoryId, setCategoryId] = useState('');
   const [lowStockThreshold, setLowStockThreshold] = useState('5');
   const [sellByWeight, setSellByWeight] = useState(false);
-  const [unit, setUnit] = useState('UND');
+  const [unit, setUnit] = useState('UND'); // Default UND for unit-based items
 
   // Estado para el modal de categorías
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -766,7 +766,12 @@ export default function InventoryPage() {
                 <div className="md:col-span-1 flex items-center gap-3 bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-200 dark:border-slate-800">
                   <button 
                     type="button"
-                    onClick={() => setSellByWeight(!sellByWeight)}
+                    onClick={() => {
+                      const newVal = !sellByWeight;
+                      setSellByWeight(newVal);
+                      if (newVal && unit === 'UND') setUnit('KG');
+                      if (!newVal) setUnit('UND');
+                    }}
                     className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${sellByWeight ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-700'}`}
                   >
                     <div className={`bg-white w-4 h-4 rounded-full shadow-sm transition-transform ${sellByWeight ? 'translate-x-4' : 'translate-x-0'}`} />

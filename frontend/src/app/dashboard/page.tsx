@@ -807,23 +807,30 @@ export default function PosPage() {
                         <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity - 1); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
                           <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <input 
-                          type="number"
-                          className="w-12 text-center text-sm font-bold text-gray-900 dark:text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                          value={item.quantity || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === '') updateQuantity(idx, 0); // Permite limpiar
-                            else {
-                              const product = item.product;
-                              const parsed = product.sellByWeight ? parseFloat(val) : parseInt(val);
-                              updateQuantity(idx, parsed || 0);
-                            }
-                          }}
-                          onFocus={(e) => e.target.select()}
-                        />
+                        <div className="relative flex items-center">
+                          {item.product.sellByWeight && (
+                            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[8px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tighter">Peso</span>
+                          )}
+                          <input 
+                            type="number"
+                            step="any"
+                            className="w-16 text-center text-base font-black text-gray-900 dark:text-white bg-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            placeholder="0.00"
+                            value={item.quantity || ''}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '') updateQuantity(idx, 0); // Permite limpiar
+                              else {
+                                const product = item.product;
+                                const parsed = product.sellByWeight ? parseFloat(val) : parseInt(val);
+                                updateQuantity(idx, parsed || 0);
+                              }
+                            }}
+                            onFocus={(e) => e.target.select()}
+                          />
+                        </div>
                         <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity + (item.product.sellByWeight ? 0.1 : 1)); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
                           <Plus className="w-3.5 h-3.5" />
                         </button>
