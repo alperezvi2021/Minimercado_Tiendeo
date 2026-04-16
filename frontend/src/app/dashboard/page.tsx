@@ -367,6 +367,16 @@ export default function PosPage() {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   };
 
+  const calculateRoundedTotal = () => {
+    const rawTotal = calculateTotal();
+    // Redondear ARRIBA al múltiplo de 50 más cercano
+    return Math.ceil(rawTotal / 50) * 50;
+  };
+
+  const calculateRoundingAdjustment = () => {
+    return calculateRoundedTotal() - calculateTotal();
+  };
+
   const handleCheckout = () => {
     if (cart.length === 0) return;
     setPaymentMethod('efectivo'); 
@@ -387,18 +397,35 @@ export default function PosPage() {
     let finalCustomerId = selectedCustomerId;
     let finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
 
+    const rawTotal = calculateTotal();
+    const roundedTotal = calculateRoundedTotal();
+    const adjustment = calculateRoundingAdjustment();
+
+    const saleItems = cart.map(i => ({
+      productId: i.product.id,
+      productName: i.product.name,
+      quantity: i.quantity,
+      unitPrice: i.product.price,
+      subtotal: i.product.price * i.quantity
+    }));
+
+    // Si hay ajuste, inyectarlo como un item virtual para que cuadre la contabilidad
+    if (adjustment > 0) {
+      saleItems.push({
+        productId: 'rounding-adjustment',
+        productName: 'Ajuste por Redondeo',
+        quantity: 1,
+        unitPrice: adjustment,
+        subtotal: adjustment
+      } as any);
+    }
+
     const payload = {
-      totalAmount: calculateTotal(),
+      totalAmount: roundedTotal,
       paymentMethod: paymentMethod,
       customerName: paymentMethod === 'credito' ? finalCustomerName : undefined,
       customerId: (paymentMethod === 'credito' && finalCustomerId) ? finalCustomerId : undefined,
-      items: cart.map(i => ({
-        productId: i.product.id,
-        productName: i.product.name,
-        quantity: i.quantity,
-        unitPrice: i.product.price,
-        subtotal: i.product.price * i.quantity
-      }))
+      items: saleItems
     };
 
     try {
@@ -1063,11 +1090,23 @@ export default function PosPage() {
 
         {/* Resumen de Pago */}
         <div className="p-5 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
-          <div className="flex justify-between items-center mb-6">
-            <span className="text-lg font-bold text-gray-900 dark:text-white">Total</span>
-            <span className="text-3xl font-black text-blue-600 dark:text-blue-400">
-              ${formatCurrency(calculateTotal())}
-            </span>
+          <div className="space-y-1 mb-6">
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-bold text-gray-500">Subtotal</span>
+              <span className="font-black text-gray-500">${formatCurrency(calculateTotal())}</span>
+            </div>
+            {calculateRoundingAdjustment() > 0 && (
+              <div className="flex justify-between items-center text-sm text-green-600 dark:text-green-400">
+                <span className="font-bold italic">Ajuste por Redondeo</span>
+                <span className="font-black">+ ${formatCurrency(calculateRoundingAdjustment())}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Total</span>
+              <span className="text-3xl font-black text-blue-600 dark:text-blue-400">
+                ${formatCurrency(calculateRoundedTotal())}
+              </span>
+            </div>
           </div>
           
           <div className="flex gap-2">
@@ -1103,7 +1142,7 @@ export default function PosPage() {
         <div className="md:hidden fixed bottom-4 left-4 right-4 bg-blue-600 text-white rounded-2xl p-4 shadow-2xl flex items-center justify-between z-30 animate-in slide-in-from-bottom-4 duration-300">
           <div>
             <p className="text-[10px] font-black opacity-70 uppercase">Total Carrito</p>
-            <p className="text-xl font-black">${formatCurrency(calculateTotal())}</p>
+            <p className="text-xl font-black">${formatCurrency(calculateRoundedTotal())}</p>
           </div>
           <button 
             onClick={() => setActiveTab('cart')}
@@ -1185,7 +1224,11 @@ export default function PosPage() {
   lines.push(formatLine('Hora:', new Date(completedSale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })));
   lines.push('');
 
-  completedSale.items.forEach((item: any) => {
+  const adjustmentItem = completedSale.items.find((i: any) => i.productId === 'rounding-adjustment');
+  const itemsToPrint = completedSale.items.filter((i: any) => i.productId !== 'rounding-adjustment');
+  const rawSubtotal = Number(completedSale.totalAmount) - (adjustmentItem ? Number(adjustmentItem.subtotal) : 0);
+
+  itemsToPrint.forEach((item: any) => {
     const name = item.productName || item.product.name;
     const priceRound = formatCurrency(Math.round((item.unitPrice || item.product.price) * item.quantity));
     const leftInfo = `${name.substring(0, is80mm ? 16 : 11)} x${item.quantity}`;
@@ -1194,7 +1237,10 @@ export default function PosPage() {
 
   lines.push('');
   lines.push(divider);
-  lines.push(formatLine('Subtotal', formatCurrency(completedSale.totalAmount)));
+  lines.push(formatLine('Subtotal', formatCurrency(rawSubtotal)));
+  if (adjustmentItem) {
+    lines.push(formatLine('Ajuste Redondeo', formatCurrency(adjustmentItem.subtotal)));
+  }
   lines.push(formatLine('IVA (0%)', '0'));
   lines.push(formatLine('TOTAL', formatCurrency(completedSale.totalAmount)));
   lines.push(divider);
