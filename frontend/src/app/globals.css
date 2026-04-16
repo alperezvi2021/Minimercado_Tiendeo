@@ -107,3 +107,11 @@ div[class*="fixed"][class*="bottom-"][class*="right-"] {
   max-height: 0 !important;
   overflow: hidden !important;
 }
+/* --- UTILS --- */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

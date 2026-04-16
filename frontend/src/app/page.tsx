@@ -14,7 +14,7 @@ export default function LandingPage() {
       </div>
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
+      <nav className="fixed top-0 w-full z-[100] bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2 group cursor-pointer">
             <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
@@ -31,88 +31,90 @@ export default function LandingPage() {
             <Link href="/login" className="px-6 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition-all">
               Iniciar Sesión
             </Link>
-            <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all">
+            <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="px-6 py-2.5 rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 hover:scale-105 active:scale-95 transition-all outline-none">
               Crear mi Negocio
             </a>
           </div>
 
           <button 
-            className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+            className="md:hidden p-3 text-slate-400 hover:text-white transition-colors outline-none active:scale-90"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
+            {mobileMenuOpen ? <X className="w-9 h-9" /> : <Menu className="w-9 h-9" />}
           </button>
         </div>
-
       </nav>
 
-      {/* Mobile Menu Drawer (Movido fuera del nav para evitar el bug del backdrop-filter) */}
+      {/* Mobile Menu Drawer (Improved Responsiveness) */}
       <div className={`
-        fixed inset-0 top-20 z-[100] bg-[#020617] md:hidden transition-all duration-300 ease-in-out border-t border-white/5
+        fixed inset-0 z-[90] bg-[#020617] md:hidden transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col items-center justify-center
         ${mobileMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}
       `}>
-        <div className="flex flex-col p-6 gap-6 text-center">
-          <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Funcionalidades</a>
-          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-slate-300">Precios</a>
-          <div className="h-px bg-white/5 my-2" />
-          <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-white">Iniciar Sesión</Link>
-          <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="px-8 py-4 rounded-2xl bg-blue-600 text-white font-black text-xl shadow-xl">
+        <div className="flex flex-col gap-8 text-center px-6 w-full max-w-sm pt-20">
+          <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-black text-slate-300 hover:text-blue-500 transition-colors">Funcionalidades</a>
+          <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-black text-slate-300 hover:text-blue-500 transition-colors">Precios</a>
+          <div className="h-px bg-white/10 my-4 shadow-sm" />
+          <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="text-3xl font-black text-white">Iniciar Sesión</Link>
+          <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} className="px-10 py-5 rounded-[2rem] bg-blue-600 text-white font-black text-2xl shadow-2xl shadow-blue-600/40 active:scale-95 transition-all">
             Crear mi Negocio
           </a>
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="relative pt-40 pb-20 px-6">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 animate-in fade-in slide-in-from-left duration-1000">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-full border border-blue-500/20">
+      {/* Hero Section (Responsive Font Sizes) */}
+      <section className="relative pt-32 sm:pt-40 md:pt-48 pb-16 sm:pb-24 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="space-y-8 animate-in fade-in slide-in-from-left duration-1000 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-full border border-blue-500/20 mx-auto lg:mx-0">
               <Zap className="w-4 h-4 text-blue-400" />
-              <span className="text-xs font-black uppercase tracking-widest text-blue-400">Punto de Venta Inteligente</span>
+              <span className="text-xs font-black uppercase tracking-[0.3em] text-blue-400">POS Profesional</span>
             </div>
-            <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight leading-[1.1]">
-              Gestiona tu negocio <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-indigo-400">como un profesional.</span>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[0.9] lg:leading-[0.95]">
+              Vende más <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-indigo-400">sin complicaciones.</span>
             </h1>
-            <p className="text-xl text-slate-400 max-w-xl leading-relaxed font-medium">
-              Vende en segundos, controla tu inventario en tiempo real y obtén reportes detallados. 
-              Diseñado para tiendas, minimercados y emprendedores modernos.
+            <p className="text-lg sm:text-xl text-slate-400 max-w-xl leading-relaxed font-medium mx-auto lg:mx-0">
+              Controla inventario, ventas y empleados desde cualquier lugar. 
+              La herramienta definitiva para el comerciante moderno.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="group px-8 py-5 rounded-2xl bg-blue-600 text-white font-black text-lg shadow-2xl shadow-blue-600/30 hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
-                Empezar Ahora <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <div className="flex flex-col sm:flex-row gap-4 pt-6">
+              <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="group px-10 py-6 rounded-[1.5rem] bg-blue-600 text-white font-black text-xl shadow-2xl shadow-blue-600/30 hover:bg-blue-500 transition-all flex items-center justify-center gap-3">
+                Empezar Gratis <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </a>
-              <Link href="#features" className="px-8 py-5 rounded-2xl border-2 border-white/5 font-black text-lg text-white hover:bg-white/5 transition-all text-center">
-                Ver Funciones
+              <Link href="#features" className="px-10 py-6 rounded-[1.5rem] border-2 border-white/10 font-black text-xl text-white hover:bg-white/5 transition-all text-center">
+                Explorar Más
               </Link>
             </div>
             
-            <div className="flex items-center gap-6 pt-8 border-t border-white/5">
+            <div className="flex items-center justify-center lg:justify-start gap-6 pt-10 border-t border-white/5">
                <div className="flex -space-x-3">
                  {[1,2,3,4].map(i => (
-                   <div key={i} className={`w-10 h-10 rounded-full border-4 border-[#020617] bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400`}>
+                   <div key={i} className={`w-12 h-12 rounded-full border-4 border-[#020617] bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-400 shadow-xl`}>
                       U{i}
                    </div>
                  ))}
                </div>
-               <p className="text-sm font-bold text-slate-500">
-                 Más de <span className="text-white">500+ negocios</span> confían en Tiendeo
+               <p className="text-sm sm:text-base font-bold text-slate-500">
+                 Confianza de <span className="text-white">500+ dueños</span> de negocios
                </p>
             </div>
           </div>
           
-          <div className="relative animate-in fade-in zoom-in duration-1000">
-            <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-[3rem] blur-3xl opacity-50"></div>
-            <div className="relative bg-white/5 rounded-[2.5rem] border border-white/10 shadow-2xl p-4 overflow-hidden backdrop-blur-sm">
-               {/* Mockup POS Interface */}
-               <div className="bg-slate-950/50 rounded-[1.5rem] h-[400px] flex flex-col items-center justify-center p-8 text-center border border-white/5">
-                  <BarChart3 className="w-20 h-20 text-blue-500 mb-6 animate-pulse" />
-                  <div className="space-y-4 w-full max-w-xs">
-                    <div className="h-4 w-full bg-slate-800 rounded-full mx-auto" />
-                    <div className="h-4 w-2/3 bg-slate-800 rounded-full mx-auto opacity-50" />
+          <div className="relative animate-in fade-in zoom-in duration-1000 hidden lg:block">
+            <div className="absolute -inset-10 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-full blur-[100px] opacity-50"></div>
+            <div className="relative bg-white/5 rounded-[3rem] border border-white/10 shadow-2xl p-6 backdrop-blur-3xl">
+               <div className="bg-slate-950/80 rounded-[2rem] h-[500px] flex flex-col items-center justify-center p-12 text-center border border-white/5 shadow-inner">
+                  <div className="w-24 h-24 bg-blue-600/20 rounded-3xl flex items-center justify-center mb-8">
+                    <BarChart3 className="w-12 h-12 text-blue-500 animate-pulse" />
                   </div>
-                  <div className="mt-12 grid grid-cols-3 gap-4 w-full">
-                    {[1,2,3].map(i => <div key={i} className="h-20 bg-slate-900/50 rounded-2xl border border-white/5 animate-pulse" style={{ animationDelay: `${i * 200}ms` }} />)}
+                  <div className="space-y-4 w-full">
+                    <div className="h-5 w-full bg-slate-800 rounded-full" />
+                    <div className="h-5 w-4/5 bg-slate-800 rounded-full mx-auto opacity-60" />
+                    <div className="h-5 w-3/4 bg-slate-800 rounded-full mx-auto opacity-30" />
+                  </div>
+                  <div className="mt-16 grid grid-cols-2 gap-6 w-full">
+                    <div className="h-28 bg-white/5 rounded-[1.5rem] border border-white/5" />
+                    <div className="h-28 bg-white/5 rounded-[1.5rem] border border-white/5" />
                   </div>
                </div>
             </div>
@@ -120,197 +122,124 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 px-6 bg-[#020617] border-y border-white/5">
+      {/* Features Grid (Responsive Columns) */}
+      <section id="features" className="py-24 sm:py-32 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">Simplifica tu vida</h2>
-            <h3 className="text-4xl font-black text-white tracking-tight">Todo lo que necesitas en un solo lugar</h3>
-            <p className="text-slate-400 font-medium text-lg leading-relaxed">
-              Olvídate de las hojas de cálculo y el desorden. Controla tu negocio desde cualquier dispositivo.
+          <div className="text-center max-w-3xl mx-auto mb-20 space-y-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500">¿Por qué elegirnos?</h2>
+            <h3 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter">Gestión inteligente que escala con tu negocio.</h3>
+            <p className="text-slate-400 font-medium text-lg lg:text-xl leading-relaxed">
+              Diseñado para la velocidad. Pensado para el crecimiento.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             <FeatureCard 
-              icon={<Store className="w-6 h-6 text-blue-400" />}
+              icon={<Store className="w-7 h-7 text-blue-400" />}
               title="Caja Registradora"
-              desc="Venta rápida con código de barras, atajos de teclado y múltiples métodos de pago."
+              desc="Venta intuitiva con buscador inteligente y múltiples métodos de cobro rápidos."
             />
             <FeatureCard 
-              icon={<Zap className="w-6 h-6 text-amber-400" />}
-              title="Inventario Inteligente"
-              desc="Alertas de stock bajo, gestión de categorías y control de precios centralizado."
+              icon={<Zap className="w-7 h-7 text-amber-500" />}
+              title="Control de Stock"
+              desc="Olvídate de las sorpresas. Recibe alertas cuando tus productos se estén agotando."
             />
             <FeatureCard 
-              icon={<BarChart3 className="w-6 h-6 text-emerald-400" />}
-              title="Reportes Pro"
-              desc="Visualiza tus ventas diarias, productos más vendidos y márgenes de ganancia."
+              icon={<BarChart3 className="w-7 h-7 text-emerald-400" />}
+              title="Analítica Real"
+              desc="Reportes automáticos de tus márgenes, ventas y productos estrella en tiempo real."
             />
             <FeatureCard 
-              icon={<Users className="w-6 h-6 text-purple-400" />}
-              title="Gestión de Empleados"
-              desc="Crea accesos limitados para cajeros y protege la información confidencial."
+              icon={<Users className="w-7 h-7 text-purple-400" />}
+              title="Multi-Usuario"
+              desc="Asigna roles específicos (cajeros, meseros, admin) y supervisa sus movimientos."
             />
             <FeatureCard 
-              icon={<Shield className="w-6 h-6 text-red-400" />}
-              title="Seguridad SaaS"
-              desc="Tu información está segura en la nube, con auditorías globales del SuperAdmin."
+              icon={<Shield className="w-7 h-7 text-rose-500" />}
+              title="Nube Segura"
+              desc="Respaldo automático total. Tu información disponible 24/7 sin riesgo de pérdida."
             />
             <FeatureCard 
-              icon={<ShoppingBag className="w-6 h-6 text-indigo-400" />}
-              title="Offline Ready"
-              desc="Sigue vendiendo incluso si pierdes internet. Los datos se sincronizarán después."
+              icon={<ShoppingBag className="w-7 h-7 text-indigo-400" />}
+              title="Modo Desconectado"
+              desc="¿Sin internet? No hay problema. Sigue vendiendo y sincroniza todo al recuperar la red."
             />
           </div>
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500">Planes y Precios</h2>
-            <h3 className="text-4xl font-black text-white tracking-tight leading-tight">Increíblemente simple y transparente</h3>
-            <div className="pt-4">
-              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl">
-                <span className="text-slate-400 font-bold">Costo de Implementación:</span>
-                <span className="text-2xl font-black text-white">$250.000 <span className="text-xs text-slate-500">COP</span></span>
-                <span className="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded-full font-black">PAGO ÚNICO</span>
-              </div>
-              <p className="mt-4 text-emerald-400 font-bold text-sm">¡Tus primeros 2 meses son totalmente gratis!</p>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Monthly Plan */}
-            <div className="relative group p-1 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent hover:from-blue-500/20 transition-all duration-500">
-              <div className="bg-[#020617] rounded-[2.3rem] p-10 h-full flex flex-col border border-white/5 relative overflow-hidden group-hover:border-blue-500/20">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-500/20 transition-all"></div>
-                <div className="mb-8">
-                  <h4 className="text-2xl font-black text-white mb-2">Plan Mensual</h4>
-                  <p className="text-slate-400 font-medium tracking-tight leading-tight">Ideal para negocios que buscan flexibilidad total.</p>
-                </div>
-                <div className="mb-8">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-black text-white tracking-tighter">$190.000</span>
-                    <span className="text-slate-500 font-bold">/ mes</span>
-                  </div>
-                </div>
-                <ul className="space-y-4 mb-10 flex-grow">
-                  <PricingItem text="Sin Cláusulas de Permanencia" />
-                  <PricingItem text="Pago mes adelantado (Día 1-5)" />
-                  <PricingItem text="Soporte Prioritario WhatsApp" />
-                  <PricingItem text="Todas las funcionalidades Pro" />
+      {/* Pricing Section (Optimized for Mobile Viewing) */}
+      <section id="pricing" className="py-24 sm:py-32 px-6 bg-slate-900/20 backdrop-blur-sm border-t border-white/5">
+        <div className="max-w-7xl mx-auto text-center">
+            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500 mb-6">Planes Flexibles</h2>
+            <h3 className="text-4xl sm:text-5xl font-black text-white tracking-tighter mb-16 px-4">Inversión justa, resultados excepcionales</h3>
+            
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto">
+              {/* Plan Mensual */}
+              <div className="bg-white/5 border border-white/10 rounded-[3rem] p-10 flex flex-col items-center text-center hover:bg-white/10 transition-all group">
+                <h4 className="text-2xl font-black text-white mb-6">Plan Mensual</h4>
+                <p className="text-5xl font-black text-white tracking-tighter mb-4">$190.000 <span className="text-lg text-slate-500">/ mes</span></p>
+                <div className="bg-blue-600/10 text-blue-400 px-4 py-1.5 rounded-full text-xs font-black mb-10 tracking-widest uppercase">Sin Permanencia</div>
+                <ul className="space-y-4 mb-12 text-slate-400 font-bold text-sm w-full">
+                  <li className="flex items-center justify-center gap-2"><ArrowRight className="w-4 h-4 text-blue-600" /> Soporte por WhatsApp</li>
+                  <li className="flex items-center justify-center gap-2"><ArrowRight className="w-4 h-4 text-blue-600" /> Todas las funciones Pro</li>
+                  <li className="flex items-center justify-center gap-2"><ArrowRight className="w-4 h-4 text-blue-600" /> Actualizaciones Gratis</li>
                 </ul>
-                <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black hover:bg-white/10 transition-all text-center">
-                  Elegir Mensual
-                </a>
+                <a href="https://wa.me/573004516713" className="w-full py-5 rounded-2xl bg-white/10 text-white font-black hover:bg-white/20 transition-all active:scale-95">Elegir Mensual</a>
               </div>
-            </div>
 
-            {/* Annual Plan */}
-            <div className="relative group p-1 rounded-[2.5rem] bg-gradient-to-br from-blue-600/50 to-indigo-600/50 hover:scale-105 transition-all duration-500 shadow-2xl shadow-blue-500/20">
-              <div className="bg-[#020617] rounded-[2.3rem] p-10 h-full flex flex-col border border-white/5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black tracking-widest rounded-bl-3xl uppercase">Más Ahorro</div>
-                <div className="mb-8 text-white relative">
-                   <h4 className="text-2xl font-black mb-2">Plan Anual</h4>
-                   <p className="text-blue-100/50 font-medium tracking-tight leading-tight">El mayor beneficio para tu crecimiento.</p>
-                </div>
-                <div className="mb-8 relative">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-5xl font-black text-white tracking-tighter">$1.800.000</span>
-                    <span className="text-slate-500 font-bold">/ año</span>
-                  </div>
-                  <p className="text-blue-400 text-sm font-bold mt-2">Ahorras más de $480.000 COP</p>
-                </div>
-                <ul className="space-y-4 mb-10 flex-grow relative">
-                  <PricingItem text="Pago único por adelantado" highlighted />
-                  <PricingItem text="Cláusula de permanencia (1 año)" highlighted />
-                  <PricingItem text="Atención Personalizada 24/7" highlighted />
-                  <PricingItem text="Capacitación completa equipo" highlighted />
+              {/* Plan Anual (Destacado) */}
+              <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-10 flex flex-col items-center text-center shadow-[0_30px_60px_-15px_rgba(37,99,235,0.4)] transform lg:scale-105">
+                <div className="absolute top-8 right-8 bg-white text-blue-600 px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-xl">Best Value</div>
+                <h4 className="text-2xl font-black text-white mb-6">Plan Anual</h4>
+                <p className="text-5xl font-black text-white tracking-tighter mb-4">$1.800.000 <span className="text-lg text-blue-200">/ año</span></p>
+                <div className="bg-white/20 text-white px-4 py-1.5 rounded-full text-xs font-black mb-10 tracking-widest uppercase">Ahorro Extremo</div>
+                <ul className="space-y-4 mb-12 text-blue-100 font-bold text-sm w-full">
+                  <li className="flex items-center justify-center gap-2"><Zap className="w-4 h-4 text-amber-300" /> Soporte Premium 24/7</li>
+                  <li className="flex items-center justify-center gap-2"><Zap className="w-4 h-4 text-amber-300" /> Capacitación In-Situ</li>
+                  <li className="flex items-center justify-center gap-2"><Zap className="w-4 h-4 text-amber-300" /> Prioridad en Novedades</li>
                 </ul>
-                <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="w-full py-4 rounded-2xl bg-blue-600 text-white font-black shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all text-center">
-                  Obtener Plan Anual
-                </a>
+                <a href="https://wa.me/573004516713" className="w-full py-5 rounded-2xl bg-white text-blue-600 font-black shadow-2xl hover:bg-gray-50 transition-all active:scale-95">Obtener Anual</a>
               </div>
             </div>
-          </div>
         </div>
       </section>
 
-      {/* Footer CTA */}
-      <section className="py-24 px-6 relative">
-        <div className="max-w-5xl mx-auto bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-12 md:p-20 text-center space-y-8 shadow-2xl shadow-blue-600/40 relative overflow-hidden">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-           <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full translateY-1/2 -translateX-1/2 blur-2xl"></div>
-           
-           <h3 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-tight relative">
-             Lleva tu negocio al siguiente nivel <br /> hoy mismo.
-           </h3>
-           <p className="text-blue-100 text-lg font-medium max-w-2xl mx-auto relative opacity-90">
-             Únete a los cientos de comerciantes que ya están digitalizando su éxito con TiendeoPOS. 
-             Registro en menos de 1 minuto.
-           </p>
-           <div className="pt-6 relative">
-             <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 bg-white text-blue-600 px-10 py-5 rounded-2xl font-black text-xl hover:bg-gray-50 transition-all shadow-xl hover:scale-105 active:scale-95">
-               Crear mi Negocio <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-             </a>
-           </div>
+      {/* Final CTA */}
+      <section className="py-24 px-6 md:py-40">
+        <div className="max-w-4xl mx-auto text-center space-y-12">
+           <h3 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-none">Únete a la nueva era del <span className="text-blue-500">comercio.</span></h3>
+           <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">Digitaliza tu éxito hoy mismo.</p>
+           <a href="https://wa.me/573004516713" className="inline-flex items-center gap-4 bg-blue-600 text-white px-12 py-6 rounded-[2rem] font-black text-2xl shadow-2xl shadow-blue-600/30 hover:bg-blue-500 transition-all active:scale-95">
+             Contactar Ahora <ChevronRight className="w-7 h-7" />
+           </a>
         </div>
       </section>
 
-      <footer className="py-12 px-6 border-t border-white/5 text-center">
-        <p className="text-slate-500 text-sm font-bold">
-          © 2026 Tiendeo POS. Desarrollado con ❤️ para emprendedores.
-        </p>
+      <footer className="py-12 px-6 border-t border-white/5 text-center text-slate-600 font-bold text-sm">
+        <p>© 2026 Tiendeo POS. Revolucionando negocios locales.</p>
       </footer>
-      
-      {/* WhatsApp Floating Button */}
+
+      {/* WhatsApp Fixed */}
       <a 
         href="https://wa.me/573004516713" 
         target="_blank" 
-        rel="noopener noreferrer"
-        className="fixed bottom-8 right-8 z-[100] group flex items-center gap-3"
+        className="fixed bottom-6 right-6 z-[100] bg-[#25D366] text-white p-5 rounded-3xl shadow-2xl hover:scale-110 active:scale-90 transition-all duration-300"
       >
-        <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-20 group-hover:opacity-40 animate-pulse transition-opacity"></div>
-        <div className="relative bg-[#25D366] text-white p-4 rounded-2xl shadow-2xl shadow-emerald-500/20 hover:bg-[#128C7E] hover:scale-110 active:scale-95 transition-all duration-300">
-          <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 .004 5.411.001 12.045a11.848 11.848 0 001.591 5.959L0 24l6.142-1.612a11.817 11.817 0 005.904 1.57h.005c6.637 0 12.048-5.414 12.051-12.049a11.81 11.81 0 00-3.486-8.522z"/>
-          </svg>
-        </div>
-        <div className="opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none">
-          <div className="bg-white text-slate-900 px-4 py-2 rounded-xl text-sm font-black shadow-xl whitespace-nowrap">
-            ¿Necesitas ayuda? <span className="text-[#25D366]">¡Escríbenos!</span>
-          </div>
-        </div>
+        <MessageCircle className="w-8 h-8" />
       </a>
     </div>
   );
 }
 
-function PricingItem({ text, highlighted = false }: { text: string, highlighted?: boolean }) {
-  return (
-    <li className="flex items-center gap-3">
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center ${highlighted ? 'bg-blue-500 text-[#020617]' : 'bg-white/10 text-blue-500'}`}>
-        <ArrowRight className="w-3 h-3" />
-      </div>
-      <span className={`text-sm font-medium ${highlighted ? 'text-slate-200' : 'text-slate-400'}`}>{text}</span>
-    </li>
-  );
-}
-
 function FeatureCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
   return (
-    <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 hover:border-blue-500/30 hover:bg-white/10 transition-all group overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-600/10 transition-colors"></div>
-      <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-white/5 group-hover:scale-110 group-hover:bg-blue-600/20 transition-all">
+    <div className="p-10 rounded-[2.5rem] bg-white/5 border border-white/5 hover:border-blue-500/20 hover:bg-white/10 transition-all group">
+      <div className="w-16 h-16 bg-slate-800 rounded-3xl flex items-center justify-center mb-8 border border-white/5 group-hover:bg-blue-600/20 group-hover:scale-110 transition-all duration-500">
         {icon}
       </div>
-      <h4 className="text-xl font-black text-white mb-3 tracking-tight">{title}</h4>
-      <p className="text-slate-400 font-medium leading-relaxed italic line-clamp-2 hover:line-clamp-none transition-all">
-        {desc}
-      </p>
+      <h4 className="text-2xl font-black text-white mb-4 tracking-tight">{title}</h4>
+      <p className="text-slate-400 font-medium leading-relaxed italic">{desc}</p>
     </div>
   );
 }

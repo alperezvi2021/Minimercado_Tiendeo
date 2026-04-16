@@ -635,9 +635,9 @@ export default function InventoryPage() {
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden transition-colors">
-        <div className="overflow-x-auto pb-4">
+        <div className="overflow-x-auto scrollbar-hide">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-800">
-            <thead className="bg-gray-50 dark:bg-slate-800/50">
+            <thead className="bg-gray-50 dark:bg-slate-800/50 sticky top-0 z-10">
               <tr>
                 <th 
                   scope="col" 

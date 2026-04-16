@@ -849,9 +849,9 @@ export default function PosPage() {
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center bg-gray-100 dark:bg-slate-900 rounded-lg p-0.5 border border-gray-200 dark:border-slate-700">
-                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity - 1); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
-                          <Minus className="w-3.5 h-3.5" />
+                      <div className="flex items-center bg-gray-100 dark:bg-slate-900 rounded-xl p-1 border border-gray-200 dark:border-slate-700">
+                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity - 1); }} className="p-3 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all active:scale-90">
+                          <Minus className="w-5 h-5" />
                         </button>
                         <div className="relative flex items-center">
                           {item.product.sellByWeight && (
@@ -886,8 +886,8 @@ export default function PosPage() {
                             onFocus={(e) => e.target.select()}
                           />
                         </div>
-                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity + (item.product.sellByWeight ? 0.1 : 1)); }} className="p-1.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-md transition-colors">
-                          <Plus className="w-3.5 h-3.5" />
+                        <button onClick={(e) => { e.stopPropagation(); updateQuantity(idx, item.quantity + (item.product.sellByWeight ? 0.1 : 1)); }} className="p-3 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all active:scale-90">
+                          <Plus className="w-5 h-5" />
                         </button>
                       </div>
                       <div className="flex flex-col items-center">

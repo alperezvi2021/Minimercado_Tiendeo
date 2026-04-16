@@ -95,9 +95,9 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       <div className="flex items-center gap-3">
         <button 
           onClick={onMenuClick}
-          className="md:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+          className="md:hidden p-3 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl active:scale-95 transition-all"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-8 h-8" />
         </button>
 
         {pathname === '/dashboard/orders' ? (
@@ -123,11 +123,11 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         {/* Offline Status Indicator & Sync Button */}
         <div className="flex items-center">
           {!isOnline ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-600 dark:text-rose-400 text-xs font-black tracking-tight animate-pulse transition-all">
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-600 dark:text-rose-400 text-xs font-black tracking-tight animate-pulse transition-all">
               <WifiOff className="w-4 h-4" />
-              <span className="hidden sm:inline">Sin Conexión</span>
+              <span className="hidden lg:inline">Sin Conexión</span>
               {totalPending > 0 && (
-                <span className="bg-rose-500 text-white px-1.5 py-0.5 rounded-full text-[10px] ml-1">{totalPending}</span>
+                <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{totalPending}</span>
               )}
             </div>
           ) : totalPending > 0 ? (

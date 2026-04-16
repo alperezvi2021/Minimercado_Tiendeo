@@ -7,13 +7,15 @@ import {
   User, 
   Trash2, 
   ChevronDown,
+  ChevronUp,
   Loader2,
   Minus,
   ShoppingCart,
   Banknote,
   X,
   CreditCard,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, parseCurrency } from '@/utils/formatters';
@@ -22,6 +24,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  barcode?: string;
 }
 
 interface OpenSaleItem {
@@ -30,6 +33,7 @@ interface OpenSaleItem {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  productId: string;
 }
 
 interface OpenSale {
@@ -55,7 +59,9 @@ export default function OrderManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'success'} | null>(null);
 
   // Payment Modal State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -69,6 +75,14 @@ export default function OrderManagementPage() {
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  // Auto-hide notification
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   const fetchInitialData = async () => {
     try {
@@ -85,7 +99,14 @@ export default function OrderManagementPage() {
         })
       ]);
 
-      if (resOrders.ok) setOrders(await resOrders.json());
+      if (resOrders.ok) {
+        const data = await resOrders.json();
+        setOrders(data);
+        if (data.length > 0) {
+           setSelectedOrderId(data[0].id);
+           setExpandedOrderId(data[0].id);
+        }
+      }
       if (resWaiters.ok) setWaiters(await resWaiters.json());
       if (resProducts.ok) setProducts(await resProducts.json());
     } catch (err) {
@@ -116,6 +137,7 @@ export default function OrderManagementPage() {
         const newOrder = await res.json();
         setOrders(prev => [newOrder, ...prev]);
         setSelectedOrderId(newOrder.id);
+        setExpandedOrderId(newOrder.id);
       }
     } catch (err) {
       console.error(err);
@@ -147,12 +169,30 @@ export default function OrderManagementPage() {
       if (res.ok) {
         const updatedOrder = await res.json();
         setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+        setNotification({ message: `${product.name} añadido`, type: 'success' });
       }
     } catch (err) {
       console.error(err);
     } finally {
       setIsProcessing(false);
       setSearchQuery('');
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    
+    // Auto-Add Logic for Barcode
+    if (value.length >= 6) {
+      const exactMatch = products.find(p => p.barcode === value);
+      if (exactMatch) {
+         if (selectedOrderId) {
+            handleAddItemToOrder(selectedOrderId, exactMatch);
+         } else {
+            setNotification({ message: 'Por favor, selecciona un pedido primero', type: 'error' });
+            setSearchQuery('');
+         }
+      }
     }
   };
 
@@ -239,15 +279,27 @@ export default function OrderManagementPage() {
   };
 
   const filteredProducts = searchQuery.length > 1 
-    ? products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 5)
+    ? products.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.barcode && p.barcode.includes(searchQuery))
+      ).slice(0, 5)
     : [];
 
   return (
-    <div className="max-w-full mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="max-w-full mx-auto space-y-6 animate-in fade-in duration-500 pb-20 relative">
+      
+      {/* Notifications */}
+      {notification && (
+        <div className={`fixed top-24 right-8 z-[100] p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-300 ${notification.type === 'error' ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}>
+           {notification.type === 'error' ? <AlertCircle className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
+           <p className="font-black text-sm">{notification.message}</p>
+        </div>
+      )}
+
       {/* Search Header */}
       <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl relative z-30">
         <div className="flex items-center gap-4">
-          <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-500/20">
+          <div className="bg-blue-600 p-4 rounded-2xl shadow-lg shadow-blue-500/20">
              <ClipboardCheck className="w-8 h-8 text-white" />
           </div>
           <div>
@@ -258,47 +310,47 @@ export default function OrderManagementPage() {
 
         <div className="flex-1 max-w-2xl w-full relative">
           <div className="relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Escanear producto o buscar por nombre..."
+              placeholder="Escanea el código o busca por nombre..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-3xl py-4 pl-14 pr-6 text-white font-bold placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-lg shadow-inner"
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl py-5 pl-16 pr-8 text-white font-black placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-xl shadow-inner min-h-[70px]"
             />
           </div>
 
           {/* Search Dropdown */}
           {filteredProducts.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-[2rem] shadow-2xl overflow-hidden z-50 animate-in zoom-in-95 duration-200">
+            <div className="absolute top-full left-0 right-0 mt-3 bg-slate-900 border-2 border-slate-800 rounded-[2.5rem] shadow-2xl overflow-hidden z-50 animate-in zoom-in-95 duration-200">
               {filteredProducts.map(product => (
                 <button
                   key={product.id}
                   onClick={() => {
                     if (selectedOrderId) {
                       handleAddItemToOrder(selectedOrderId, product);
-                    } else if (orders.length > 0) {
-                      handleAddItemToOrder(orders[0].id, product);
                     } else {
-                      handleCreateOrder(waiters[0]?.id).then(() => {
-                        // This would need a bit more state to add the item after creation if we wanted it instant
-                      });
+                      setNotification({ message: 'Selecciona un pedido primero', type: 'error' });
+                      setSearchQuery('');
                     }
                   }}
-                  className="w-full flex items-center justify-between p-5 hover:bg-slate-800 text-left transition-colors border-b border-slate-800/50 last:border-0"
+                  className="w-full flex items-center justify-between p-6 hover:bg-slate-800 text-left transition-colors border-b-2 border-slate-800/50 last:border-0"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="bg-slate-800 p-2 rounded-xl">
-                      <ShoppingCart className="w-5 h-5 text-slate-400" />
+                  <div className="flex items-center gap-5">
+                    <div className="bg-slate-800 p-3 rounded-2xl">
+                      <ShoppingCart className="w-6 h-6 text-slate-400" />
                     </div>
                     <div>
-                      <p className="text-white font-black">{product.name}</p>
-                      <p className="text-blue-500 font-bold">${formatCurrency(product.price)}</p>
+                      <p className="text-white font-black text-lg">{product.name}</p>
+                      <div className="flex items-center gap-3">
+                        <p className="text-blue-500 font-bold">${formatCurrency(product.price)}</p>
+                        {product.barcode && <p className="text-slate-500 text-xs font-mono">{product.barcode}</p>}
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-blue-600/20 text-blue-500 p-2 rounded-full">
-                    <Plus className="w-5 h-5" />
+                  <div className="bg-blue-600/20 text-blue-500 p-3 rounded-full hover:bg-blue-600 hover:text-white transition-all">
+                    <Plus className="w-6 h-6" />
                   </div>
                 </button>
               ))}
@@ -308,139 +360,194 @@ export default function OrderManagementPage() {
 
         <button 
           onClick={() => handleCreateOrder()}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-3xl font-black flex items-center gap-3 transition-all shadow-xl shadow-blue-900/40 active:scale-95 whitespace-nowrap"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-3 transition-all shadow-xl shadow-blue-900/40 active:scale-95 whitespace-nowrap min-h-[70px] text-lg"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-7 h-7" />
           Nuevo Pedido
         </button>
       </div>
 
       {/* Orders List (Rows) */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-            <p className="text-slate-500 font-bold tracking-widest uppercase">Consultando pedidos abiertos...</p>
+          <div className="flex flex-col items-center justify-center py-40 space-y-4">
+            <Loader2 className="w-16 h-16 text-blue-500 animate-spin" />
+            <p className="text-slate-500 font-black tracking-widest uppercase">Consultando pedidos abiertos...</p>
           </div>
         ) : (
-          orders.map((order) => (
-            <div 
-              key={order.id}
-              onClick={() => setSelectedOrderId(order.id)}
-              className={`
-                group bg-slate-900/40 border-l-[12px] rounded-[2rem] transition-all p-6 flex flex-col lg:flex-row items-center gap-8 relative
-                ${selectedOrderId === order.id ? 'border-blue-600 bg-slate-800/60 shadow-2xl' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/60'}
-              `}
-            >
-              {/* Waiter Selection */}
-              <div className="min-w-[150px] flex flex-col gap-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
-                  <User className="w-3 h-3" /> Mesero
-                </p>
-                <div className="relative">
-                  <select 
-                    value={order.waiterId}
-                    onChange={(e) => {
-                      const res = fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/restaurant/order/${order.id}/waiter`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-                        body: JSON.stringify({ waiterId: e.target.value })
-                      });
-                      setOrders(prev => prev.map(o => o.id === order.id ? { ...o, waiterId: e.target.value } : o));
+          orders.map((order) => {
+            const isExpanded = expandedOrderId === order.id;
+            const isSelected = selectedOrderId === order.id;
+
+            return (
+              <div 
+                key={order.id}
+                className={`
+                  group bg-slate-900/40 border-2 rounded-[2.5rem] transition-all overflow-hidden relative
+                  ${isSelected ? 'border-blue-600/50 bg-slate-800/60 shadow-2xl' : 'border-slate-800 hover:border-slate-700 hover:bg-slate-900/60 shadow-lg'}
+                `}
+              >
+                {/* Header of Row */}
+                <div 
+                  className="p-6 flex flex-col md:flex-row items-center gap-6 md:gap-10 cursor-pointer"
+                  onClick={() => {
+                    setSelectedOrderId(order.id);
+                    setExpandedOrderId(isExpanded ? null : order.id);
+                  }}
+                >
+                  {/* Selection Indicator */}
+                  <div className={`
+                    absolute left-0 top-0 bottom-0 w-3 transition-all
+                    ${isSelected ? 'bg-blue-600' : 'bg-transparent'}
+                  `} />
+
+                  {/* Waiter Information */}
+                  <div className="min-w-[180px] w-full md:w-auto">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2 mb-2">
+                       Mesero
+                    </p>
+                    <div className="flex items-center gap-3">
+                       <div className={`p-3 rounded-2xl ${isSelected ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400'}`}>
+                          <User className="w-6 h-6" />
+                       </div>
+                       <select 
+                        value={order.waiterId}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/restaurant/order/${order.id}/waiter`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+                            body: JSON.stringify({ waiterId: e.target.value })
+                          });
+                          setOrders(prev => prev.map(o => o.id === order.id ? { ...o, waiterId: e.target.value } : o));
+                        }}
+                        className="bg-transparent text-white font-black focus:outline-none cursor-pointer text-lg flex-1 md:w-32"
+                      >
+                        {waiters.map(w => <option key={w.id} value={w.id} className="bg-slate-900">{w.name}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Order Summary Label */}
+                  <div className="flex-1 w-full text-center md:text-left">
+                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">Items en pedido</p>
+                     <p className="text-xl font-black text-white">
+                        {order.items?.length || 0} productos registrados
+                     </p>
+                     <p className="text-slate-500 text-sm font-medium mt-1">
+                        Toca para ver el detalle {isExpanded ? '▲' : '▼'}
+                     </p>
+                  </div>
+
+                  {/* Total Financial Section */}
+                  <div className="text-right min-w-[200px] w-full md:w-auto">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Total a Cobrar</p>
+                    <p className="text-5xl font-black text-rose-500 tracking-tighter drop-shadow-sm">
+                      ${formatCurrency(order.totalAmount)}
+                    </p>
+                  </div>
+
+                  {/* Pay Button */}
+                  <button 
+                    onClick={(e) => {
+                       e.stopPropagation();
+                       handlePayOrder(order);
                     }}
-                    className="appearance-none bg-slate-950/50 border border-slate-800 border-none rounded-xl py-3 pl-4 pr-10 text-white font-black focus:outline-none cursor-pointer text-sm w-full"
+                    className="w-full md:w-auto bg-[#10b981] hover:bg-[#059669] text-white px-10 py-6 rounded-[2rem] font-black text-xl uppercase tracking-wider flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 min-h-[80px]"
                   >
-                    {waiters.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                    Pagar Pedido
+                  </button>
+                </div>
+
+                {/* Expanded Item List (Vertical Accordion) */}
+                <div className={`
+                    border-t-2 border-slate-800/50 bg-slate-950/30 overflow-hidden transition-all duration-300 ease-in-out
+                    ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}
+                `}>
+                   <div className="p-6 space-y-4">
+                      {order.items?.map((item) => (
+                        <div key={item.id} className="bg-slate-900/40 border border-slate-800 rounded-3xl p-5 flex flex-col sm:flex-row items-center justify-between gap-6 hover:bg-slate-800/40 transition-colors">
+                           <div className="flex items-center gap-5 flex-1 min-w-0">
+                              <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center flex-shrink-0">
+                                 <ShoppingCart className="w-6 h-6 text-slate-500" />
+                              </div>
+                              <div className="truncate">
+                                 <p className="text-white font-black text-lg truncate uppercase tracking-tight">{item.productName}</p>
+                                 <p className="text-blue-500 font-bold">${formatCurrency(item.unitPrice)} p/u</p>
+                              </div>
+                           </div>
+
+                           <div className="flex items-center gap-10">
+                              {/* Quantity Controls - Optimized for Touch */}
+                              <div className="flex items-center bg-slate-950 p-2 rounded-2xl border-2 border-slate-800">
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(order.id, item.id, item.quantity - 1); }}
+                                  className="p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all active:scale-90"
+                                >
+                                  <Minus className="w-6 h-6" />
+                                </button>
+                                <span className="px-6 text-center text-white font-black text-2xl min-w-[60px]">{item.quantity}</span>
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(order.id, item.id, item.quantity + 1); }}
+                                  className="p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all active:scale-90"
+                                >
+                                  <Plus className="w-6 h-6" />
+                                </button>
+                              </div>
+
+                              <div className="text-right min-w-[120px]">
+                                 <p className="text-[10px] font-black text-slate-600 uppercase mb-1">Subtotal</p>
+                                 <p className="text-2xl font-black text-white">${formatCurrency(item.subtotal)}</p>
+                              </div>
+
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handleRemoveItem(order.id, item.id); }}
+                                className="p-5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all active:scale-95"
+                              >
+                                <Trash2 className="w-7 h-7" />
+                              </button>
+                           </div>
+                        </div>
+                      ))}
+                      {order.items?.length === 0 && (
+                        <div className="text-center py-10">
+                           <ShoppingCart className="w-16 h-16 text-slate-800 mx-auto mb-4" />
+                           <p className="text-slate-600 font-bold uppercase tracking-widest text-sm">Este pedido no tiene productos registrados</p>
+                        </div>
+                      )}
+                   </div>
                 </div>
               </div>
-
-              {/* Items List (Horizontal scrollable) */}
-              <div className="flex-1 flex gap-4 overflow-x-auto py-2 no-scrollbar scroll-smooth w-full">
-                {order.items?.map((item) => (
-                  <div key={item.id} className="min-w-[280px] bg-slate-950/50 border border-slate-800 rounded-3xl p-4 flex items-center justify-between gap-4 group/item">
-                    <div className="overflow-hidden">
-                      <p className="text-white font-black text-sm truncate">{item.productName}</p>
-                      <p className="text-slate-500 font-bold text-xs">${formatCurrency(item.unitPrice)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center bg-slate-900 rounded-2xl p-1 border border-slate-800">
-                        <button 
-                          onClick={() => handleUpdateQuantity(order.id, item.id, item.quantity - 1)}
-                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="w-8 text-center text-white font-black text-xs">{item.quantity}</span>
-                        <button 
-                          onClick={() => handleUpdateQuantity(order.id, item.id, item.quantity + 1)}
-                          className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <button 
-                         onClick={() => handleRemoveItem(order.id, item.id)}
-                         className="p-2 text-slate-600 hover:text-rose-500 transition-colors"
-                      >
-                         <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {order.items?.length === 0 && (
-                  <div className="flex items-center gap-2 text-slate-600 italic text-sm">
-                    <ShoppingCart className="w-4 h-4" /> Sin productos aún
-                  </div>
-                )}
-              </div>
-
-              {/* Total Financial */}
-              <div className="text-right min-w-[200px]">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Total a Cobrar</p>
-                <p className="text-4xl font-black text-rose-500 tracking-tighter">
-                  ${formatCurrency(order.totalAmount)}
-                </p>
-              </div>
-
-              {/* Pay Button */}
-              <button 
-                onClick={() => handlePayOrder(order)}
-                className="bg-[#10b981] hover:bg-[#059669] text-white px-10 py-5 rounded-3xl font-black text-lg uppercase tracking-wider flex items-center gap-3 transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
-              >
-                Pagar Pedido
-              </button>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
 
       {/* Payment Modal */}
       {showPaymentModal && payingOrder && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => !isProcessing && setShowPaymentModal(false)} />
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300" onClick={() => !isProcessing && setShowPaymentModal(false)} />
           
-          <div className="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-200">
              {!paymentFinished ? (
-               <div className="p-8 flex flex-col items-center">
-                  <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-3xl flex items-center justify-center mb-6">
-                    <Banknote className="w-10 h-10 text-emerald-600" />
+               <div className="p-10 md:p-14 flex flex-col items-center">
+                  <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-3xl flex items-center justify-center mb-8 shadow-inner">
+                    <Banknote className="w-12 h-12 text-emerald-600" />
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Proceso de Pago</h2>
-                  <p className="text-slate-500 font-bold mb-8 uppercase tracking-widest text-xs">Total a pagar: <span className="text-rose-500"> ${formatCurrency(payingOrder.totalAmount)}</span></p>
+                  <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-3">Proceso de Pago</h2>
+                  <p className="text-slate-500 font-bold mb-10 uppercase tracking-[0.2em] text-sm">Total a pagar: <span className="text-rose-500 text-lg"> ${formatCurrency(payingOrder.totalAmount)}</span></p>
 
-                  <div className="w-full space-y-6">
-                    <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-800">
-                       <p className="text-[10px] font-black text-slate-400 mb-2 uppercase">Efectivo Recibido</p>
+                  <div className="w-full space-y-8">
+                    <div className="bg-slate-50 dark:bg-slate-950 p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-inner">
+                       <p className="text-xs font-black text-slate-400 mb-4 uppercase tracking-widest">Efectivo Recibido</p>
                        <div className="relative">
-                          <span className="absolute left-6 top-1/2 -translate-y-1/2 text-3xl font-black text-slate-300">$</span>
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 text-5xl font-black text-slate-300">$</span>
                           <input 
                             autoFocus
                             type="text"
                             value={formatCurrency(cashReceived)}
                             onChange={(e) => setCashReceived(parseCurrency(e.target.value).toString())}
-                            className="w-full bg-transparent border-none text-4xl font-black text-slate-900 dark:text-white pl-12 focus:ring-0 outline-none"
+                            className="w-full bg-transparent border-none text-6xl font-black text-slate-900 dark:text-white pl-12 focus:ring-0 outline-none tracking-tighter"
                             placeholder="0"
                             onKeyDown={(e) => e.key === 'Enter' && parseCurrency(cashReceived) >= payingOrder.totalAmount && confirmPayment()}
                           />
@@ -448,27 +555,27 @@ export default function OrderManagementPage() {
                     </div>
 
                     {parseCurrency(cashReceived) > 0 && (
-                      <div className={`p-6 rounded-[2rem] flex justify-between items-center animate-in slide-in-from-top-2 ${parseCurrency(cashReceived) >= payingOrder.totalAmount ? 'bg-emerald-600' : 'bg-rose-600'} text-white`}>
-                        <span className="font-black uppercase tracking-widest text-xs">
+                      <div className={`p-8 rounded-[2.5rem] flex justify-between items-center animate-in slide-in-from-top-4 ${parseCurrency(cashReceived) >= payingOrder.totalAmount ? 'bg-emerald-600' : 'bg-rose-600'} text-white shadow-2xl transition-all duration-300`}>
+                        <span className="font-black uppercase tracking-widest text-sm">
                           {parseCurrency(cashReceived) >= payingOrder.totalAmount ? 'Vueltas a devolver' : 'Faltan fondos'}
                         </span>
-                        <span className="text-3xl font-black">
+                        <span className="text-4xl font-black">
                            ${formatCurrency(Math.abs(parseCurrency(cashReceived) - payingOrder.totalAmount))}
                         </span>
                       </div>
                     )}
 
-                    <div className="flex gap-4">
+                    <div className="flex gap-6">
                       <button 
                         onClick={() => setShowPaymentModal(false)}
-                        className="flex-1 py-5 rounded-[1.5rem] bg-slate-100 dark:bg-slate-800 text-slate-400 font-black uppercase text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                        className="flex-1 py-6 rounded-[2rem] bg-slate-100 dark:bg-slate-800 text-slate-400 font-black uppercase text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
                       >
                         Cancelar
                       </button>
                       <button 
                          disabled={isProcessing || parseCurrency(cashReceived) < payingOrder.totalAmount}
                          onClick={confirmPayment}
-                         className="flex-1 py-5 rounded-[1.5rem] bg-emerald-600 text-white font-black uppercase text-sm hover:bg-emerald-500 shadow-lg shadow-emerald-500/20 disabled:opacity-30 transition-all"
+                         className="flex-1 py-6 rounded-[2rem] bg-emerald-600 text-white font-black uppercase text-lg hover:bg-emerald-500 shadow-[0_15px_30px_rgba(16,185,129,0.3)] disabled:opacity-30 transition-all active:scale-95"
                       >
                          {isProcessing ? 'Procesando...' : 'Confirmar Venta'}
                       </button>
@@ -476,16 +583,17 @@ export default function OrderManagementPage() {
                   </div>
                </div>
              ) : (
-               <div className="p-12 flex flex-col items-center text-center animate-in zoom-in-95 duration-500">
-                  <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-8">
-                     <CheckCircle2 className="w-12 h-12 text-emerald-600" />
+               <div className="p-16 flex flex-col items-center text-center animate-in zoom-in-95 duration-500">
+                  <div className="w-32 h-32 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-10 shadow-2xl">
+                     <CheckCircle2 className="w-16 h-16 text-emerald-600" />
                   </div>
-                  <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">¡Venta Exitosa!</h2>
-                  <p className="text-slate-500 font-bold uppercase tracking-widest text-sm mb-10">Toda la orden ha sido liquidada</p>
+                  <h2 className="text-5xl font-black text-slate-900 dark:text-white mb-4 tracking-tight">¡Venta Exitosa!</h2>
+                  <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-sm mb-12">Toda la orden ha sido liquidada</p>
                   
-                  <div className="w-full bg-emerald-600 text-white p-8 rounded-[2.5rem] mb-10 shadow-2xl shadow-emerald-500/30">
-                     <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2">Entregar Vueltas</p>
-                     <p className="text-6xl font-black tracking-tighter">${formatCurrency(changeAmount)}</p>
+                  <div className="w-full bg-emerald-600 text-white p-10 rounded-[3rem] mb-12 shadow-[0_25px_50px_rgba(16,185,129,0.4)] relative overflow-hidden">
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                     <p className="text-xs font-black uppercase tracking-widest opacity-80 mb-3">Entregar Vueltas</p>
+                     <p className="text-7xl font-black tracking-tighter">${formatCurrency(changeAmount)}</p>
                   </div>
 
                   <button 
@@ -493,7 +601,7 @@ export default function OrderManagementPage() {
                       setShowPaymentModal(false);
                       setPayingOrder(null);
                     }}
-                    className="w-full py-6 rounded-[2rem] bg-slate-900 text-white font-black uppercase text-lg hover:bg-black transition-all"
+                    className="w-full py-7 rounded-[2.5rem] bg-slate-900 text-white font-black uppercase text-2xl hover:bg-black transition-all shadow-xl active:scale-95"
                   >
                     Cerrar (Esc)
                   </button>
