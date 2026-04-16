@@ -84,6 +84,16 @@ export default function OrderManagementPage() {
     }
   }, [notification]);
 
+  // Persistent Focus Logic
+  useEffect(() => {
+    const focusTimer = setTimeout(() => {
+      if (!showPaymentModal && !isProcessing) {
+        searchInputRef.current?.focus();
+      }
+    }, 100);
+    return () => clearTimeout(focusTimer);
+  }, [showPaymentModal, isProcessing, orders.length]);
+
   const fetchInitialData = async () => {
     try {
       const token = localStorage.getItem('access_token');
@@ -296,8 +306,8 @@ export default function OrderManagementPage() {
         </div>
       )}
 
-      {/* Search Header */}
-      <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800 p-6 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl relative z-30">
+      {/* Search Header (Sticky) */}
+      <div className="sticky top-0 z-40 -mt-2 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800 p-6 -mx-8 px-8 mb-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
         <div className="flex items-center gap-4">
           <div className="bg-blue-600 p-4 rounded-2xl shadow-lg shadow-blue-500/20">
              <ClipboardCheck className="w-8 h-8 text-white" />
@@ -318,6 +328,19 @@ export default function OrderManagementPage() {
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full bg-slate-950 border-2 border-slate-800 rounded-3xl py-5 pl-16 pr-8 text-white font-black placeholder-slate-600 focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-xl shadow-inner min-h-[70px]"
+              onBlur={(e) => {
+                // Solo re-enfocar si no estamos intentando interactuar con otro elemento importante (como el modal o el selector de mesero)
+                if (!showPaymentModal && !isProcessing) {
+                  const timer = setTimeout(() => {
+                    if (document.activeElement?.tagName !== 'INPUT' && 
+                        document.activeElement?.tagName !== 'SELECT' && 
+                        document.activeElement?.contentEditable !== 'true') {
+                      searchInputRef.current?.focus();
+                    }
+                  }, 150);
+                  return () => clearTimeout(timer);
+                }
+              }}
             />
           </div>
 
