@@ -66,6 +66,7 @@ export default function OrderManagementPage() {
   // Payment Modal State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [payingOrder, setPayingOrder] = useState<OpenSale | null>(null);
+  const [payingItem, setPayingItem] = useState<{orderId: string, itemId: string, itemSubtotal: number} | null>(null);
   const [cashReceived, setCashReceived] = useState('');
   const [paymentFinished, setPaymentFinished] = useState(false);
   const [changeAmount, setChangeAmount] = useState(0);
@@ -256,6 +257,19 @@ export default function OrderManagementPage() {
 
   const handlePayOrder = (order: OpenSale) => {
     setPayingOrder(order);
+    setPayingItem(null);
+    setCashReceived('');
+    setPaymentFinished(false);
+    setShowPaymentModal(true);
+  };
+
+  const handlePayItem = (order: OpenSale, item: any) => {
+    setPayingOrder(order);
+    setPayingItem({
+      orderId: order.id,
+      itemId: item.id,
+      itemSubtotal: Number(item.subtotal)
+    });
     setCashReceived('');
     setPaymentFinished(false);
     setShowPaymentModal(true);
@@ -263,13 +277,23 @@ export default function OrderManagementPage() {
 
   const confirmPayment = async () => {
     if (!payingOrder) return;
+    
+    // Si estamos pagando un item solo, el total es su subtotal
+    const targetTotal = payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount;
+    
     const received = parseCurrency(cashReceived);
-    const amountToReturn = received - payingOrder.totalAmount;
+    const amountToReturn = received - targetTotal;
 
     setIsProcessing(true);
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/restaurant/order/${payingOrder.id}/close`, {
+      
+      let url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/restaurant/order/${payingOrder.id}/close`;
+      if (payingItem) {
+        url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/restaurant/order/${payingItem.orderId}/items/${payingItem.itemId}/pay`;
+      }
+
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -279,9 +303,17 @@ export default function OrderManagementPage() {
       });
 
       if (res.ok) {
+        const result = await res.json();
         setChangeAmount(amountToReturn);
         setPaymentFinished(true);
-        setOrders(prev => prev.filter(o => o.id !== payingOrder.id));
+        
+        if (payingItem) {
+          // El backend devuelve el pedido actualizado tras retirar el item
+          setOrders(prev => prev.map(o => o.id === payingOrder.id ? result : o));
+        } else {
+          // Si era el pedido completo, lo quitamos de la lista
+          setOrders(prev => prev.filter(o => o.id !== payingOrder.id));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -526,12 +558,23 @@ export default function OrderManagementPage() {
                                  <p className="text-2xl font-black text-white">${formatCurrency(item.subtotal)}</p>
                               </div>
 
+                            <div className="flex items-center gap-3">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); handlePayItem(order, item); }}
+                                className="p-5 text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-2xl transition-all active:scale-95"
+                                title="Pagar este item"
+                              >
+                                <Banknote className="w-7 h-7" />
+                              </button>
+
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleRemoveItem(order.id, item.id); }}
                                 className="p-5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all active:scale-95"
+                                title="Eliminar del pedido"
                               >
                                 <Trash2 className="w-7 h-7" />
                               </button>
+                            </div>
                            </div>
                         </div>
                       ))}
@@ -560,8 +603,11 @@ export default function OrderManagementPage() {
                   <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-3xl flex items-center justify-center mb-8 shadow-inner">
                     <Banknote className="w-12 h-12 text-emerald-600" />
                   </div>
-                  <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-3">Proceso de Pago</h2>
-                  <p className="text-slate-500 font-bold mb-10 uppercase tracking-[0.2em] text-sm">Total a pagar: <span className="text-rose-500 text-lg"> ${formatCurrency(payingOrder.totalAmount)}</span></p>
+                  <h2 className="text-4xl font-black text-slate-900 dark:text-white mb-3">{payingItem ? 'Pago de Producto' : 'Proceso de Pago'}</h2>
+                  <p className="text-slate-500 font-bold mb-10 uppercase tracking-[0.2em] text-sm">
+                    {payingItem ? 'Subtotal Item: ' : 'Total a pagar: '}
+                    <span className="text-rose-500 text-lg"> ${formatCurrency(payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount)}</span>
+                  </p>
 
                   <div className="w-full space-y-8">
                     <div className="bg-slate-50 dark:bg-slate-950 p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-inner">
@@ -575,18 +621,18 @@ export default function OrderManagementPage() {
                             onChange={(e) => setCashReceived(parseCurrency(e.target.value).toString())}
                             className="w-full bg-transparent border-none text-6xl font-black text-slate-900 dark:text-white pl-12 focus:ring-0 outline-none tracking-tighter"
                             placeholder="0"
-                            onKeyDown={(e) => e.key === 'Enter' && parseCurrency(cashReceived) >= payingOrder.totalAmount && confirmPayment()}
+                            onKeyDown={(e) => e.key === 'Enter' && parseCurrency(cashReceived) >= (payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount) && confirmPayment()}
                           />
                        </div>
                     </div>
 
                     {parseCurrency(cashReceived) > 0 && (
-                      <div className={`p-8 rounded-[2.5rem] flex justify-between items-center animate-in slide-in-from-top-4 ${parseCurrency(cashReceived) >= payingOrder.totalAmount ? 'bg-emerald-600' : 'bg-rose-600'} text-white shadow-2xl transition-all duration-300`}>
+                      <div className={`p-8 rounded-[2.5rem] flex justify-between items-center animate-in slide-in-from-top-4 ${parseCurrency(cashReceived) >= (payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount) ? 'bg-emerald-600' : 'bg-rose-600'} text-white shadow-2xl transition-all duration-300`}>
                         <span className="font-black uppercase tracking-widest text-sm">
-                          {parseCurrency(cashReceived) >= payingOrder.totalAmount ? 'Vueltas a devolver' : 'Faltan fondos'}
+                          {parseCurrency(cashReceived) >= (payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount) ? 'Vueltas a devolver' : 'Faltan fondos'}
                         </span>
                         <span className="text-4xl font-black">
-                           ${formatCurrency(Math.abs(parseCurrency(cashReceived) - payingOrder.totalAmount))}
+                           ${formatCurrency(Math.abs(parseCurrency(cashReceived) - (payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount)))}
                         </span>
                       </div>
                     )}

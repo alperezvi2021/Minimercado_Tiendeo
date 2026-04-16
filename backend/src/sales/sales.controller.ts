@@ -192,16 +192,20 @@ export class SalesController {
     return this.salesService.removeItemFromTable(req.user.tenantId, id, itemId);
   }
 
-  @Post('restaurant/order/:id/close')
+    return this.salesService.closeTableOrder(req.user.tenantId, userId, userName, id, body);
+  }
+
+  @Post('restaurant/order/:id/items/:itemId/pay')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
-  closeTableOrder(
+  payOrderItem(
     @Request() req, 
     @Param('id') id: string, 
-    @Body() body: { paymentMethod: string, customerId?: string, customerName?: string }
+    @Param('itemId') itemId: string,
+    @Body() body: { paymentMethod: string }
   ) {
     const userId = req.user.userId;
     const userName = req.user.name || 'Cajero';
-    return this.salesService.closeTableOrder(req.user.tenantId, userId, userName, id, body);
+    return this.salesService.payOrderItem(req.user.tenantId, userId, userName, id, itemId, body);
   }
 
   @Delete('restaurant/order/:id')

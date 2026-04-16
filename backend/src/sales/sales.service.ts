@@ -251,7 +251,13 @@ export class SalesService {
       // 3. Recalcular total garantizado
       sale.totalAmount = sale.items.reduce((sum, it) => sum + Number(it.subtotal), 0);
 
-      return await transactionalEntityManager.save(Sale, sale);
+      await transactionalEntityManager.save(Sale, sale);
+
+      // 4. Recargar con relaciones para coherencia en el frontend
+      return await transactionalEntityManager.findOne(Sale, {
+        where: { id: sale.id },
+        relations: ['items', 'waiter']
+      });
     });
   }
 
@@ -288,7 +294,13 @@ export class SalesService {
 
       // 4. Guardar cambios
       await transactionalEntityManager.save(SaleItem, item);
-      return await transactionalEntityManager.save(Sale, sale);
+      await transactionalEntityManager.save(Sale, sale);
+
+      // 5. Recargar con relaciones para coherencia en el frontend
+      return await transactionalEntityManager.findOne(Sale, {
+        where: { id: sale.id },
+        relations: ['items', 'waiter']
+      });
     });
   }
 
@@ -336,6 +348,68 @@ export class SalesService {
       }
 
       return savedSale;
+    });
+  }
+
+  async payOrderItem(tenantId: string, userId: string, userName: string, saleId: string, itemId: string, dto: { paymentMethod: string }): Promise<Sale> {
+    const originalSale = await this.salesRepository.findOne({
+      where: { id: saleId, tenantId, status: 'OPEN' },
+      relations: ['items', 'waiter']
+    });
+
+    if (!originalSale) throw new NotFoundException('Pedido no encontrado');
+    
+    const itemToPay = originalSale.items.find(i => i.id === itemId);
+    if (!itemToPay) throw new NotFoundException('Producto no encontrado en el pedido');
+
+    const closure = await this.getOpenClosure(tenantId, userId);
+    if (!closure) throw new BadRequestException('Debe abrir la caja para procesar el pago');
+
+    return await this.dataSource.transaction(async transactionalEntityManager => {
+      const invoiceNumber = await this.generateNextInvoiceNumber(tenantId, transactionalEntityManager);
+      
+      const waiterName = originalSale.waiter?.name || 'Varios';
+      const sellerDisplayName = `${userName} (Mesero: ${waiterName})`;
+
+      // 1. Crear una nueva venta cerrada para este item
+      const newSale = transactionalEntityManager.create(Sale, {
+        tenantId,
+        userId,
+        sellerName: sellerDisplayName,
+        closureId: closure.id,
+        totalAmount: Number(itemToPay.subtotal),
+        paymentMethod: dto.paymentMethod,
+        invoiceNumber,
+        status: 'PAID',
+        tableName: originalSale.tableName,
+        items: [
+          transactionalEntityManager.create(SaleItem, {
+            productId: itemToPay.productId,
+            productName: itemToPay.productName,
+            quantity: itemToPay.quantity,
+            unitPrice: itemToPay.unitPrice,
+            subtotal: itemToPay.subtotal
+          })
+        ]
+      });
+
+      await transactionalEntityManager.save(Sale, newSale);
+
+      // 2. Eliminar el item del pedido original
+      originalSale.items = originalSale.items.filter(i => i.id !== itemId);
+      await transactionalEntityManager.remove(SaleItem, itemToPay);
+
+      // 3. Recalcular total del pedido original
+      originalSale.totalAmount = originalSale.items.reduce((sum, it) => sum + Number(it.subtotal), 0);
+      
+      // Si el pedido original quedó vacío, tal vez cerrarlo? El usuario no especificó, así que lo dejamos abierto.
+      
+      await transactionalEntityManager.save(Sale, originalSale);
+
+      return await transactionalEntityManager.findOne(Sale, {
+        where: { id: originalSale.id },
+        relations: ['items', 'waiter']
+      });
     });
   }
 
