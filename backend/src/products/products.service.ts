@@ -72,6 +72,7 @@ export class ProductsService {
   }
 
   async updateStock(tenantId: string, id: string, quantityToSubtract: number, manager?: EntityManager): Promise<void> {
+    if (id === 'rounding-adjustment') return; // Ignorar items virtuales de redondeo
     const repo = manager ? manager.getRepository(Product) : this.productsRepository;
     const product = await repo.findOne({ where: { id, tenantId } });
     if (product) {

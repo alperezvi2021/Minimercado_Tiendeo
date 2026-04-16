@@ -989,12 +989,12 @@ export default function PosPage() {
                       </div>
 
                       {parseCurrency(cashReceived) > 0 && (
-                        <div className={`mt-1 p-3 rounded-2xl flex justify-between items-center ${parseCurrency(cashReceived) >= calculateTotal() ? 'bg-green-600 text-white' : 'bg-rose-600 text-white'}`}>
+                        <div className={`mt-1 p-3 rounded-2xl flex justify-between items-center ${parseCurrency(cashReceived) >= calculateRoundedTotal() ? 'bg-green-600 text-white' : 'bg-rose-600 text-white'}`}>
                           <span className="text-[10px] font-black uppercase tracking-wider">
-                            {parseCurrency(cashReceived) >= calculateTotal() ? 'CAMBIO A DEVOLVER' : 'FALTA DINERO'}
+                            {parseCurrency(cashReceived) >= calculateRoundedTotal() ? 'CAMBIO A DEVOLVER' : 'FALTA DINERO'}
                           </span>
                           <span className="text-xl font-black">
-                            ${formatCurrency(Math.abs(parseCurrency(cashReceived) - calculateTotal()))}
+                            ${formatCurrency(Math.abs(parseCurrency(cashReceived) - calculateRoundedTotal()))}
                           </span>
                         </div>
                       )}
