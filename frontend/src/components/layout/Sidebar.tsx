@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 
 const navItems = [
   { name: 'Gestión Pedidos', href: '/dashboard/orders', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'RESTAURANT' },
-  { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'POS', hideIfRestaurant: true },
+  { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'POS' },
   { name: 'Servicio a Mesas', href: '/dashboard/restaurant', icon: Utensils, roles: ['OWNER', 'ADMIN', 'CASHIER', 'WAITER', 'SUPER_ADMIN'], module: 'RESTAURANT' },
   { name: 'Cierre de Caja', href: '/dashboard/closure', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CLOSURE' },
   { name: 'Inventario', href: '/dashboard/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'INVENTORY' },
@@ -54,8 +54,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
     // SUPER_ADMIN skips module filtering
     if (userRole === 'SUPER_ADMIN') return hasRole;
     const hasModule = tenantModules.includes(item.module);
-    const shouldHide = (item as any).hideIfRestaurant && tenantModules.includes('RESTAURANT');
-    return hasRole && hasModule && !shouldHide;
+    return hasRole && hasModule;
   });
 
   const router = useRouter();

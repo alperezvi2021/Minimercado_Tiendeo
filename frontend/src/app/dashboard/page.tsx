@@ -87,19 +87,6 @@ export default function PosPage() {
       searchInputRef.current?.focus();
     }, 100);
 
-    // Redirigir si es un restaurante (Punto de entrada principal según usuario)
-    const modulesString = localStorage.getItem('tenant_modules');
-    if (modulesString) {
-      try {
-        const modules = JSON.parse(modulesString);
-        setTenantModules(modules);
-        if (modules.includes('RESTAURANT') && !window.location.search.includes('force_pos')) {
-          router.replace('/dashboard/orders');
-          return;
-        }
-      } catch (e) {}
-    }
-
     // Identity update
     const savedName = localStorage.getItem('user_name');
     const savedRole = localStorage.getItem('user_role');
