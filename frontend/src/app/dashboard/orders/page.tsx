@@ -193,10 +193,12 @@ export default function OrderManagementPage() {
     setSearchQuery(value);
     
     // Auto-Add Logic for Barcode
-    if (value.length >= 6) {
+    if (value.length >= 6 && !isProcessing) {
       const exactMatch = products.find(p => p.barcode === value);
       if (exactMatch) {
          if (selectedOrderId) {
+            // Limpiar inmediatamente para evitar múltiples peticiones del lector
+            setSearchQuery('');
             handleAddItemToOrder(selectedOrderId, exactMatch);
          } else {
             setNotification({ message: 'Por favor, selecciona un pedido primero', type: 'error' });

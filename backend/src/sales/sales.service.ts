@@ -200,10 +200,10 @@ export class SalesService {
         
         // Descontar inventario
         await this.productsService.updateStock(tenantId, item.productId, item.quantity, transactionalEntityManager);
-        
-        // Actualizar total de la venta
-        sale.totalAmount = Number(sale.totalAmount) + subtotal;
       }
+
+      // Recalcular total garantizado de todos los items
+      sale.totalAmount = sale.items.reduce((sum, item) => sum + Number(item.subtotal), 0);
 
       await transactionalEntityManager.save(Sale, sale);
       
@@ -244,11 +244,12 @@ export class SalesService {
       // 1. Devolver stock
       await this.productsService.updateStock(tenantId, item.productId, -item.quantity, transactionalEntityManager);
 
-      // 2. Descontar del total de la venta
-      sale.totalAmount = Number(sale.totalAmount) - Number(item.subtotal);
-
-      // 3. Eliminar el item
+      // 2. Eliminar el item de la colección y de la base de datos
+      sale.items = sale.items.filter(i => i.id !== itemId);
       await transactionalEntityManager.remove(SaleItem, item);
+
+      // 3. Recalcular total garantizado
+      sale.totalAmount = sale.items.reduce((sum, it) => sum + Number(it.subtotal), 0);
 
       return await transactionalEntityManager.save(Sale, sale);
     });
@@ -274,15 +275,18 @@ export class SalesService {
       // 1. Ajustar inventario (si diff es +0.5, descuenta 0.5; si es -0.5, suma 0.5)
       await this.productsService.updateStock(tenantId, item.productId, diff, transactionalEntityManager);
 
-      // 2. Ajustar totales
-      const oldSubtotal = Number(item.subtotal);
+      // 2. Ajustar subtotales del item
       item.quantity = newQuantity;
       item.subtotal = Number(item.unitPrice) * newQuantity;
-      const newSubtotal = item.subtotal;
 
-      sale.totalAmount = Number(sale.totalAmount) - oldSubtotal + newSubtotal;
+      // 3. Recalcular total de la venta basado en los items actuales
+      sale.totalAmount = sale.items.reduce((sum, it) => {
+        // Usar el subtotal actualizado del item que estamos editando
+        const st = it.id === itemId ? item.subtotal : it.subtotal;
+        return sum + Number(st);
+      }, 0);
 
-      // 3. Guardar cambios
+      // 4. Guardar cambios
       await transactionalEntityManager.save(SaleItem, item);
       return await transactionalEntityManager.save(Sale, sale);
     });
