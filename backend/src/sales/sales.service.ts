@@ -184,43 +184,47 @@ export class SalesService {
     if (!sale) throw new NotFoundException('Mesa no encontrada o ya está cerrada');
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
+      console.log(`[DEBUG] Añadiendo items al pedido ${saleId}. Items actuales: ${sale.items.length}`);
+      
       // 1. Añadir o fusionar los nuevos items
       for (const newItem of newItems) {
-        // Buscar si ya existe este producto en el pedido actual
         const existingItem = sale.items.find(i => i.productId === newItem.productId);
 
         if (existingItem) {
-          // Fusionar: solo aumentar cantidad y subtotal
-          existingItem.quantity = Number(existingItem.quantity) + Number(newItem.quantity);
+          const oldQty = Number(existingItem.quantity);
+          existingItem.quantity = oldQty + Number(newItem.quantity);
           existingItem.subtotal = Number(existingItem.unitPrice) * existingItem.quantity;
+          console.log(`[DEBUG] Fusión: Producto ${existingItem.productName}. Cantidad: ${oldQty} -> ${existingItem.quantity}. Subtotal: ${existingItem.subtotal}`);
           await transactionalEntityManager.save(SaleItem, existingItem);
         } else {
-          // Crear nuevo item
           const subtotal = Number(newItem.unitPrice) * Number(newItem.quantity);
           const saleItem = transactionalEntityManager.create(SaleItem, {
             productId: newItem.productId,
             productName: newItem.productName,
-            quantity: newItem.quantity,
-            unitPrice: newItem.unitPrice,
+            quantity: Number(newItem.quantity),
+            unitPrice: Number(newItem.unitPrice),
             subtotal,
           });
           sale.items.push(saleItem);
+          console.log(`[DEBUG] Nuevo Item: ${newItem.productName}. Qty: ${newItem.quantity}. Subtotal: ${subtotal}`);
         }
         
-        // Descontar inventario (siempre se descuenta lo "nuevo" añadido)
         await this.productsService.updateStock(tenantId, newItem.productId, newItem.quantity, transactionalEntityManager);
       }
 
-      // 2. Recalcular total garantizado del pedido basado en la colección final
+      // 2. Recalcular total garantizado
       sale.totalAmount = sale.items.reduce((sum, item) => sum + Number(item.subtotal), 0);
+      console.log(`[DEBUG] Nuevo Total a Cobrar: ${sale.totalAmount}`);
 
       await transactionalEntityManager.save(Sale, sale);
       
-      // Recargar con items para que el frontend vea todo al momento
-      return await transactionalEntityManager.findOne(Sale, {
+      const refreshedSale = await transactionalEntityManager.findOne(Sale, {
         where: { id: sale.id },
         relations: ['items', 'waiter']
       });
+      console.log(`[DEBUG] Pedido refrescado. Items devueltos: ${refreshedSale?.items?.length || 0}`);
+      return refreshedSale;
+    });
     });
   }
 
@@ -285,31 +289,30 @@ export class SalesService {
     if (!item) throw new NotFoundException('Producto no encontrado en la mesa');
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
-      const diff = newQuantity - item.quantity;
+      const diff = Number(newQuantity) - Number(item.quantity);
+      console.log(`[DEBUG] Actualizando Qty para ${item.productName}. ${item.quantity} -> ${newQuantity}. Diff: ${diff}`);
       
-      // 1. Ajustar inventario (si diff es +0.5, descuenta 0.5; si es -0.5, suma 0.5)
       await this.productsService.updateStock(tenantId, item.productId, diff, transactionalEntityManager);
 
-      // 2. Ajustar subtotales del item
-      item.quantity = newQuantity;
-      item.subtotal = Number(item.unitPrice) * newQuantity;
+      item.quantity = Number(newQuantity);
+      item.subtotal = Number(item.unitPrice) * item.quantity;
 
-      // 3. Recalcular total de la venta basado en los items actuales
+      // Recalcular total
       sale.totalAmount = sale.items.reduce((sum, it) => {
-        // Usar el subtotal actualizado del item que estamos editando
         const st = it.id === itemId ? item.subtotal : it.subtotal;
         return sum + Number(st);
       }, 0);
+      console.log(`[DEBUG] Recalculado Total: ${sale.totalAmount}. Item Subtotal: ${item.subtotal}`);
 
-      // 4. Guardar cambios
       await transactionalEntityManager.save(SaleItem, item);
       await transactionalEntityManager.save(Sale, sale);
 
-      // 5. Recargar con relaciones para coherencia en el frontend
-      return await transactionalEntityManager.findOne(Sale, {
+      const refreshedSale = await transactionalEntityManager.findOne(Sale, {
         where: { id: sale.id },
         relations: ['items', 'waiter']
       });
+      console.log(`[DEBUG] Pedido refrescado tras Qty. Items en DB: ${refreshedSale?.items?.length || 0}`);
+      return refreshedSale;
     });
   }
 

@@ -187,7 +187,9 @@ export default function OrderManagementPage() {
 
       if (res.ok) {
         const updatedOrder = await res.json();
-        setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+        console.log("[DEBUG] Pedido Actualizado (Add):", updatedOrder);
+        // Forzar clonado profundo para asegurar re-render de items anidados
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...JSON.parse(JSON.stringify(updatedOrder)) } : o));
         setNotification({ message: `${product.name} añadido`, type: 'success' });
       }
     } catch (err) {
@@ -234,7 +236,9 @@ export default function OrderManagementPage() {
 
       if (res.ok) {
         const updatedOrder = await res.json();
-        setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+        console.log("[DEBUG] Pedido Actualizado (Qty):", updatedOrder);
+        // Clonado forzado
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...JSON.parse(JSON.stringify(updatedOrder)) } : o));
       }
     } catch (err) {
       console.error(err);
@@ -254,7 +258,8 @@ export default function OrderManagementPage() {
 
       if (res.ok) {
         const updatedOrder = await res.json();
-        setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+        console.log("[DEBUG] Pedido Actualizado (Remove):", updatedOrder);
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...JSON.parse(JSON.stringify(updatedOrder)) } : o));
       }
     } catch (err) {
       console.error(err);
