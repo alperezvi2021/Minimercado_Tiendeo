@@ -72,6 +72,7 @@ export default function OrderManagementPage() {
   const [changeAmount, setChangeAmount] = useState(0);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -94,6 +95,13 @@ export default function OrderManagementPage() {
     }, 100);
     return () => clearTimeout(focusTimer);
   }, [showPaymentModal, isProcessing, orders.length]);
+
+  // Focus on Close button after payment success
+  useEffect(() => {
+    if (paymentFinished) {
+      setTimeout(() => closeButtonRef.current?.focus(), 100);
+    }
+  }, [paymentFinished]);
 
   const fetchInitialData = async () => {
     try {
@@ -539,15 +547,17 @@ export default function OrderManagementPage() {
                               {/* Quantity Controls - Optimized for Touch */}
                               <div className="flex items-center bg-slate-950 p-2 rounded-2xl border-2 border-slate-800">
                                 <button 
+                                  disabled={isProcessing}
                                   onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(order.id, item.id, item.quantity - 1); }}
-                                  className="p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all active:scale-90"
+                                  className="p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all active:scale-90 disabled:opacity-30 disabled:pointer-events-none"
                                 >
                                   <Minus className="w-6 h-6" />
                                 </button>
                                 <span className="px-6 text-center text-white font-black text-2xl min-w-[60px]">{item.quantity}</span>
                                 <button 
+                                  disabled={isProcessing}
                                   onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(order.id, item.id, item.quantity + 1); }}
-                                  className="p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all active:scale-90"
+                                  className="p-4 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all active:scale-90 disabled:opacity-30 disabled:pointer-events-none"
                                 >
                                   <Plus className="w-6 h-6" />
                                 </button>
@@ -560,16 +570,18 @@ export default function OrderManagementPage() {
 
                             <div className="flex items-center gap-3">
                               <button 
+                                disabled={isProcessing}
                                 onClick={(e) => { e.stopPropagation(); handlePayItem(order, item); }}
-                                className="p-5 text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-2xl transition-all active:scale-95"
+                                className="p-5 text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-2xl transition-all active:scale-95 disabled:opacity-30"
                                 title="Pagar este item"
                               >
                                 <Banknote className="w-7 h-7" />
                               </button>
 
                               <button 
+                                disabled={isProcessing}
                                 onClick={(e) => { e.stopPropagation(); handleRemoveItem(order.id, item.id); }}
-                                className="p-5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all active:scale-95"
+                                className="p-5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all active:scale-95 disabled:opacity-30"
                                 title="Eliminar del pedido"
                               >
                                 <Trash2 className="w-7 h-7" />
@@ -639,13 +651,14 @@ export default function OrderManagementPage() {
 
                     <div className="flex gap-6">
                       <button 
+                        disabled={isProcessing}
                         onClick={() => setShowPaymentModal(false)}
-                        className="flex-1 py-6 rounded-[2rem] bg-slate-100 dark:bg-slate-800 text-slate-400 font-black uppercase text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
+                        className="flex-1 py-6 rounded-[2rem] bg-slate-100 dark:bg-slate-800 text-slate-400 font-black uppercase text-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 disabled:opacity-30"
                       >
                         Cancelar
                       </button>
                       <button 
-                         disabled={isProcessing || parseCurrency(cashReceived) < payingOrder.totalAmount}
+                         disabled={isProcessing || parseCurrency(cashReceived) < (payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount)}
                          onClick={confirmPayment}
                          className="flex-1 py-6 rounded-[2rem] bg-emerald-600 text-white font-black uppercase text-lg hover:bg-emerald-500 shadow-[0_15px_30px_rgba(16,185,129,0.3)] disabled:opacity-30 transition-all active:scale-95"
                       >
@@ -669,13 +682,14 @@ export default function OrderManagementPage() {
                   </div>
 
                   <button 
+                    ref={closeButtonRef}
                     onClick={() => {
                       setShowPaymentModal(false);
                       setPayingOrder(null);
                     }}
-                    className="w-full py-7 rounded-[2.5rem] bg-slate-900 text-white font-black uppercase text-2xl hover:bg-black transition-all shadow-xl active:scale-95"
+                    className="w-full py-7 rounded-[2.5rem] bg-slate-900 text-white font-black uppercase text-2xl hover:bg-black transition-all shadow-xl active:scale-95 focus:ring-4 focus:ring-emerald-500 outline-none"
                   >
-                    Cerrar (Esc)
+                    CERRAR
                   </button>
                </div>
              )}

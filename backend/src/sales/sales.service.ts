@@ -184,25 +184,34 @@ export class SalesService {
     if (!sale) throw new NotFoundException('Mesa no encontrada o ya está cerrada');
 
     return await this.dataSource.transaction(async transactionalEntityManager => {
-      // 1. Añadir los nuevos items
-      for (const item of newItems) {
-        const subtotal = Number(item.unitPrice) * Number(item.quantity);
+      // 1. Añadir o fusionar los nuevos items
+      for (const newItem of newItems) {
+        // Buscar si ya existe este producto en el pedido actual
+        const existingItem = sale.items.find(i => i.productId === newItem.productId);
+
+        if (existingItem) {
+          // Fusionar: solo aumentar cantidad y subtotal
+          existingItem.quantity = Number(existingItem.quantity) + Number(newItem.quantity);
+          existingItem.subtotal = Number(existingItem.unitPrice) * existingItem.quantity;
+          await transactionalEntityManager.save(SaleItem, existingItem);
+        } else {
+          // Crear nuevo item
+          const subtotal = Number(newItem.unitPrice) * Number(newItem.quantity);
+          const saleItem = transactionalEntityManager.create(SaleItem, {
+            productId: newItem.productId,
+            productName: newItem.productName,
+            quantity: newItem.quantity,
+            unitPrice: newItem.unitPrice,
+            subtotal,
+          });
+          sale.items.push(saleItem);
+        }
         
-        const saleItem = transactionalEntityManager.create(SaleItem, {
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          subtotal,
-        });
-        
-        sale.items.push(saleItem);
-        
-        // Descontar inventario
-        await this.productsService.updateStock(tenantId, item.productId, item.quantity, transactionalEntityManager);
+        // Descontar inventario (siempre se descuenta lo "nuevo" añadido)
+        await this.productsService.updateStock(tenantId, newItem.productId, newItem.quantity, transactionalEntityManager);
       }
 
-      // Recalcular total garantizado de todos los items
+      // 2. Recalcular total garantizado del pedido basado en la colección final
       sale.totalAmount = sale.items.reduce((sum, item) => sum + Number(item.subtotal), 0);
 
       await transactionalEntityManager.save(Sale, sale);
