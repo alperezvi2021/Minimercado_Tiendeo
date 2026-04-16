@@ -192,6 +192,15 @@ export class SalesController {
     return this.salesService.removeItemFromTable(req.user.tenantId, id, itemId);
   }
 
+  @Post('restaurant/order/:id/close')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  closeTableOrder(
+    @Request() req, 
+    @Param('id') id: string, 
+    @Body() body: { paymentMethod: string, customerId?: string, customerName?: string }
+  ) {
+    const userId = req.user.userId;
+    const userName = req.user.name || 'Cajero';
     return this.salesService.closeTableOrder(req.user.tenantId, userId, userName, id, body);
   }
 
