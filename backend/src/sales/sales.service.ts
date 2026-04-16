@@ -225,7 +225,6 @@ export class SalesService {
       console.log(`[DEBUG] Pedido refrescado. Items devueltos: ${refreshedSale?.items?.length || 0}`);
       return refreshedSale;
     });
-    });
   }
 
   async updateOrderWaiter(tenantId: string, saleId: string, waiterId: string): Promise<Sale> {
