@@ -332,9 +332,10 @@ export default function OrderManagementPage() {
                 // Solo re-enfocar si no estamos intentando interactuar con otro elemento importante (como el modal o el selector de mesero)
                 if (!showPaymentModal && !isProcessing) {
                   const timer = setTimeout(() => {
-                    if (document.activeElement?.tagName !== 'INPUT' && 
-                        document.activeElement?.tagName !== 'SELECT' && 
-                        document.activeElement?.contentEditable !== 'true') {
+                    const activeEl = document.activeElement as HTMLElement | null;
+                    if (activeEl?.tagName !== 'INPUT' && 
+                        activeEl?.tagName !== 'SELECT' && 
+                        activeEl?.contentEditable !== 'true') {
                       searchInputRef.current?.focus();
                     }
                   }, 150);
