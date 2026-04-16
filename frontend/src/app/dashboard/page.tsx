@@ -706,7 +706,7 @@ export default function PosPage() {
             className="block w-full rounded-2xl border-0 py-4 pl-12 pr-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-200 dark:bg-slate-900 dark:text-white dark:ring-slate-800 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-lg sm:leading-6 transition-all"
             placeholder="Escanea el código de barras o busca por nombre..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value.replace(/[^\w\s\.-]/gi, ''))}
+            onChange={(e) => setSearchTerm(e.target.value.replace(/[^a-zA-Z0-9\s]/g, ''))}
             onKeyDown={handleScannerInput}
             autoFocus
           />

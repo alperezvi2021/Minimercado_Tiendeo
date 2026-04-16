@@ -15,9 +15,16 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Migración de token: si existe el antiguo y no el nuevo, copiarlo.
-    const tenantToken = localStorage.getItem('tenant_token');
     const accessToken = localStorage.getItem('access_token');
+    
+    // Auth Check: Si no hay token, expulsar al login
+    if (!accessToken) {
+      router.replace('/login');
+      return;
+    }
+
+    // Migración de token (compatibilidad)
+    const tenantToken = localStorage.getItem('tenant_token');
     if (tenantToken && !accessToken) {
       localStorage.setItem('access_token', tenantToken);
     }

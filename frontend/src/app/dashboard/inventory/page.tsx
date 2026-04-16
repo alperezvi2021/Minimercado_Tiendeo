@@ -760,7 +760,7 @@ export default function InventoryPage() {
                 </div>
                 <div className="md:col-span-2">
                   <label htmlFor="barcode" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Código de Barras</label>
-                  <input id="barcode" title="Código de barras" type="text" placeholder="Pistolea aquí o deja en blanco" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={barcode} onChange={e => setBarcode(e.target.value)} />
+                  <input id="barcode" title="Código de barras" type="text" placeholder="Pistolea aquí o deja en blanco" className="mt-1 block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 ring-1 ring-inset ring-gray-300 dark:bg-slate-800 dark:text-white dark:ring-slate-700 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all" value={barcode} onChange={e => setBarcode(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))} />
                 </div>
 
                 <div className="md:col-span-1 flex items-center gap-3 bg-gray-50 dark:bg-slate-800/50 p-3 rounded-xl border border-gray-200 dark:border-slate-800">
