@@ -482,10 +482,10 @@ export default function PosPage() {
           const savedSale = await res.json();
           const saleWithItems = { 
             ...savedSale, 
-            items: [...cart],
+            items: saleItems, // Usar saleItems que ya incluye el ajuste
             customerName: paymentMethod === 'credito' ? finalCustomerName : undefined,
             receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
-            changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0
+            changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - roundedTotal) : 0
           };
           setCompletedSale(saleWithItems);
           setCart([]);
