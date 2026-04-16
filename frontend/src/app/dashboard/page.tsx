@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft, AlertCircle } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft, AlertCircle, Utensils } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
 import { formatCurrency, parseCurrency } from '@/utils/formatters';
 
@@ -40,6 +40,7 @@ export default function PosPage() {
   const [userName, setUserName] = useState('Usuario');
   const [userRole, setUserRole] = useState('CASHIER');
   const [hasOpenClosure, setHasOpenClosure] = useState<boolean | null>(null);
+  const [tenantModules, setTenantModules] = useState<string[]>([]);
   
   const offlineStore = useOfflineStore();
   const [cashReceived, setCashReceived] = useState<string>('');
@@ -85,6 +86,19 @@ export default function PosPage() {
     const focusTimer = setTimeout(() => {
       searchInputRef.current?.focus();
     }, 100);
+
+    // Redirigir si es un restaurante (Punto de entrada principal según usuario)
+    const modulesString = localStorage.getItem('tenant_modules');
+    if (modulesString) {
+      try {
+        const modules = JSON.parse(modulesString);
+        setTenantModules(modules);
+        if (modules.includes('RESTAURANT') && !window.location.search.includes('force_pos')) {
+          router.replace('/dashboard/orders');
+          return;
+        }
+      } catch (e) {}
+    }
 
     // Identity update
     const savedName = localStorage.getItem('user_name');

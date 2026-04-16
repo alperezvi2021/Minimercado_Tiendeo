@@ -159,6 +159,12 @@ export class SalesController {
     return this.salesService.createTableOrder(req.user.tenantId, waiterId, body);
   }
 
+  @Patch('restaurant/order/:id/waiter')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  updateOrderWaiter(@Request() req, @Param('id') id: string, @Body() body: { waiterId: string }) {
+    return this.salesService.updateOrderWaiter(req.user.tenantId, id, body.waiterId);
+  }
+
   @Post('restaurant/order/:id/items')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
   addItemsToTable(@Request() req, @Param('id') id: string, @Body() body: { items: any[] }) {

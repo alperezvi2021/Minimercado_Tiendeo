@@ -215,6 +215,17 @@ export class SalesService {
     });
   }
 
+  async updateOrderWaiter(tenantId: string, saleId: string, waiterId: string): Promise<Sale> {
+    const sale = await this.salesRepository.findOne({
+      where: { id: saleId, tenantId, status: 'OPEN' }
+    });
+
+    if (!sale) throw new NotFoundException('Mesa no encontrada');
+    
+    sale.waiterId = waiterId;
+    return await this.salesRepository.save(sale);
+  }
+
   async removeItemFromTable(tenantId: string, saleId: string, itemId: string): Promise<Sale> {
     const sale = await this.salesRepository.findOne({
       where: { id: saleId, tenantId, status: 'OPEN' },

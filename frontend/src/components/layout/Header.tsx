@@ -1,11 +1,12 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Search, Bell, LogOut, Sun, Moon, User, Menu, X, Wifi, WifiOff, CloudLightning, RefreshCcw } from 'lucide-react';
+import { Search, Bell, LogOut, Sun, Moon, User, Menu, X, Wifi, WifiOff, CloudLightning, RefreshCcw, ClipboardCheck } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
 import { useState, useEffect } from 'react';
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
+  const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [userName, setUserName] = useState('Usuario');
@@ -98,16 +99,24 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <div className="relative hidden lg:block w-72 xl:w-96">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
-            <Search className="w-5 h-5" />
-          </span>
-          <input
-            type="text"
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border-none rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-700 transition-all"
-            placeholder="Buscar productos o recibos..."
-          />
-        </div>
+
+        {pathname === '/dashboard/orders' ? (
+          <div className="flex items-center gap-3 px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-2xl animate-in slide-in-from-left duration-500">
+            <ClipboardCheck className="w-5 h-5 text-blue-500" />
+            <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">Gestión de Pedidos</span>
+          </div>
+        ) : (
+          <div className="relative hidden lg:block w-72 xl:w-96">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 dark:text-gray-500">
+              <Search className="w-5 h-5" />
+            </span>
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-800 border-none rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-700 transition-all"
+              placeholder="Buscar productos o recibos..."
+            />
+          </div>
+        )}
       </div>
       
       <div className="flex items-center space-x-4">
