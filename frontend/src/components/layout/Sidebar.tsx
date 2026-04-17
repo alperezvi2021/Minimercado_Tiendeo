@@ -9,7 +9,7 @@ const navItems = [
   { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'POS' },
   { name: 'Servicio a Mesas', href: '/dashboard/restaurant', icon: Utensils, roles: ['OWNER', 'ADMIN', 'CASHIER', 'WAITER', 'SUPER_ADMIN'], module: 'RESTAURANT' },
   { name: 'Cierre de Caja', href: '/dashboard/closure', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CLOSURE' },
-  { name: 'Inventario', href: '/dashboard/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'INVENTORY' },
+  { name: 'Inventario', href: '/dashboard/inventory', icon: Package, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'INVENTORY' },
   { name: 'Reportes', href: '/dashboard/reports', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'REPORTS' },
   { name: 'Proveedores', href: '/dashboard/suppliers', icon: Truck, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'SUPPLIERS' },
   { name: 'Clientes', href: '/dashboard/customers', icon: User, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CUSTOMERS' },

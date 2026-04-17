@@ -644,35 +644,35 @@ export default function InventoryPage() {
               <tr>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('barcode')}
                 >
                   Código {sortConfig?.key === 'barcode' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[200px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('name')}
                 >
                   Producto {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('category')}
                 >
                   Categoría {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('price')}
                 >
-                  Precio de Venta {sortConfig?.key === 'price' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                  Precio Ventas {sortConfig?.key === 'price' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[80px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('stock')}
                 >
                   Stock {sortConfig?.key === 'stock' && (sortConfig.direction === 'asc' ? '↑' : '↓')}

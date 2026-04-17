@@ -287,7 +287,7 @@ export default function CreditsPage() {
               <tr className="border-b border-slate-800/50">
                 <th 
                   onClick={() => requestSort('invoice')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[100px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Factura #
@@ -296,7 +296,7 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('customerName')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[180px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[150px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Cliente
@@ -305,7 +305,7 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('createdAt')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center min-w-[140px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center min-w-[120px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2 justify-center">
                     Fecha Deuda
@@ -314,7 +314,7 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('amount')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[140px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Monto Original
@@ -323,15 +323,15 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('remaining')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[160px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[140px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Saldo Pendiente
                     {sortConfig?.key === 'remaining' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
                   </div>
                 </th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px]">Estado</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right min-w-[180px]">Acciones</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[90px]">Estado</th>
+                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right min-w-[150px]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">

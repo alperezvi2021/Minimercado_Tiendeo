@@ -36,6 +36,9 @@ export class User {
   @Column({ nullable: true, length: 4 })
   pin: string;
 
+  @Column({ type: 'simple-array', nullable: true })
+  modules: string[];
+
   @CreateDateColumn()
   createdAt: Date;
 

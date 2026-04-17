@@ -44,7 +44,25 @@ export class AdminService {
   async findAllUsers(): Promise<User[]> {
     return this.usersRepository.find({
       relations: ['tenant'],
+      select: ['id', 'name', 'email', 'role', 'modules', 'createdAt'],
     });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+    await this.usersRepository.delete(userId);
+  }
+
+  async updateUserModules(userId: string, modules: string[]): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new Error('Usuario no encontrado');
+    }
+    await this.usersRepository.update(userId, { modules });
+    return this.usersRepository.findOne({ where: { id: userId }, relations: ['tenant'] });
   }
 
   async resetUserPassword(userId: string, newPassword: string): Promise<void> {

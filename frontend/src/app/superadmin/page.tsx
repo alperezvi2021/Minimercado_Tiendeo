@@ -19,6 +19,7 @@ interface AdminUser {
   name: string;
   email: string;
   role: string;
+  modules?: string[];
   tenant?: { name: string };
 }
 
@@ -49,6 +50,8 @@ export default function SuperAdminPage() {
   const [selectedTenantForModules, setSelectedTenantForModules] = useState<Tenant | null>(null);
   const [editingModules, setEditingModules] = useState<string[]>([]);
   const [isSavingModules, setIsSavingModules] = useState(false);
+  const [isUserModulesMode, setIsUserModulesMode] = useState(false);
+  const [selectedUserForModules, setSelectedUserForModules] = useState<AdminUser | null>(null);
 
   const ALL_MODULES = [
     { id: 'POS', name: 'Caja Registradora (POS)' },
@@ -65,24 +68,39 @@ export default function SuperAdminPage() {
 
   const openModulesModal = (tenant: Tenant) => {
     const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+    setIsUserModulesMode(false);
     setSelectedTenantForModules(tenant);
     setEditingModules(tenant.modules || defaultModules);
     setIsModulesModalOpen(true);
   };
 
+  const openUserModulesModal = (user: AdminUser) => {
+    const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+    setIsUserModulesMode(true);
+    setSelectedUserForModules(user);
+    setEditingModules(user.modules || defaultModules);
+    setIsModulesModalOpen(true);
+  };
+
   const handleSaveModules = async () => {
-    if (!selectedTenantForModules) return;
+    if (!isUserModulesMode && !selectedTenantForModules) return;
+    if (isUserModulesMode && !selectedUserForModules) return;
+
     setIsSavingModules(true);
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/tenants/${selectedTenantForModules.id}/modules`, {
+      const url = isUserModulesMode 
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/users/${selectedUserForModules?.id}/modules`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/tenants/${selectedTenantForModules?.id}/modules`;
+
+      const res = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ modules: editingModules })
       });
       if (res.ok) {
         setIsModulesModalOpen(false);
-        fetchData(); // refresh tenant list
+        fetchData(); // refresh list
         alert('Módulos actualizados correctamente');
       } else {
         alert('Error al actualizar módulos');
@@ -91,6 +109,28 @@ export default function SuperAdminPage() {
       alert('Error de conexión');
     } finally {
       setIsSavingModules(false);
+    }
+  };
+
+  const handleDeleteUser = async (user: AdminUser) => {
+    if (!confirm(`¿Estás seguro de eliminar al usuario ${user.name} (${user.email})? Esta acción no se puede deshacer.`)) return;
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/users/${user.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        alert('Usuario eliminado correctamente');
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(`Error al eliminar usuario: ${err.message || 'Error desconocido'}`);
+      }
+    } catch (e) {
+      alert('Error de conexión');
     }
   };
 
@@ -466,7 +506,7 @@ export default function SuperAdminPage() {
                   <th className="px-8 py-6">Email / Acceso</th>
                   <th className="px-8 py-6">Negocio</th>
                   <th className="px-8 py-6">Rol</th>
-                  <th className="px-8 py-6">Recuperación</th>
+                  <th className="px-8 py-6">Recuperación / Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -481,13 +521,30 @@ export default function SuperAdminPage() {
                       </span>
                     </td>
                     <td className="px-8 py-6">
-                      <button 
-                        onClick={() => { setSelectedUser(u); setIsResetModalOpen(true); }}
-                        className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-white/5"
-                      >
-                        <Key className="w-4 h-4" />
-                        Reset PWD
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => { setSelectedUser(u); setIsResetModalOpen(true); }}
+                          className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all border border-white/5"
+                          title="Restablecer Contraseña"
+                        >
+                          <Key className="w-4 h-4" />
+                          Reset PWD
+                        </button>
+                        <button 
+                          onClick={() => openUserModulesModal(u)}
+                          className="text-blue-400 hover:text-blue-300 transition-colors p-2 hover:bg-blue-500/10 rounded-lg" 
+                          title="Configurar Módulos del Usuario"
+                        >
+                          <ToggleRight className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteUser(u)}
+                          className="text-rose-500 hover:text-rose-400 transition-colors p-2 hover:bg-rose-500/10 rounded-lg" 
+                          title="Eliminar Usuario"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -686,11 +743,16 @@ export default function SuperAdminPage() {
                 <ToggleRight className="w-7 h-7 text-blue-400" />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-white">Módulos del Negocio</h3>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{selectedTenantForModules.name}</p>
+                <h3 className="text-2xl font-black text-white">{isUserModulesMode ? 'Módulos del Usuario' : 'Módulos del Negocio'}</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{isUserModulesMode ? selectedUserForModules?.name : selectedTenantForModules?.name}</p>
               </div>
             </div>
-            <p className="text-gray-500 text-sm font-medium mb-6">Activa o desactiva las funciones que este negocio puede usar. El menú lateral del negocio se actualizará en el próximo login.</p>
+            <p className="text-gray-500 text-sm font-medium mb-6">
+              {isUserModulesMode 
+                ? 'Asigna permisos específicos a este usuario. Estos módulos aparecerán en su menú lateral al iniciar sesión.' 
+                : 'Activa o desactiva las funciones que este negocio puede usar. El menú lateral del negocio se actualizará en el próximo login.'
+              }
+            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
               {ALL_MODULES.map(mod => {
