@@ -67,22 +67,22 @@ export default function LandingPage() {
           <div className="space-y-8 animate-in fade-in slide-in-from-left duration-1000 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 rounded-full border border-blue-500/20 mx-auto lg:mx-0">
               <Zap className="w-4 h-4 text-blue-400" />
-              <span className="text-xs font-black uppercase tracking-[0.3em] text-blue-400">POS Profesional</span>
+              <span className="text-xs font-black uppercase tracking-[0.3em] text-blue-400">Punto de venta inteligente</span>
             </div>
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tighter leading-[0.9] lg:leading-[0.95]">
-              Vende más <br className="hidden sm:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-indigo-400">sin complicaciones.</span>
+              Gestiona tu negocio <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-600 to-indigo-400">como un profesional.</span>
             </h1>
             <p className="text-lg sm:text-xl text-slate-400 max-w-xl leading-relaxed font-medium mx-auto lg:mx-0">
-              Controla inventario, ventas y empleados desde cualquier lugar. 
-              La herramienta definitiva para el comerciante moderno.
+              Vende en segundos, controla tu inventario en tiempo real y obtén reportes detallados. 
+              Diseñado para tiendas, minimercados y emprendedores modernos.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
               <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="group px-10 py-6 rounded-[1.5rem] bg-blue-600 text-white font-black text-xl shadow-2xl shadow-blue-600/30 hover:bg-blue-500 transition-all flex items-center justify-center gap-3">
-                Empezar Gratis <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                Empezar Ahora <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
               </a>
               <Link href="#features" className="px-10 py-6 rounded-[1.5rem] border-2 border-white/10 font-black text-xl text-white hover:bg-white/5 transition-all text-center">
-                Explorar Más
+                Ver Funciones
               </Link>
             </div>
             
@@ -126,10 +126,10 @@ export default function LandingPage() {
       <section id="features" className="py-24 sm:py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-3xl mx-auto mb-20 space-y-6">
-            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500">¿Por qué elegirnos?</h2>
-            <h3 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter">Gestión inteligente que escala con tu negocio.</h3>
+            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500">Simplifica tu vida</h2>
+            <h3 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tighter">Todo lo que necesitas en un solo lugar</h3>
             <p className="text-slate-400 font-medium text-lg lg:text-xl leading-relaxed">
-              Diseñado para la velocidad. Pensado para el crecimiento.
+              Olvídate de las hojas de cálculo y el desorden. Controla tu negocio desde cualquier dispositivo.
             </p>
           </div>
 
@@ -171,8 +171,17 @@ export default function LandingPage() {
       {/* Pricing Section (Optimized for Mobile Viewing) */}
       <section id="pricing" className="py-24 sm:py-32 px-6 bg-slate-900/20 backdrop-blur-sm border-t border-white/5">
         <div className="max-w-7xl mx-auto text-center">
-            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500 mb-6">Planes Flexibles</h2>
-            <h3 className="text-4xl sm:text-5xl font-black text-white tracking-tighter mb-16 px-4">Inversión justa, resultados excepcionales</h3>
+            <h2 className="text-xs font-black uppercase tracking-[0.4em] text-blue-500 mb-6">PLANES Y PRECIOS</h2>
+            <h3 className="text-4xl sm:text-5xl font-black text-white tracking-tighter mb-4 px-4">Increíblemente simple y transparente</h3>
+            
+            <div className="flex flex-col items-center gap-4 mb-16">
+              <div className="inline-flex items-center gap-3 px-6 py-2 bg-slate-800/50 rounded-2xl border border-white/10 shadow-xl">
+                 <span className="text-slate-400 font-bold text-sm">Costo de Implementación:</span>
+                 <span className="text-white font-black text-xl">$250.000 <span className="text-xs text-slate-500 uppercase">COP</span></span>
+                 <div className="bg-blue-600 px-2 py-0.5 rounded-lg text-[10px] font-black text-white ml-2">PAGO ÚNICO</div>
+              </div>
+              <p className="text-emerald-400 font-black text-sm animate-pulse tracking-wide">¡Tus primeros 2 meses son totalmente gratis!</p>
+            </div>
             
             <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto">
               {/* Plan Mensual */}
@@ -181,9 +190,10 @@ export default function LandingPage() {
                 <p className="text-5xl font-black text-white tracking-tighter mb-4">$190.000 <span className="text-lg text-slate-500">/ mes</span></p>
                 <div className="bg-blue-600/10 text-blue-400 px-4 py-1.5 rounded-full text-xs font-black mb-10 tracking-widest uppercase">Sin Permanencia</div>
                 <ul className="space-y-4 mb-12 text-slate-400 font-bold text-sm w-full">
-                  <li className="flex items-center justify-center gap-2"><ArrowRight className="w-4 h-4 text-blue-600" /> Soporte por WhatsApp</li>
-                  <li className="flex items-center justify-center gap-2"><ArrowRight className="w-4 h-4 text-blue-600" /> Todas las funciones Pro</li>
-                  <li className="flex items-center justify-center gap-2"><ArrowRight className="w-4 h-4 text-blue-600" /> Actualizaciones Gratis</li>
+                  <li className="flex items-center justify-center gap-2 tracking-tight">Sin Cláusulas de Permanencia</li>
+                  <li className="flex items-center justify-center gap-2 tracking-tight">Pago mes adelantado (Día 1-5)</li>
+                  <li className="flex items-center justify-center gap-2 tracking-tight">Soporte Prioritario WhatsApp</li>
+                  <li className="flex items-center justify-center gap-2 tracking-tight">Todas las funcionalidades Pro</li>
                 </ul>
                 <a href="https://wa.me/573004516713" className="w-full py-5 rounded-2xl bg-white/10 text-white font-black hover:bg-white/20 transition-all active:scale-95">Elegir Mensual</a>
               </div>
@@ -195,11 +205,12 @@ export default function LandingPage() {
                 <p className="text-5xl font-black text-white tracking-tighter mb-4">$1.800.000 <span className="text-lg text-blue-200">/ año</span></p>
                 <div className="bg-white/20 text-white px-4 py-1.5 rounded-full text-xs font-black mb-10 tracking-widest uppercase">Ahorro Extremo</div>
                 <ul className="space-y-4 mb-12 text-blue-100 font-bold text-sm w-full">
-                  <li className="flex items-center justify-center gap-2"><Zap className="w-4 h-4 text-amber-300" /> Soporte Premium 24/7</li>
-                  <li className="flex items-center justify-center gap-2"><Zap className="w-4 h-4 text-amber-300" /> Capacitación In-Situ</li>
-                  <li className="flex items-center justify-center gap-2"><Zap className="w-4 h-4 text-amber-300" /> Prioridad en Novedades</li>
+                  <li className="flex items-center justify-center gap-2">Pago único por adelantado</li>
+                  <li className="flex items-center justify-center gap-2">Cláusula de permanencia (1 año)</li>
+                  <li className="flex items-center justify-center gap-2">Atención Personalizada 24/7</li>
+                  <li className="flex items-center justify-center gap-2">Capacitación completa equipo</li>
                 </ul>
-                <a href="https://wa.me/573004516713" className="w-full py-5 rounded-2xl bg-white text-blue-600 font-black shadow-2xl hover:bg-gray-50 transition-all active:scale-95">Obtener Anual</a>
+                <a href="https://wa.me/573004516713" target="_blank" rel="noopener noreferrer" className="w-full py-5 rounded-2xl bg-white text-blue-600 font-black shadow-2xl hover:bg-gray-50 transition-all active:scale-95">Obtener Plan Anual</a>
               </div>
             </div>
         </div>
@@ -208,16 +219,16 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="py-24 px-6 md:py-40">
         <div className="max-w-4xl mx-auto text-center space-y-12">
-           <h3 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-none">Únete a la nueva era del <span className="text-blue-500">comercio.</span></h3>
-           <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">Digitaliza tu éxito hoy mismo.</p>
+           <h3 className="text-5xl sm:text-6xl lg:text-7xl font-black text-white tracking-tighter leading-none">Lleva tu negocio al siguiente nivel <span className="text-blue-500">hoy mismo.</span></h3>
+           <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">Únete a los cientos de comerciantes que ya están digitalizando su éxito con TiendeoPOS. Registro en menos de 1 minuto.</p>
            <a href="https://wa.me/573004516713" className="inline-flex items-center gap-4 bg-blue-600 text-white px-12 py-6 rounded-[2rem] font-black text-2xl shadow-2xl shadow-blue-600/30 hover:bg-blue-500 transition-all active:scale-95">
-             Contactar Ahora <ChevronRight className="w-7 h-7" />
+             Crear mi Negocio <ChevronRight className="w-7 h-7" />
            </a>
         </div>
       </section>
 
       <footer className="py-12 px-6 border-t border-white/5 text-center text-slate-600 font-bold text-sm">
-        <p>© 2026 Tiendeo POS. Revolucionando negocios locales.</p>
+        <p>© 2026 Tiendeo POS. Desarrollado con ❤️ para emprendedores.</p>
       </footer>
 
       {/* WhatsApp Fixed */}
