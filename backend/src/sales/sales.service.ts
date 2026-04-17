@@ -296,14 +296,20 @@ export class SalesService {
       item.quantity = Number(newQuantity);
       item.subtotal = Number(item.unitPrice) * item.quantity;
 
-      // Recalcular total
-      sale.totalAmount = sale.items.reduce((sum, it) => {
-        const st = it.id === itemId ? item.subtotal : it.subtotal;
-        return sum + Number(st);
-      }, 0);
+      // CRITICAL FIX: Actualizar el item dentro de la colección cargada 'sale.items'
+      // Si no hacemos esto, al hacer 'save(Sale, sale)', TypeORM hace cascade y sobreescribe 
+      // nuestro nuevo quantity en BD con el valor viejo (que quedó guardado en sale.items).
+      const itemInSale = sale.items.find(i => i.id === itemId);
+      if (itemInSale) {
+        itemInSale.quantity = item.quantity;
+        itemInSale.subtotal = item.subtotal;
+      }
+
+      // Recalcular total usando la colección ya actualizada
+      sale.totalAmount = sale.items.reduce((sum, it) => sum + Number(it.subtotal), 0);
       console.log(`[DEBUG] Recalculado Total: ${sale.totalAmount}. Item Subtotal: ${item.subtotal}`);
 
-      await transactionalEntityManager.save(SaleItem, item);
+      // Podemos guardar solo el sale (el cascade actualizará el SaleItem) o ambos
       await transactionalEntityManager.save(Sale, sale);
 
       const refreshedSale = await transactionalEntityManager.findOne(Sale, {
