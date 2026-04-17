@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { Sale } from './sale.entity';
 import { RefundItem } from './refund-item.entity';
 import { User } from '../../users/entities/user.entity';
@@ -34,6 +42,8 @@ export class Refund {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @OneToMany(() => RefundItem, refundItem => refundItem.refund, { cascade: true })
+  @OneToMany(() => RefundItem, (refundItem) => refundItem.refund, {
+    cascade: true,
+  })
   items: RefundItem[];
 }

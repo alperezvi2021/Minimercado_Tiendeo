@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, ManyToOne, JoinColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+  Unique,
+} from 'typeorm';
 import { SaleItem } from './sale-item.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -52,6 +61,6 @@ export class Sale {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @OneToMany(() => SaleItem, saleItem => saleItem.sale, { cascade: true })
+  @OneToMany(() => SaleItem, (saleItem) => saleItem.sale, { cascade: true })
   items: SaleItem[];
 }

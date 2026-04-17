@@ -109,9 +109,10 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         const localId = `temp-cust-${uuid}`;
         const newCustomer = {
           ...formData,
+          initialDebt: Number(formData.initialDebt) || 0,
           id: localId,
           localId,
-          totalDebt: 0,
+          totalDebt: Number(formData.initialDebt) || 0,
           pendingInvoices: 0
         };
         addPendingCustomer(newCustomer);

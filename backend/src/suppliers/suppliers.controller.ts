@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards, Request, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -48,7 +58,11 @@ export class SuppliersController {
 
   @Patch('invoices/:id')
   @Roles(Role.OWNER, Role.ADMIN)
-  updateInvoice(@Param('id') id: string, @Body() data: any, @Request() req: any) {
+  updateInvoice(
+    @Param('id') id: string,
+    @Body() data: any,
+    @Request() req: any,
+  ) {
     return this.suppliersService.updateInvoice(req.user.tenantId, id, data);
   }
 
@@ -63,7 +77,11 @@ export class SuppliersController {
   @Post('expenses')
   @Roles(Role.OWNER, Role.ADMIN, Role.CASHIER)
   createExpense(@Request() req: any, @Body() data: any) {
-    return this.suppliersService.createExpense(req.user.tenantId, req.user.id, data);
+    return this.suppliersService.createExpense(
+      req.user.tenantId,
+      req.user.id,
+      data,
+    );
   }
 
   @Get('expenses')
@@ -94,8 +112,16 @@ export class SuppliersController {
 
   @Patch('scheduled-orders/:id/status')
   @Roles(Role.OWNER, Role.ADMIN)
-  updateScheduledOrderStatus(@Param('id') id: string, @Body('status') status: string, @Request() req: any) {
-    return this.suppliersService.updateScheduledOrderStatus(req.user.tenantId, id, status);
+  updateScheduledOrderStatus(
+    @Param('id') id: string,
+    @Body('status') status: string,
+    @Request() req: any,
+  ) {
+    return this.suppliersService.updateScheduledOrderStatus(
+      req.user.tenantId,
+      id,
+      status,
+    );
   }
 
   @Delete('scheduled-orders/:id')

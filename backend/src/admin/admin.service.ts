@@ -19,15 +19,25 @@ export class AdminService {
     const tenants = await this.tenantsRepository.find({
       relations: ['users'],
     });
-    
-    return tenants.map(t => ({
+
+    return tenants.map((t) => ({
       id: t.id,
       name: t.name,
       activePlan: t.activePlan,
       isActive: t.isActive !== false,
-      modules: t.modules || ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'],
+      modules: t.modules || [
+        'POS',
+        'CLOSURE',
+        'INVENTORY',
+        'REPORTS',
+        'SUPPLIERS',
+        'CUSTOMERS',
+        'CREDITS',
+        'REFUNDS',
+        'ACCOUNTING',
+      ],
       userCount: t.users ? t.users.length : 0,
-      createdAt: t.createdAt
+      createdAt: t.createdAt,
     }));
   }
 
@@ -46,12 +56,18 @@ export class AdminService {
     await this.usersRepository.update(userId, { passwordHash });
   }
 
-  async updateTenantModules(tenantId: string, modules: string[]): Promise<Tenant> {
+  async updateTenantModules(
+    tenantId: string,
+    modules: string[],
+  ): Promise<Tenant> {
     await this.tenantsRepository.update(tenantId, { modules });
     return this.tenantsRepository.findOne({ where: { id: tenantId } });
   }
 
-  async updateTenantStatus(tenantId: string, isActive: boolean): Promise<Tenant> {
+  async updateTenantStatus(
+    tenantId: string,
+    isActive: boolean,
+  ): Promise<Tenant> {
     await this.tenantsRepository.update(tenantId, { isActive });
     return this.tenantsRepository.findOne({ where: { id: tenantId } });
   }

@@ -35,7 +35,11 @@ export class CategoriesService {
     return category;
   }
 
-  async update(id: string, updateCategoryDto: any, tenantId: string): Promise<Category> {
+  async update(
+    id: string,
+    updateCategoryDto: any,
+    tenantId: string,
+  ): Promise<Category> {
     const category = await this.findOne(id, tenantId);
     Object.assign(category, updateCategoryDto);
     return (await this.categoriesRepository.save(category)) as any;

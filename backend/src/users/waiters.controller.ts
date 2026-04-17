@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+  Patch,
+} from '@nestjs/common';
 import { WaitersService } from './waiters.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -13,7 +23,7 @@ export class WaitersController {
   }
 
   @Post()
-  async create(@Request() req, @Body() body: { name: string, pin: string }) {
+  async create(@Request() req, @Body() body: { name: string; pin: string }) {
     return this.waitersService.create(req.user.tenantId, body.name, body.pin);
   }
 
@@ -23,12 +33,20 @@ export class WaitersController {
   }
 
   @Post(':id/pin')
-  async updatePin(@Request() req, @Param('id') id: string, @Body() body: { pin: string }) {
+  async updatePin(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { pin: string },
+  ) {
     return this.waitersService.updatePin(req.user.tenantId, id, body.pin);
   }
 
   @Patch(':id')
-  async update(@Request() req, @Param('id') id: string, @Body() body: { name?: string, pin?: string }) {
+  async update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { name?: string; pin?: string },
+  ) {
     return this.waitersService.update(req.user.tenantId, id, body);
   }
 

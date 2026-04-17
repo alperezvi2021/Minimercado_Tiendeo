@@ -15,50 +15,105 @@ const storage: StateStorage = {
   },
 };
 
+export interface OfflineSaleItem {
+  productId?: number | string;
+  localId?: string;
+  quantity: number;
+  price: number;
+  name?: string;
+  unitPrice?: number;
+  subtotal?: number;
+  [key: string]: unknown;
+}
+
 export interface OfflineSale {
   localId: string;
-  items: any[];
+  items: OfflineSaleItem[];
   total: number;
   paymentMethod: string;
   receivedAmount: number;
   changeAmount: number;
-  customerId?: string | null;
+  customerId?: string | number;
   isCredit: boolean;
   timestamp: number;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+export interface OfflineProduct {
+  id?: number | string;
+  localId?: string;
+  name?: string;
+  price?: number;
+  categoryId?: string;
+  [key: string]: unknown;
+}
+
+export interface OfflineCategory {
+  id?: number | string;
+  localId?: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+export interface OfflineCustomer {
+  id?: number | string;
+  localId?: string;
+  name?: string;
+  idNumber?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  initialDebt?: number;
+  [key: string]: unknown;
+}
+
+export interface OfflinePayment {
+  localId?: string;
+  creditSaleId?: string;
+  customerId?: string | number;
+  amount?: number;
+  notes?: string;
+  [key: string]: unknown;
+}
+
+export interface OfflineCredit {
+  id?: number | string;
+  [key: string]: unknown;
 }
 
 interface OfflineState {
   isOnline: boolean;
-  products: any[];
-  categories: any[];
-  customers: any[];
-  rawCredits: any[]; // Para caché de deudas
+  products: OfflineProduct[];
+  categories: OfflineCategory[];
+  customers: OfflineCustomer[];
+  rawCredits: OfflineCredit[]; // Para caché de deudas
   pendingSales: OfflineSale[];
-  pendingProducts: any[];
-  pendingCategories: any[];
-  pendingCustomers: any[];
-  pendingPayments: any[];
+  pendingProducts: OfflineProduct[];
+  pendingCategories: OfflineCategory[];
+  pendingCustomers: OfflineCustomer[];
+  pendingPayments: OfflinePayment[];
   lastSyncTime: number | null;
   setIsOnline: (status: boolean) => void;
-  setCache: (data: { products?: any[]; categories?: any[]; customers?: any[]; rawCredits?: any[] }) => void;
+  setCache: (data: { products?: OfflineProduct[]; categories?: OfflineCategory[]; customers?: OfflineCustomer[]; rawCredits?: OfflineCredit[] }) => void;
   
   addPendingSale: (sale: OfflineSale) => void;
   removePendingSale: (localId: string) => void;
   clearPendingSales: () => void;
 
-  addPendingProduct: (product: any) => void;
+  addPendingProduct: (product: OfflineProduct) => void;
   removePendingProduct: (localId: string) => void;
   clearPendingProducts: () => void;
 
-  addPendingCategory: (category: any) => void;
+  addPendingCategory: (category: OfflineCategory) => void;
   removePendingCategory: (localId: string) => void;
   clearPendingCategories: () => void;
 
-  addPendingCustomer: (customer: any) => void;
+  addPendingCustomer: (customer: OfflineCustomer) => void;
   removePendingCustomer: (localId: string) => void;
   clearPendingCustomers: () => void;
 
-  addPendingPayment: (payment: any) => void;
+  addPendingPayment: (payment: OfflinePayment) => void;
   removePendingPayment: (localId: string) => void;
   clearPendingPayments: () => void;
 

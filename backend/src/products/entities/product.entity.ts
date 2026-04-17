@@ -1,10 +1,22 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Category } from '../../categories/entities/category.entity';
 
 @Entity('products')
 // El tenantId y el barcode forman una clave única conjunta. Así un código de barras
 // puede repetirse en tiendas distintas, pero nunca dentro de la misma tienda.
-@Index(['tenantId', 'barcode'], { unique: true, where: "barcode IS NOT NULL AND barcode != ''" })
+@Index(['tenantId', 'barcode'], {
+  unique: true,
+  where: "barcode IS NOT NULL AND barcode != ''",
+})
 export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Supplier } from './entities/supplier.entity';
@@ -35,14 +39,16 @@ export class SuppliersService {
 
   async createInvoice(tenantId: string, data: any) {
     const { items, ...invoiceData } = data;
-    
+
     const invoice = this.invoicesRepo.create({
       ...invoiceData,
       tenantId,
       date: new Date(invoiceData.date),
     });
 
-    const savedInvoice = (await this.invoicesRepo.save(invoice)) as unknown as SupplierInvoice;
+    const savedInvoice = (await this.invoicesRepo.save(
+      invoice,
+    )) as unknown as SupplierInvoice;
 
     if (items && items.length > 0) {
       const invoiceItems = items.map((item: any) => ({
@@ -72,7 +78,9 @@ export class SuppliersService {
   }
 
   async findOneSupplier(tenantId: string, id: string) {
-    const supplier = await this.suppliersRepo.findOne({ where: { id, tenantId } });
+    const supplier = await this.suppliersRepo.findOne({
+      where: { id, tenantId },
+    });
     if (!supplier) throw new NotFoundException('Supplier not found');
     return supplier;
   }
@@ -86,18 +94,24 @@ export class SuppliersService {
   async removeSupplier(tenantId: string, id: string) {
     const supplier = await this.findOneSupplier(tenantId, id);
     // Verificar si tiene facturas asociadas
-    const invoicesCount = await this.invoicesRepo.count({ where: { supplier: { id } } });
+    const invoicesCount = await this.invoicesRepo.count({
+      where: { supplier: { id } },
+    });
     if (invoicesCount > 0) {
-      throw new ConflictException('No se puede eliminar el proveedor porque tiene facturas registradas.');
+      throw new ConflictException(
+        'No se puede eliminar el proveedor porque tiene facturas registradas.',
+      );
     }
     return this.suppliersRepo.remove(supplier);
   }
 
   async updateInvoice(tenantId: string, id: string, data: any) {
     const { items, ...invoiceData } = data;
-    
+
     // Verificar existencia
-    const invoice = await this.invoicesRepo.findOne({ where: { id, tenantId } });
+    const invoice = await this.invoicesRepo.findOne({
+      where: { id, tenantId },
+    });
     if (!invoice) throw new NotFoundException('Invoice not found');
 
     // Actualizar cabecera
@@ -108,7 +122,7 @@ export class SuppliersService {
 
     // Sincronizar ítems: Borrar actuales y crear nuevos
     await this.itemsRepo.delete({ invoiceId: id });
-    
+
     if (items && items.length > 0) {
       const invoiceItems = items.map((item: any) => ({
         ...item,
@@ -122,9 +136,11 @@ export class SuppliersService {
   }
 
   async removeInvoice(tenantId: string, id: string) {
-    const invoice = await this.invoicesRepo.findOne({ where: { id, tenantId } });
+    const invoice = await this.invoicesRepo.findOne({
+      where: { id, tenantId },
+    });
     if (!invoice) throw new NotFoundException('Invoice not found');
-    
+
     // Primero borrar ítems ( cascade: true en la entidad debería funcionar, pero por seguridad lo hacemos manual)
     await this.itemsRepo.delete({ invoiceId: id });
     return this.invoicesRepo.remove(invoice);
@@ -134,7 +150,7 @@ export class SuppliersService {
 
   async createExpense(tenantId: string, userId: string, data: any) {
     const closure = await this.salesService.getOpenClosure(tenantId, userId);
-    
+
     const expense = this.expenseRepo.create({
       ...data,
       tenantId,
@@ -187,7 +203,11 @@ export class SuppliersService {
     });
   }
 
-  async updateScheduledOrderStatus(tenantId: string, id: string, status: string) {
+  async updateScheduledOrderStatus(
+    tenantId: string,
+    id: string,
+    status: string,
+  ) {
     const order = await this.scheduledRepo.findOne({ where: { id, tenantId } });
     if (!order) throw new NotFoundException('Order not found');
     order.status = status;

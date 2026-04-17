@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -27,12 +35,18 @@ export class AdminController {
   }
 
   @Patch('tenants/:id/modules')
-  updateTenantModules(@Param('id') id: string, @Body('modules') modules: string[]) {
+  updateTenantModules(
+    @Param('id') id: string,
+    @Body('modules') modules: string[],
+  ) {
     return this.adminService.updateTenantModules(id, modules);
   }
 
   @Patch('tenants/:id/status')
-  updateTenantStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+  updateTenantStatus(
+    @Param('id') id: string,
+    @Body('isActive') isActive: boolean,
+  ) {
     return this.adminService.updateTenantStatus(id, isActive);
   }
 }

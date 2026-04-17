@@ -9,11 +9,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET', 'super-secret-tiendeo-key-123'),
+      secretOrKey: configService.get<string>(
+        'JWT_SECRET',
+        'super-secret-tiendeo-key-123',
+      ),
     });
   }
 
   async validate(payload: any) {
-    return { userId: payload.sub, email: payload.email, tenantId: payload.tenantId, role: payload.role, name: payload.name };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      tenantId: payload.tenantId,
+      role: payload.role,
+      name: payload.name,
+    };
   }
 }

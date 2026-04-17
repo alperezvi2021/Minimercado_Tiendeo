@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -41,7 +51,11 @@ export class ProductsController {
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.OWNER)
-  update(@Request() req, @Param('id') id: string, @Body() updateProductDto: UpdateProductDto) {
+  update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
     const tenantId = req.user.tenantId;
     return this.productsService.update(tenantId, id, updateProductDto);
   }

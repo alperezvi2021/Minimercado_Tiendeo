@@ -9,14 +9,16 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private tenantsService: TenantsService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    if (user && await bcrypt.compare(pass, user.passwordHash)) {
+    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
       if (user.tenant && user.tenant.isActive === false) {
-        throw new UnauthorizedException('Lo sentimos, su cuenta ha sido suspendida. Contacte al administrador');
+        throw new UnauthorizedException(
+          'Lo sentimos, su cuenta ha sido suspendida. Contacte al administrador',
+        );
       }
       const { passwordHash, ...result } = user;
       return result;
@@ -25,7 +27,13 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user.id, tenantId: user.tenantId, role: user.role, name: user.name };
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      tenantId: user.tenantId,
+      role: user.role,
+      name: user.name,
+    };
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -33,10 +41,21 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
-        tenant_modules: (user.tenant?.modules && user.tenant.modules.length > 0) 
-          ? user.tenant.modules 
-          : ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']
-      }
+        tenant_modules:
+          user.tenant?.modules && user.tenant.modules.length > 0
+            ? user.tenant.modules
+            : [
+                'POS',
+                'CLOSURE',
+                'INVENTORY',
+                'REPORTS',
+                'SUPPLIERS',
+                'CUSTOMERS',
+                'CREDITS',
+                'REFUNDS',
+                'ACCOUNTING',
+              ],
+      },
     };
   }
 
@@ -46,8 +65,11 @@ export class AuthService {
       throw new Error('El correo electrónico ya está registrado');
     }
     // 1. Create Tenant
-    const tenant = await this.tenantsService.create(registerDto.storeName, registerDto.modules);
-    
+    const tenant = await this.tenantsService.create(
+      registerDto.storeName,
+      registerDto.modules,
+    );
+
     // 2. Hash Password
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(registerDto.password, saltRounds);
@@ -58,7 +80,7 @@ export class AuthService {
       name: registerDto.userName,
       email: registerDto.email,
       passwordHash,
-      role: 'OWNER'
+      role: 'OWNER',
     });
 
     // 4. Return Login Token

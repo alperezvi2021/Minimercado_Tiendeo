@@ -1,4 +1,11 @@
-import { Controller, Get, Patch, Body, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Body,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { TenantsService } from './tenants.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
@@ -15,7 +22,10 @@ export class TenantsController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('me')
-  async updateMyTenant(@Request() req, @Body() updateTenantDto: UpdateTenantDto) {
+  async updateMyTenant(
+    @Request() req,
+    @Body() updateTenantDto: UpdateTenantDto,
+  ) {
     return this.tenantsService.update(req.user.tenantId, updateTenantDto);
   }
 }

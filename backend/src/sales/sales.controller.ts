@@ -1,4 +1,14 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Param, Delete, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Get,
+  Param,
+  Delete,
+  Patch,
+} from '@nestjs/common';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { CreateRefundDto } from './dto/create-refund.dto';
@@ -25,7 +35,8 @@ export class SalesController {
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   getClosureStatus(@Request() req) {
     const { tenantId, userId, role } = req.user;
-    const searchUserId = (role === Role.ADMIN || role === Role.OWNER) ? undefined : userId;
+    const searchUserId =
+      role === Role.ADMIN || role === Role.OWNER ? undefined : userId;
     return this.salesService.getCurrentClosureStatus(tenantId, searchUserId);
   }
 
@@ -41,22 +52,38 @@ export class SalesController {
   openClosure(@Request() req, @Body() body: { openingAmount: number }) {
     const { tenantId, userId, name } = req.user;
     const userName = name || 'Cajero';
-    return this.salesService.openClosure(tenantId, userId, userName, body.openingAmount);
+    return this.salesService.openClosure(
+      tenantId,
+      userId,
+      userName,
+      body.openingAmount,
+    );
   }
 
   @Post('mark-credit')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
-  markAsCredit(@Request() req, @Body() body: { saleId: string; customerName: string }) {
+  markAsCredit(
+    @Request() req,
+    @Body() body: { saleId: string; customerName: string },
+  ) {
     const tenantId = req.user.tenantId;
-    return this.salesService.markAsCredit(tenantId, body.saleId, body.customerName);
+    return this.salesService.markAsCredit(
+      tenantId,
+      body.saleId,
+      body.customerName,
+    );
   }
 
   @Get('closure/sales')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   async getClosureSales(@Request() req) {
     const { tenantId, userId, role } = req.user;
-    const searchUserId = (role === Role.ADMIN || role === Role.OWNER) ? undefined : userId;
-    const status = await this.salesService.getCurrentClosureStatus(tenantId, searchUserId);
+    const searchUserId =
+      role === Role.ADMIN || role === Role.OWNER ? undefined : userId;
+    const status = await this.salesService.getCurrentClosureStatus(
+      tenantId,
+      searchUserId,
+    );
     if (!status || !status.closure) return [];
     return this.salesService.findByClosure(tenantId, status.closure.id);
   }
@@ -65,8 +92,12 @@ export class SalesController {
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   async getClosurePayments(@Request() req) {
     const { tenantId, userId, role } = req.user;
-    const searchUserId = (role === Role.ADMIN || role === Role.OWNER) ? undefined : userId;
-    const status = await this.salesService.getCurrentClosureStatus(tenantId, searchUserId);
+    const searchUserId =
+      role === Role.ADMIN || role === Role.OWNER ? undefined : userId;
+    const status = await this.salesService.getCurrentClosureStatus(
+      tenantId,
+      searchUserId,
+    );
     if (!status || !status.closure) return [];
     return this.salesService.getPaymentsByClosure(tenantId, status.closure.id);
   }
@@ -114,11 +145,22 @@ export class SalesController {
 
   @Post('credits/:id/partial-payment')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
-  registerPartialPayment(@Request() req, @Param('id') id: string, @Body() body: { amount: number; notes?: string }) {
+  registerPartialPayment(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { amount: number; notes?: string },
+  ) {
     const tenantId = req.user.tenantId;
     const userId = req.user.userId;
     const userName = req.user.name || 'Cajero';
-    return this.salesService.registerPartialPayment(tenantId, id, body.amount, userId, userName, body.notes);
+    return this.salesService.registerPartialPayment(
+      tenantId,
+      id,
+      body.amount,
+      userId,
+      userName,
+      body.notes,
+    );
   }
 
   @Get('credits/:id/history')
@@ -141,7 +183,12 @@ export class SalesController {
     const tenantId = req.user.tenantId;
     const userId = req.user.userId;
     const userName = req.user.name || 'Cajero';
-    return this.salesService.createRefund(tenantId, userId, userName, createRefundDto);
+    return this.salesService.createRefund(
+      tenantId,
+      userId,
+      userName,
+      createRefundDto,
+    );
   }
 
   // --- RESTAURANT MODULE ENDPOINTS ---
@@ -154,40 +201,64 @@ export class SalesController {
 
   @Post('restaurant/order')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
-  createTableOrder(@Request() req, @Body() body: { tableName: string, waiterId?: string, items: any[] }) {
+  createTableOrder(
+    @Request() req,
+    @Body() body: { tableName: string; waiterId?: string; items: any[] },
+  ) {
     const waiterId = body.waiterId || req.user.userId;
-    return this.salesService.createTableOrder(req.user.tenantId, waiterId, body);
+    return this.salesService.createTableOrder(
+      req.user.tenantId,
+      waiterId,
+      body,
+    );
   }
 
   @Patch('restaurant/order/:id/waiter')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
-  updateOrderWaiter(@Request() req, @Param('id') id: string, @Body() body: { waiterId: string }) {
-    return this.salesService.updateOrderWaiter(req.user.tenantId, id, body.waiterId);
+  updateOrderWaiter(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { waiterId: string },
+  ) {
+    return this.salesService.updateOrderWaiter(
+      req.user.tenantId,
+      id,
+      body.waiterId,
+    );
   }
 
   @Post('restaurant/order/:id/items')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
-  addItemsToTable(@Request() req, @Param('id') id: string, @Body() body: { items: any[] }) {
+  addItemsToTable(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { items: any[] },
+  ) {
     return this.salesService.addItemsToTable(req.user.tenantId, id, body.items);
   }
 
   @Patch('restaurant/order/:id/items/:itemId')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
   updateItemQuantity(
-    @Request() req, 
-    @Param('id') id: string, 
-    @Param('itemId') itemId: string, 
-    @Body() body: { quantity: number }
+    @Request() req,
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+    @Body() body: { quantity: number },
   ) {
-    return this.salesService.updateItemQuantity(req.user.tenantId, id, itemId, body.quantity);
+    return this.salesService.updateItemQuantity(
+      req.user.tenantId,
+      id,
+      itemId,
+      body.quantity,
+    );
   }
 
   @Delete('restaurant/order/:id/items/:itemId')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER, Role.WAITER)
   removeItemFromTable(
-    @Request() req, 
-    @Param('id') id: string, 
-    @Param('itemId') itemId: string
+    @Request() req,
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
   ) {
     return this.salesService.removeItemFromTable(req.user.tenantId, id, itemId);
   }
@@ -195,26 +266,40 @@ export class SalesController {
   @Post('restaurant/order/:id/close')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   closeTableOrder(
-    @Request() req, 
-    @Param('id') id: string, 
-    @Body() body: { paymentMethod: string, customerId?: string, customerName?: string }
+    @Request() req,
+    @Param('id') id: string,
+    @Body()
+    body: { paymentMethod: string; customerId?: string; customerName?: string },
   ) {
     const userId = req.user.userId;
     const userName = req.user.name || 'Cajero';
-    return this.salesService.closeTableOrder(req.user.tenantId, userId, userName, id, body);
+    return this.salesService.closeTableOrder(
+      req.user.tenantId,
+      userId,
+      userName,
+      id,
+      body,
+    );
   }
 
   @Post('restaurant/order/:id/items/:itemId/pay')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   payOrderItem(
-    @Request() req, 
-    @Param('id') id: string, 
+    @Request() req,
+    @Param('id') id: string,
     @Param('itemId') itemId: string,
-    @Body() body: { paymentMethod: string }
+    @Body() body: { paymentMethod: string },
   ) {
     const userId = req.user.userId;
     const userName = req.user.name || 'Cajero';
-    return this.salesService.payOrderItem(req.user.tenantId, userId, userName, id, itemId, body);
+    return this.salesService.payOrderItem(
+      req.user.tenantId,
+      userId,
+      userName,
+      id,
+      itemId,
+      body,
+    );
   }
 
   @Delete('restaurant/order/:id')

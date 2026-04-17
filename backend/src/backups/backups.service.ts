@@ -57,7 +57,9 @@ export class BackupsService {
     try {
       this.logger.log(`Generating dump: ${fileName}`);
       // PGPASSWORD is used to avoid interactive prompt
-      await execPromise(`PGPASSWORD="${dbPass}" pg_dump -h ${dbHost} -U ${dbUser} -d ${dbName} -f ${tempPath}`);
+      await execPromise(
+        `PGPASSWORD="${dbPass}" pg_dump -h ${dbHost} -U ${dbUser} -d ${dbName} -f ${tempPath}`,
+      );
 
       this.logger.log(`Uploading to Minio: ${fileName}`);
       await this.minioClient.fPutObject(this.bucketName, fileName, tempPath);
@@ -81,12 +83,22 @@ export class BackupsService {
       const stream = this.minioClient.listObjectsV2(this.bucketName, '', true);
       stream.on('data', (obj) => backups.push(obj));
       stream.on('error', (err) => reject(err));
-      stream.on('end', () => resolve(backups.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())));
+      stream.on('end', () =>
+        resolve(
+          backups.sort(
+            (a, b) => b.lastModified.getTime() - a.lastModified.getTime(),
+          ),
+        ),
+      );
     });
   }
 
   async getDownloadUrl(fileName: string): Promise<string> {
-    return await this.minioClient.presignedGetObject(this.bucketName, fileName, 24 * 60 * 60); // 24h
+    return await this.minioClient.presignedGetObject(
+      this.bucketName,
+      fileName,
+      24 * 60 * 60,
+    ); // 24h
   }
 
   async deleteBackup(fileName: string): Promise<void> {

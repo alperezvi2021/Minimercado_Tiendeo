@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('cash_closures')
@@ -22,7 +29,12 @@ export class CashClosure {
   @CreateDateColumn({ name: 'opened_at' })
   openedAt: Date;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0, name: 'opening_amount' })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    default: 0,
+    name: 'opening_amount',
+  })
   openingAmount: number;
 
   @Column({ name: 'closed_at', nullable: true })
@@ -34,10 +46,20 @@ export class CashClosure {
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   totalCreditSales: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0, name: 'total_credit_payments' })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    default: 0,
+    name: 'total_credit_payments',
+  })
   totalCreditPayments: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0, name: 'total_expenses' })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    default: 0,
+    name: 'total_expenses',
+  })
   totalExpenses: number;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })

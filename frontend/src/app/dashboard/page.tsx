@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft, AlertCircle, Utensils } from 'lucide-react';
-import { useOfflineStore } from '@/store/useOfflineStore';
+import { useOfflineStore, OfflineSale, OfflineCustomer, OfflineSaleItem } from '@/store/useOfflineStore';
 import { formatCurrency, parseCurrency } from '@/utils/formatters';
 
 interface Product {
@@ -18,6 +18,27 @@ interface Product {
 interface CartItem {
   product: Product;
   quantity: number;
+  productId?: string | number;
+  productName?: string;
+  unitPrice?: number;
+  subtotal?: number;
+  [key: string]: unknown;
+}
+
+interface CompletedSale {
+  localId?: string;
+  id?: string | number;
+  paymentMethod?: string;
+  total?: number;
+  totalAmount?: number;
+  changeAmount?: number;
+  receivedAmount?: number;
+  isCredit?: boolean;
+  invoiceNumber?: string;
+  createdAt?: string | number | Date;
+  customerName?: string;
+  items?: CartItem[];
+  [key: string]: unknown;
 }
 
 export default function PosPage() {
@@ -26,13 +47,13 @@ export default function PosPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [posState, setPosState] = useState<'billing' | 'payment'>('billing');
-  const [completedSale, setCompletedSale] = useState<any>(null);
+  const [completedSale, setCompletedSale] = useState<CompletedSale | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'efectivo' | 'credito'>('efectivo');
   const [customerName, setCustomerName] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<OfflineCustomer[]>([]);
   const [activeTab, setActiveTab] = useState<'products' | 'cart'>('products');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastCheckoutTime, setLastCheckoutTime] = useState(0); 
@@ -63,7 +84,7 @@ export default function PosPage() {
 
   useEffect(() => {
     // 1. Carga inmediata desde el caché (Instantánea)
-    if (offlineStore.products.length > 0) setAllProducts(offlineStore.products);
+    if (offlineStore.products.length > 0) setAllProducts(offlineStore.products as unknown as Product[]);
     if (offlineStore.customers.length > 0) setCustomers(offlineStore.customers);
 
     // 2. Lógica de Sincronización Inteligente
@@ -207,7 +228,7 @@ export default function PosPage() {
 
   const fetchProducts = async () => {
     if (!offlineStore.isOnline) {
-      setAllProducts(offlineStore.products);
+      setAllProducts(offlineStore.products as unknown as Product[]);
       return;
     }
     try {
@@ -220,17 +241,17 @@ export default function PosPage() {
         setAllProducts(data);
         offlineStore.setCache({ products: data });
       } else {
-        setAllProducts(offlineStore.products);
+        setAllProducts(offlineStore.products as unknown as Product[]);
       }
     } catch (error) {
       console.error("Error fetching products", error);
-      setAllProducts(offlineStore.products);
+      setAllProducts(offlineStore.products as unknown as Product[]);
     }
   };
 
   const fetchCustomers = async () => {
     if (!offlineStore.isOnline) {
-      setCustomers(offlineStore.customers);
+      setCustomers(offlineStore.customers as OfflineCustomer[]);
       return;
     }
     try {
@@ -243,11 +264,11 @@ export default function PosPage() {
         setCustomers(data);
         offlineStore.setCache({ customers: data });
       } else {
-        setCustomers(offlineStore.customers);
+        setCustomers(offlineStore.customers as OfflineCustomer[]);
       }
     } catch (error) {
       console.error("Error fetching customers", error);
-      setCustomers(offlineStore.customers);
+      setCustomers(offlineStore.customers as OfflineCustomer[]);
     }
   };
 
@@ -395,8 +416,8 @@ export default function PosPage() {
   const processSale = async () => {
     if (cart.length === 0 || isProcessing) return;
     setIsProcessing(true);
-    let finalCustomerId = selectedCustomerId;
-    let finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
+    const finalCustomerId = selectedCustomerId;
+    const finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
 
     const rawTotal = calculateTotal();
     const roundedTotal = calculateRoundedTotal();
@@ -418,7 +439,7 @@ export default function PosPage() {
         quantity: 1,
         unitPrice: adjustment,
         subtotal: adjustment
-      } as any);
+      } as unknown as typeof saleItems[0]);
     }
 
     const payload = {
@@ -509,19 +530,19 @@ export default function PosPage() {
     }
   };
 
-  const queueOfflineSale = (payload: any) => {
+  const queueOfflineSale = (payload: Record<string, unknown>) => {
     const uuid = crypto.randomUUID();
     const offlineId = 'off-' + uuid;
-    const saleToStore = { 
-      ...payload, 
-      id: offlineId, 
+    const saleToStore: OfflineSale = { 
       localId: offlineId,
-      timestamp: Date.now(),
+      items: (payload.items as OfflineSaleItem[]) ?? [],
+      total: (payload.totalAmount as number) ?? 0,
+      paymentMethod: (payload.paymentMethod as string) ?? 'efectivo',
       isCredit: payload.paymentMethod === 'credito',
-      createdAt: new Date().toISOString(), 
-      offline: true,
+      timestamp: Date.now(),
       receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
-      changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0
+      changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0,
+      customerId: (payload.customerId as string | null | undefined) ?? undefined,
     };
     offlineStore.addPendingSale(saleToStore);
     
@@ -1051,7 +1072,7 @@ export default function PosPage() {
                       >
                         <option value="">-- Seleccionar de la lista --</option>
                         {customers.map(c => (
-                          <option key={c.id} value={c.id}>{c.name} {c.totalDebt > 0 ? `($${formatCurrency(c.totalDebt)})` : ''}</option>
+                          <option key={c.id} value={c.id}>{c.name} {Number(c.totalDebt) > 0 ? `($${formatCurrency(Number(c.totalDebt))})` : ''}</option>
                         ))}
                       </select>
 
@@ -1221,17 +1242,18 @@ export default function PosPage() {
   lines.push(centerText('DOCUMENTO POS'));
   lines.push(centerText(`No: ${completedSale.invoiceNumber || 'POS-' + (completedSale.id ? completedSale.id.toString().substring(0,6).toUpperCase() : '000123')}`));
   lines.push(divider);
-  lines.push(formatLine('Fecha:', new Date(completedSale.createdAt).toLocaleDateString('es-CO')));
-  lines.push(formatLine('Hora:', new Date(completedSale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })));
+  lines.push(formatLine('Fecha:', new Date(completedSale.createdAt ?? Date.now()).toLocaleDateString('es-CO')));
+  lines.push(formatLine('Hora:', new Date(completedSale.createdAt ?? Date.now()).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })));
   lines.push('');
 
-  const adjustmentItem = completedSale.items.find((i: any) => i.productId === 'rounding-adjustment');
-  const itemsToPrint = completedSale.items.filter((i: any) => i.productId !== 'rounding-adjustment');
-  const rawSubtotal = Number(completedSale.totalAmount) - (adjustmentItem ? Number(adjustmentItem.subtotal) : 0);
+  const items = completedSale.items || [];
+  const adjustmentItem = items.find((i: CartItem) => i.productId === 'rounding-adjustment');
+  const itemsToPrint = items.filter((i: CartItem) => i.productId !== 'rounding-adjustment');
+  const rawSubtotal = Number(completedSale.totalAmount || 0) - (adjustmentItem ? Number(adjustmentItem.subtotal as number) : 0);
 
-  itemsToPrint.forEach((item: any) => {
-    const name = item.productName || item.product.name;
-    const priceRound = formatCurrency(Math.round((item.unitPrice || item.product.price) * item.quantity));
+  itemsToPrint.forEach((item: CartItem) => {
+    const name = (item.productName as string) || item.product.name;
+    const priceRound = formatCurrency(Math.round(((item.unitPrice as number) || item.product.price) * item.quantity));
     const leftInfo = `${name.substring(0, is80mm ? 16 : 11)} x${item.quantity}`;
     lines.push(formatLine(leftInfo, priceRound));
   });
@@ -1246,12 +1268,13 @@ export default function PosPage() {
   lines.push(formatLine('TOTAL', formatCurrency(completedSale.totalAmount)));
   lines.push(divider);
   lines.push('');
-  lines.push(`Pago: ${completedSale.paymentMethod.toUpperCase()}`);
-  if (completedSale.paymentMethod === 'efectivo') {
+  const pMethod = completedSale.paymentMethod || 'efectivo';
+  lines.push(`Pago: ${pMethod.toUpperCase()}`);
+  if (pMethod === 'efectivo') {
     lines.push(formatLine('Recibido:', formatCurrency(completedSale.receivedAmount || 0)));
     lines.push(formatLine('Cambio:', formatCurrency(completedSale.changeAmount || 0)));
   }
-  if (completedSale.paymentMethod === 'credito' && completedSale.customerName) {
+  if (pMethod === 'credito' && completedSale.customerName) {
     lines.push(centerText(completedSale.customerName.toUpperCase()));
   }
   

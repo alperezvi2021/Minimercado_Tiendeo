@@ -70,7 +70,7 @@ export default function SyncManager() {
           if (res.ok) {
             const savedCat = await res.json();
             if (cat.localId && savedCat.id) categoryIdMapping[cat.localId] = savedCat.id;
-            removePendingCategory(cat.localId);
+            if (cat.localId) removePendingCategory(cat.localId);
             results.success.push(`Categoría: ${cat.name}`);
           } else {
             results.failed.push(`Categoría: ${cat.name} (Error servidor)`);
@@ -84,10 +84,13 @@ export default function SyncManager() {
       // 2. Sincronizar Productos
       if (pendingProducts.length > 0) {
         try {
-          const productsToSync = pendingProducts.map(p => ({
-              ...p,
-              categoryId: p.categoryId && categoryIdMapping[p.categoryId] ? categoryIdMapping[p.categoryId] : (p.categoryId?.startsWith('temp-') ? null : p.categoryId)
-          }));
+          const productsToSync = pendingProducts.map(p => {
+              const pCategoryId = p.categoryId as string | undefined;
+              return {
+                  ...p,
+                  categoryId: pCategoryId && categoryIdMapping[pCategoryId] ? categoryIdMapping[pCategoryId] : (pCategoryId?.startsWith('temp-') ? null : pCategoryId)
+              };
+          });
           const res = await fetch(`${apiUrl}/products/bulk`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -124,7 +127,7 @@ export default function SyncManager() {
           if (res.ok) {
             const savedCust = await res.json();
             if (cust.localId && savedCust.id) customerIdMapping[cust.localId] = savedCust.id;
-            removePendingCustomer(cust.localId);
+            if (cust.localId) removePendingCustomer(cust.localId);
             results.success.push(`Cliente: ${cust.name}`);
           } else {
             results.failed.push(`Cliente: ${cust.name} (Error servidor)`);
@@ -138,7 +141,7 @@ export default function SyncManager() {
       // 4. Sincronizar Ventas
       for (const sale of pendingSales) {
         try {
-          const isTempCustomer = !!sale.customerId?.startsWith('temp-cust-');
+          const isTempCustomer = typeof sale.customerId === 'string' && sale.customerId.startsWith('temp-cust-');
           const finalCustomerId = isTempCustomer ? customerIdMapping[sale.customerId as string] : sale.customerId;
 
           // Si el cliente era temporal y NO se pudo sincronizar, saltamos esta venta para evitar error de FK
@@ -157,7 +160,7 @@ export default function SyncManager() {
             if (sale.paymentMethod === 'credito' && savedSale.creditSale?.id) {
                salesCreditIdMapping[sale.localId] = savedSale.creditSale.id;
             }
-            removePendingSale(sale.localId);
+            if (sale.localId) removePendingSale(sale.localId);
             results.success.push(`Venta: $${sale.total}`);
           } else {
             results.failed.push(`Venta: $${sale.total} (Error servidor)`);
@@ -173,7 +176,7 @@ export default function SyncManager() {
         try {
           const finalCreditId = (pay.creditSaleId && salesCreditIdMapping[pay.creditSaleId as string]) ? salesCreditIdMapping[pay.creditSaleId as string] : pay.creditSaleId;
 
-          if (pay.creditSaleId?.startsWith('temp-') && !finalCreditId) {
+          if (typeof pay.creditSaleId === 'string' && pay.creditSaleId.startsWith('temp-') && !finalCreditId) {
              results.failed.push(`Abono: $${pay.amount} (Crédito original no sincronizado)`);
              continue;
           }
@@ -184,7 +187,7 @@ export default function SyncManager() {
             body: JSON.stringify({ amount: pay.amount, notes: pay.notes, localId: pay.localId })
           });
           if (res.ok) {
-            removePendingPayment(pay.localId);
+            if (pay.localId) removePendingPayment(pay.localId);
             results.success.push(`Abono: $${pay.amount}`);
           } else {
             results.failed.push(`Abono: $${pay.amount} (Error servidor)`);

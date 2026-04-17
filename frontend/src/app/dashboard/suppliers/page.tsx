@@ -45,6 +45,8 @@ interface Invoice {
   isPaid: boolean;
   supplier: { id: string; name: string };
   description?: string;
+  discount?: number;
+  items?: InvoiceItem[];
 }
 
 export default function SuppliersPage() {
@@ -187,7 +189,7 @@ export default function SuppliersPage() {
     setInvItems(invItems.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
+  const updateItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
     const newItems = [...invItems];
     newItems[index] = { ...newItems[index], [field]: value };
     setInvItems(newItems);
@@ -247,14 +249,14 @@ export default function SuppliersPage() {
     }
   };
 
-  const handleEditInvoice = (inv: any) => {
+  const handleEditInvoice = (inv: Invoice) => {
     setEditingInvoice(inv);
     setInvNumber(inv.invoiceNumber);
     setInvDate(new Date(inv.date).toISOString().split('T')[0]);
     setSelectedSupplierId(inv.supplier?.id || '');
     setInvDiscount(inv.discount || 0);
     if (inv.items && inv.items.length > 0) {
-      setInvItems(inv.items.map((i: any) => ({
+      setInvItems(inv.items.map((i: InvoiceItem) => ({
         description: i.description,
         quantity: Number(i.quantity),
         unitNetValue: Number(i.unitNetValue),
@@ -342,10 +344,11 @@ export default function SuppliersPage() {
   const sortedSuppliers = [...suppliers].filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     s.taxId?.toLowerCase().includes(searchTerm.toLowerCase())
-  ).sort((a: any, b: any) => {
+  ).sort((a: Supplier, b: Supplier) => {
     if (!sortConfig) return 0;
-    const aValue = a[sortConfig.key] || '';
-    const bValue = b[sortConfig.key] || '';
+    const key = sortConfig.key as keyof Supplier;
+    const aValue = String(a[key] || '');
+    const bValue = String(b[key] || '');
     if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
@@ -354,15 +357,18 @@ export default function SuppliersPage() {
   const sortedInvoices = [...invoices].filter(inv => 
     inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
     inv.supplier?.name.toLowerCase().includes(searchTerm.toLowerCase())
-  ).sort((a: any, b: any) => {
+  ).sort((a: Invoice, b: Invoice) => {
     if (!sortConfig) return 0;
-    let aValue = a[sortConfig.key];
-    let bValue = b[sortConfig.key];
+    let aValue = (a as any)[sortConfig.key];
+    let bValue = (b as any)[sortConfig.key];
     
     if (sortConfig.key === 'supplier') {
       aValue = a.supplier?.name || '';
       bValue = b.supplier?.name || '';
     }
+
+    if (aValue === null || aValue === undefined) aValue = '';
+    if (bValue === null || bValue === undefined) bValue = '';
 
     if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -647,11 +653,11 @@ export default function SuppliersPage() {
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Compras Brutas</p>
-                          <p className="text-3xl font-black text-slate-900 dark:text-white">${formatCurrency(invoices.reduce((s: number, i: any) => s + i.totalAmount, 0))}</p>
+                          <p className="text-3xl font-black text-slate-900 dark:text-white">${formatCurrency(invoices.reduce((s: number, i: Invoice) => s + Number(i.totalAmount || 0), 0))}</p>
                        </div>
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Impuestos</p>
-                          <p className="text-3xl font-black text-blue-600">${formatCurrency(invoices.reduce((s: number, i: any) => s + i.totalTax, 0))}</p>
+                          <p className="text-3xl font-black text-blue-600">${formatCurrency(invoices.reduce((s: number, i: Invoice) => s + Number(i.totalTax || 0), 0))}</p>
                        </div>
                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-700">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Facturas Pendientes</p>
@@ -673,8 +679,8 @@ export default function SuppliersPage() {
                           </thead>
                           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                             {suppliers.map((s: Supplier) => {
-                              const supInvoices = invoices.filter((i: any) => i.supplier?.id === s.id);
-                              const total = supInvoices.reduce((sum: number, i: any) => sum + i.totalAmount, 0);
+                              const supInvoices = invoices.filter((i: Invoice) => i.supplier?.id === s.id);
+                              const total = supInvoices.reduce((sum: number, i: Invoice) => sum + Number(i.totalAmount || 0), 0);
                               return (
                                 <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                   <td className="px-6 py-4">

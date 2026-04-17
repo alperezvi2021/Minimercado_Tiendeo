@@ -1,5 +1,18 @@
 import { useState, useCallback } from 'react';
 
+// Tipos mínimos para Web Serial API
+interface SerialPort {
+  open(options: { baudRate: number; dataBits?: number; stopBits?: number; parity?: string }): Promise<void>;
+  readable: any; // Se asume stream, ignoramos tipo exacto interno para evitar conflictos
+  close(): Promise<void>;
+}
+interface Serial {
+  requestPort(): Promise<SerialPort>;
+}
+interface NavigatorWithSerial extends Navigator {
+  serial: Serial;
+}
+
 export const useUSBScale = () => {
   const [weight, setWeight] = useState<number>(0);
   const [isReading, setIsReading] = useState(false);
@@ -14,12 +27,12 @@ export const useUSBScale = () => {
     setIsReading(true);
     setError(null);
 
-    let port: any = null;
-    let reader: any = null;
+    let port: SerialPort | null = null;
+    let reader: ReadableStreamDefaultReader | null = null;
 
     try {
       // Solicitar acceso al puerto
-      port = await (navigator as any).serial.requestPort();
+      port = await (navigator as NavigatorWithSerial).serial.requestPort();
       
       // Abrir con configuración estándar (BaudRate 9600 es muy común en pesas)
       await port.open({ baudRate: 9600, dataBits: 8, stopBits: 1, parity: 'none' });
@@ -63,14 +76,18 @@ export const useUSBScale = () => {
       await readableStreamClosed?.catch(() => { /* Ignore */ });
       await port.close();
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error leyendo la pesa:', err);
-      if (err.name === 'NotFoundError') {
-        setError('No se seleccionó ninguna pesa.');
-      } else if (err.name === 'SecurityError') {
-        setError('Permiso denegado para el puerto serial.');
+      if (err instanceof Error) {
+        if (err.name === 'NotFoundError') {
+          setError('No se seleccionó ninguna pesa.');
+        } else if (err.name === 'SecurityError') {
+          setError('Permiso denegado para el puerto serial.');
+        } else {
+          setError('Error al conectar con la pesa. Verifica la conexión.');
+        }
       } else {
-        setError('Error al conectar con la pesa. Verifica la conexión.');
+        setError('Error desconocido al intentar conectar.');
       }
     } finally {
       setIsReading(false);

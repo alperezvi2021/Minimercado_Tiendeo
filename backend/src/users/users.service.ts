@@ -13,16 +13,26 @@ export class UsersService {
   ) {}
 
   async findByEmail(email: string): Promise<User | null> {
-    const user = await this.usersRepository.findOne({ 
+    const user = await this.usersRepository.findOne({
       where: { email },
-      relations: ['tenant']
+      relations: ['tenant'],
     });
-    
+
     // Ensure backward compatibility: if tenant exists but modules is null, set defaults
     if (user?.tenant && !user.tenant.modules) {
-      user.tenant.modules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+      user.tenant.modules = [
+        'POS',
+        'CLOSURE',
+        'INVENTORY',
+        'REPORTS',
+        'SUPPLIERS',
+        'CUSTOMERS',
+        'CREDITS',
+        'REFUNDS',
+        'ACCOUNTING',
+      ];
     }
-    
+
     return user;
   }
 
@@ -49,17 +59,21 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async update(id: string, updateData: Partial<User>, tenantId?: string): Promise<User> {
+  async update(
+    id: string,
+    updateData: Partial<User>,
+    tenantId?: string,
+  ): Promise<User> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    
+
     const user = await this.usersRepository.findOne({ where });
     if (!user) throw new Error('User not found or access denied');
-    
+
     if (updateData.passwordHash && !updateData.passwordHash.startsWith('$2')) {
       updateData.passwordHash = await bcrypt.hash(updateData.passwordHash, 10);
     }
-    
+
     Object.assign(user, updateData);
     return this.usersRepository.save(user);
   }
@@ -67,10 +81,10 @@ export class UsersService {
   async remove(id: string, tenantId?: string): Promise<void> {
     const where: any = { id };
     if (tenantId) where.tenantId = tenantId;
-    
+
     const user = await this.usersRepository.findOne({ where });
     if (!user) throw new Error('User not found or access denied');
-    
+
     await this.usersRepository.remove(user);
   }
 }

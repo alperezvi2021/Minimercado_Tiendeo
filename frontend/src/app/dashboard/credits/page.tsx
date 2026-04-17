@@ -58,7 +58,7 @@ export default function CreditsPage() {
     if (isOnline) {
       fetchCredits();
     } else {
-      setCredits(cachedCredits || []);
+      setCredits((cachedCredits as unknown as CreditSale[]) || []);
       setLoading(false);
     }
   }, [isOnline, cachedCredits]);
@@ -76,7 +76,7 @@ export default function CreditsPage() {
       }
     } catch (e) {
       console.error(e);
-      setCredits(cachedCredits || []);
+      setCredits((cachedCredits as unknown as CreditSale[]) || []);
     } finally {
       setLoading(false);
     }
@@ -174,8 +174,8 @@ export default function CreditsPage() {
   const sortedCredits = [...credits].sort((a, b) => {
     if (!sortConfig) return 0;
     
-    let aValue: any = a[sortConfig.key as keyof CreditSale];
-    let bValue: any = b[sortConfig.key as keyof CreditSale];
+    let aValue: string | number | undefined = a[sortConfig.key as keyof CreditSale] as string | number | undefined;
+    let bValue: string | number | undefined = b[sortConfig.key as keyof CreditSale] as string | number | undefined;
 
     if (sortConfig.key === 'invoice') {
       aValue = a.sale?.invoiceNumber || '';
@@ -187,9 +187,11 @@ export default function CreditsPage() {
        aValue = Number(a.amount);
        bValue = Number(b.amount);
     }
+    const aSafe = aValue ?? '';
+    const bSafe = bValue ?? '';
     
-    if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+    if (aSafe < bSafe) return sortConfig.direction === 'ascending' ? -1 : 1;
+    if (aSafe > bSafe) return sortConfig.direction === 'ascending' ? 1 : -1;
     return 0;
   });
 

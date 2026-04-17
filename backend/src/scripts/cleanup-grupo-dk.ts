@@ -23,7 +23,9 @@ async function run() {
   const customerRepo = getRepository(Customer);
   const creditRepo = getRepository(CreditSale);
 
-  const tenant = await tenantRepo.findOne({ where: { name: 'TIENDA GRUPO DK' } });
+  const tenant = await tenantRepo.findOne({
+    where: { name: 'TIENDA GRUPO DK' },
+  });
   if (!tenant) {
     console.log('Tenant "TIENDA GRUPO DK" not found.');
     await connection.close();
@@ -36,20 +38,22 @@ async function run() {
       { tenantId: tenant.id, name: 'Cliente Genérico' },
       { tenantId: tenant.id, name: 'Cliente Recuperado' },
       { tenantId: tenant.id, name: 'daniel' },
-      { tenantId: tenant.id, name: 'Juan Perez' }
-    ]
+      { tenantId: tenant.id, name: 'Juan Perez' },
+    ],
   });
 
   for (const customer of customersToDelete) {
     console.log(`Deleting customer: ${customer.name} (${customer.id})`);
-    
+
     // Delete associated credits first
-    const credits = await creditRepo.find({ where: { customerId: customer.id } });
+    const credits = await creditRepo.find({
+      where: { customerId: customer.id },
+    });
     if (credits.length > 0) {
       console.log(`  Deleting ${credits.length} credit records...`);
       await creditRepo.remove(credits);
     }
-    
+
     await customerRepo.remove(customer);
   }
 

@@ -24,8 +24,8 @@ import { RefundItem } from '../sales/entities/refund-item.entity';
       InvoiceItem,
       SaleItem,
       Refund,
-      RefundItem
-    ])
+      RefundItem,
+    ]),
   ],
   controllers: [MaintenanceController],
   providers: [MaintenanceService],

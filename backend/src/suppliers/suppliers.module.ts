@@ -13,7 +13,13 @@ import { SalesModule } from '../sales/sales.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Supplier, SupplierInvoice, InvoiceItem, Expense, ScheduledOrder]),
+    TypeOrmModule.forFeature([
+      Supplier,
+      SupplierInvoice,
+      InvoiceItem,
+      Expense,
+      ScheduledOrder,
+    ]),
     SalesModule,
   ],
   controllers: [SuppliersController],

@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Refund } from './refund.entity';
 
 @Entity('refund_items')
@@ -9,7 +15,7 @@ export class RefundItem {
   @Column({ name: 'refund_id' })
   refundId: string;
 
-  @ManyToOne(() => Refund, refund => refund.items, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Refund, (refund) => refund.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'refund_id' })
   refund: Refund;
 

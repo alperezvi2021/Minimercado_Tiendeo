@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { Sale } from './sale.entity';
 import { CreditPayment } from './credit-payment.entity';
 
@@ -30,7 +39,12 @@ export class CreditSale {
   @Column('decimal', { precision: 10, scale: 2 })
   amount: number;
 
-  @Column('decimal', { name: 'remaining_amount', precision: 10, scale: 2, default: 0 })
+  @Column('decimal', {
+    name: 'remaining_amount',
+    precision: 10,
+    scale: 2,
+    default: 0,
+  })
   remainingAmount: number;
 
   @Column({ default: 'PENDING' }) // PENDING, PARTIAL, PAID

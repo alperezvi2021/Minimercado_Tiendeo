@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards, Request, Param, Patch, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -21,7 +31,7 @@ export class UsersController {
   async create(@Request() req, @Body() createUserDto: any) {
     return this.usersService.create({
       ...createUserDto,
-      tenantId: req.user.tenantId
+      tenantId: req.user.tenantId,
     });
   }
 
@@ -36,7 +46,11 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(Role.SUPER_ADMIN, Role.OWNER, Role.ADMIN)
-  async update(@Request() req, @Param('id') id: string, @Body() updateUserDto: any) {
+  async update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() updateUserDto: any,
+  ) {
     if (req.user.role !== Role.SUPER_ADMIN) {
       return this.usersService.update(id, updateUserDto, req.user.tenantId);
     }

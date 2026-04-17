@@ -46,10 +46,19 @@ export default function SettingsPage() {
   };
   
   // Users management state
-  const [users, setUsers] = useState<any[]>([]);
+interface SettingsUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  password?: string;
+  [key: string]: unknown;
+}
+
+  const [users, setUsers] = useState<SettingsUser[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<SettingsUser | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'CASHIER' });
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
@@ -112,15 +121,16 @@ export default function SettingsPage() {
     }
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: SettingsUser) => {
     setEditingUser({ ...user, password: '' });
     setIsEditModalOpen(true);
   };
 
   const handleUpdateUser = async () => {
+    if (!editingUser) return;
     try {
       const token = localStorage.getItem('access_token');
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         name: editingUser.name,
         email: editingUser.email,
         role: editingUser.role
@@ -575,7 +585,7 @@ export default function SettingsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-sm">
-                    {users.map((u: any) => (
+                    {users.map((u: SettingsUser) => (
                       <tr key={u.id}>
                         <td className="px-6 py-4 font-bold text-gray-900 dark:text-white uppercase">{u.name}</td>
                         <td className="px-6 py-4 text-gray-500">{u.email}</td>

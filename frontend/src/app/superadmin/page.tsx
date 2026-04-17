@@ -5,17 +5,34 @@ import Link from 'next/link';
 import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X, ToggleRight, ToggleLeft, Power } from 'lucide-react';
 import BackupsManager from '@/components/admin/BackupsManager';
 
+interface Tenant {
+  id: string;
+  name: string;
+  modules?: string[];
+  isActive?: boolean;
+  userCount?: number;
+  createdAt: string;
+}
+
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  tenant?: { name: string };
+}
+
 export default function SuperAdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('tenants');
-  const [tenants, setTenants] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedTenantForReset, setSelectedTenantForReset] = useState<any>(null);
+  const [selectedTenantForReset, setSelectedTenantForReset] = useState<Tenant | null>(null);
   const [adminResetConfirmText, setAdminResetConfirmText] = useState('');
   const [isResettingData, setIsResettingData] = useState(false);
   const [resetOptions, setResetOptions] = useState({
@@ -26,10 +43,10 @@ export default function SuperAdminPage() {
     cleanSupplierInvoices: false
   });
   const [isCleaningData, setIsCleaningData] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [isModulesModalOpen, setIsModulesModalOpen] = useState(false);
-  const [selectedTenantForModules, setSelectedTenantForModules] = useState<any>(null);
+  const [selectedTenantForModules, setSelectedTenantForModules] = useState<Tenant | null>(null);
   const [editingModules, setEditingModules] = useState<string[]>([]);
   const [isSavingModules, setIsSavingModules] = useState(false);
 
@@ -46,7 +63,7 @@ export default function SuperAdminPage() {
     { id: 'RESTAURANT', name: 'Servicio a Mesas (Restaurante)' },
   ];
 
-  const openModulesModal = (tenant: any) => {
+  const openModulesModal = (tenant: Tenant) => {
     const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
     setSelectedTenantForModules(tenant);
     setEditingModules(tenant.modules || defaultModules);
@@ -54,6 +71,7 @@ export default function SuperAdminPage() {
   };
 
   const handleSaveModules = async () => {
+    if (!selectedTenantForModules) return;
     setIsSavingModules(true);
     try {
       const token = localStorage.getItem('access_token');
@@ -104,7 +122,7 @@ export default function SuperAdminPage() {
   };
 
   const handleResetPassword = async () => {
-    if (!newPassword) return;
+    if (!newPassword || !selectedUser) return;
     try {
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/users/${selectedUser.id}/reset-password`, {
@@ -134,6 +152,7 @@ export default function SuperAdminPage() {
       return;
     }
 
+    if (!selectedTenantForReset) return;
     setIsResettingData(true);
     try {
       const token = localStorage.getItem('access_token');
@@ -166,7 +185,8 @@ export default function SuperAdminPage() {
   };
 
   const handleAdminCleanupDuplicates = async () => {
-    if (!confirm(`Este proceso eliminará los registros de ventas duplicados para ${selectedTenantForReset?.name} (manteniendo el más reciente). ¿Deseas continuar?`)) return;
+    if (!selectedTenantForReset) return;
+    if (!confirm(`Este proceso eliminará los registros de ventas duplicados para ${selectedTenantForReset.name} (manteniendo el más reciente). ¿Deseas continuar?`)) return;
     
     setIsCleaningData(true);
     try {
@@ -220,8 +240,8 @@ export default function SuperAdminPage() {
     router.push('/login');
   };
 
-  const filteredTenants = tenants.filter((t: any) => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredUsers = users.filter((u: any) => u.email.toLowerCase().includes(searchQuery.toLowerCase()) || u.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredTenants = tenants.filter((t: Tenant) => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredUsers = users.filter((u: AdminUser) => u.email.toLowerCase().includes(searchQuery.toLowerCase()) || u.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="min-h-screen bg-[#050510] text-gray-300 font-sans selection:bg-blue-500/30">
@@ -390,7 +410,7 @@ export default function SuperAdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredTenants.map((t: any) => (
+                {filteredTenants.map((t: Tenant) => (
                   <tr key={t.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-8 py-6 text-xs font-mono text-gray-600 group-hover:text-blue-500 transition-colors">{t.id}</td>
                     <td className="px-8 py-6 font-black text-white text-lg">{t.name}</td>
@@ -450,7 +470,7 @@ export default function SuperAdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredUsers.map((u: any) => (
+                {filteredUsers.map((u: AdminUser) => (
                   <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
                     <td className="px-8 py-6 font-black text-white text-lg">{u.name}</td>
                     <td className="px-8 py-6 text-sm font-medium text-blue-400">{u.email}</td>

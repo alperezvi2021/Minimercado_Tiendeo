@@ -76,8 +76,8 @@ export default function InventoryPage() {
 
   useEffect(() => {
     // 1. Carga inmediata del caché
-    if (cachedProducts.length > 0) setProducts(cachedProducts);
-    if (cachedCategories.length > 0) setCategories(cachedCategories);
+    if (cachedProducts.length > 0) setProducts(cachedProducts as unknown as Product[]);
+    if (cachedCategories.length > 0) setCategories(cachedCategories as unknown as Category[]);
 
     // 2. Lógica de Sincronización Inteligente
     const { lastSyncTime } = useOfflineStore.getState();
@@ -130,7 +130,7 @@ export default function InventoryPage() {
       }
     } catch (error) {
       console.error("Error fetching categories", error);
-      setCategories(cachedCategories);
+      setCategories(cachedCategories as unknown as Category[]);
     }
   };
 
@@ -147,7 +147,7 @@ export default function InventoryPage() {
       }
     } catch (error) {
       console.error("Error fetching products", error);
-      setProducts(cachedProducts);
+      setProducts(cachedProducts as unknown as Product[]);
     } finally {
       setLoading(false);
     }
@@ -207,7 +207,7 @@ export default function InventoryPage() {
         profitMargin: profitMargin ? parseFloat(profitMargin) : null,
         stock: parseFloat(stock),
         lowStockThreshold: parseInt(lowStockThreshold),
-        categoryId: categoryId || null,
+        categoryId: categoryId || undefined,
         sellByWeight,
         unit,
       };
@@ -544,8 +544,8 @@ export default function InventoryPage() {
   }).sort((a, b) => {
     if (!sortConfig) return 0;
     
-    let aValue: any = a[sortConfig.key as keyof Product];
-    let bValue: any = b[sortConfig.key as keyof Product];
+    let aValue: string | number | undefined = a[sortConfig.key as keyof Product] as string | number | undefined;
+    let bValue: string | number | undefined = b[sortConfig.key as keyof Product] as string | number | undefined;
 
     if (sortConfig.key === 'category') {
       aValue = a.category?.name || '';
@@ -555,8 +555,11 @@ export default function InventoryPage() {
     if (aValue === null || aValue === undefined) aValue = '';
     if (bValue === null || bValue === undefined) bValue = '';
 
-    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    const aSafe = aValue;
+    const bSafe = bValue;
+
+    if (aSafe < bSafe) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aSafe > bSafe) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
   });
 

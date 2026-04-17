@@ -14,7 +14,16 @@ import { RefundItem } from './entities/refund-item.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Sale, SaleItem, CreditSale, CreditPayment, CashClosure, Customer, Refund, RefundItem]),
+    TypeOrmModule.forFeature([
+      Sale,
+      SaleItem,
+      CreditSale,
+      CreditPayment,
+      CashClosure,
+      Customer,
+      Refund,
+      RefundItem,
+    ]),
     ProductsModule,
   ],
   controllers: [SalesController],
