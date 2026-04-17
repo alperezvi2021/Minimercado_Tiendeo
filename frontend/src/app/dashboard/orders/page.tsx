@@ -63,6 +63,15 @@ export default function OrderManagementPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'success'} | null>(null);
 
+  // Numpad State (Quantity Editing)
+  const [showNumpad, setShowNumpad] = useState<{
+    orderId: string,
+    itemId: string,
+    title: string,
+    initialValue: string
+  } | null>(null);
+  const [numpadValue, setNumpadValue] = useState('0');
+
   // Payment Modal State
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [payingOrder, setPayingOrder] = useState<OpenSale | null>(null);
@@ -164,6 +173,36 @@ export default function OrderManagementPage() {
       setIsProcessing(false);
     }
   };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm('¿Estás seguro de cancelar todo este pedido? Los productos regresarán al inventario.')) return;
+    
+    setIsProcessing(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/restaurant/order/${orderId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        setNotification({ message: 'Pedido cancelado', type: 'success' });
+        if (selectedOrderId === orderId) {
+          setSelectedOrderId(null);
+          setExpandedOrderId(null);
+        }
+      } else {
+        setNotification({ message: 'No se pudo cancelar el pedido', type: 'error' });
+      }
+    } catch (err) {
+      console.error(err);
+      setNotification({ message: 'Error de red al cancelar', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
 
   const handleAddItemToOrder = async (orderId: string, product: Product) => {
     setIsProcessing(true);
@@ -518,16 +557,26 @@ export default function OrderManagementPage() {
                     </p>
                   </div>
 
-                  {/* Pay Button */}
-                  <button 
-                    onClick={(e) => {
-                       e.stopPropagation();
-                       handlePayOrder(order);
-                    }}
-                    className="w-full md:w-auto bg-[#10b981] hover:bg-[#059669] text-white px-10 py-6 rounded-[2rem] font-black text-xl uppercase tracking-wider flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 min-h-[80px]"
-                  >
-                    Pagar Pedido
-                  </button>
+                  {/* Pay Button & Delete Button Container */}
+                  <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+                    <button 
+                      onClick={(e) => {
+                         e.stopPropagation();
+                         handlePayOrder(order);
+                      }}
+                      className="flex-1 md:flex-none bg-[#10b981] hover:bg-[#059669] text-white px-8 py-5 rounded-[2rem] font-black text-xl uppercase tracking-wider flex items-center justify-center gap-3 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 min-h-[80px]"
+                    >
+                      Pagar Pedido
+                    </button>
+                    <button
+                      disabled={isProcessing}
+                      onClick={(e) => { e.stopPropagation(); handleCancelOrder(order.id); }}
+                      className="w-[80px] bg-rose-600 hover:bg-rose-500 text-white rounded-[2rem] flex items-center justify-center transition-all shadow-xl shadow-rose-500/20 active:scale-95 disabled:opacity-30"
+                      title="Cancelar Pedido Completo"
+                    >
+                      <Trash2 className="w-8 h-8" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Expanded Item List (Vertical Accordion) */}
@@ -558,7 +607,21 @@ export default function OrderManagementPage() {
                                 >
                                   <Minus className="w-6 h-6" />
                                 </button>
-                                <span className="px-6 text-center text-white font-black text-2xl min-w-[60px]">{item.quantity}</span>
+                                <span 
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    setNumpadValue(String(item.quantity));
+                                    setShowNumpad({
+                                      orderId: order.id,
+                                      itemId: item.id,
+                                      title: `Cantidad: ${item.productName}`,
+                                      initialValue: String(item.quantity)
+                                    });
+                                  }}
+                                  className="px-6 text-center text-white font-black text-2xl min-w-[60px] cursor-pointer hover:text-emerald-400 active:scale-90 transition-all select-none bg-slate-900 mx-2 py-4 rounded-xl shadow-inner border border-slate-800"
+                                >
+                                  {item.quantity}
+                                </span>
                                 <button 
                                   disabled={isProcessing}
                                   onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(order.id, item.id, item.quantity + 1); }}
@@ -626,20 +689,45 @@ export default function OrderManagementPage() {
                     <span className="text-rose-500 text-lg"> ${formatCurrency(payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount)}</span>
                   </p>
 
-                  <div className="w-full space-y-8">
-                    <div className="bg-slate-50 dark:bg-slate-950 p-8 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-inner">
-                       <p className="text-xs font-black text-slate-400 mb-4 uppercase tracking-widest">Efectivo Recibido</p>
-                       <div className="relative">
-                          <span className="absolute left-0 top-1/2 -translate-y-1/2 text-5xl font-black text-slate-300">$</span>
-                          <input 
-                            autoFocus
-                            type="text"
-                            value={formatCurrency(cashReceived)}
-                            onChange={(e) => setCashReceived(parseCurrency(e.target.value).toString())}
-                            className="w-full bg-transparent border-none text-6xl font-black text-slate-900 dark:text-white pl-12 focus:ring-0 outline-none tracking-tighter"
-                            placeholder="0"
-                            onKeyDown={(e) => e.key === 'Enter' && parseCurrency(cashReceived) >= (payingItem ? payingItem.itemSubtotal : payingOrder.totalAmount) && confirmPayment()}
-                          />
+                  <div className="w-full space-y-6">
+                    <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-[2.5rem] border-2 border-slate-100 dark:border-slate-800 shadow-inner">
+                       <p className="text-xs font-black text-slate-400 mb-4 uppercase tracking-widest text-center">Efectivo Recibido</p>
+                       <div className="w-full bg-slate-900 rounded-3xl py-4 flex items-center justify-center border border-slate-800 shadow-inner mb-6">
+                          <span className="text-5xl font-black text-slate-300 mr-2">$</span>
+                          <span className="text-6xl font-black text-emerald-400 tracking-tighter">
+                            {formatCurrency(cashReceived || '0')}
+                          </span>
+                       </div>
+
+                       {/* Touch Numpad for Payment */}
+                       <div className="grid grid-cols-3 gap-3">
+                          {[7, 8, 9, 4, 5, 6, 1, 2, 3].map(num => (
+                            <button
+                              key={num}
+                              onClick={() => setCashReceived(prev => prev === '0' ? String(num) : prev + num)}
+                              className="bg-slate-800 hover:bg-slate-700 text-white text-3xl font-black py-4 rounded-2xl active:scale-95 transition-all shadow-md"
+                            >
+                              {num}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => setCashReceived('0')}
+                            className="bg-slate-800/60 hover:bg-rose-500/20 text-rose-500 text-2xl font-black py-4 rounded-2xl active:scale-95 transition-all shadow-md uppercase"
+                          >
+                            Borrar
+                          </button>
+                          <button
+                            onClick={() => setCashReceived(prev => prev === '0' ? '0' : prev + '0')}
+                            className="bg-slate-800 hover:bg-slate-700 text-white text-3xl font-black py-4 rounded-2xl active:scale-95 transition-all shadow-md"
+                          >
+                            0
+                          </button>
+                          <button
+                            onClick={() => setCashReceived(prev => prev === '0' ? '0' : prev + '000')}
+                            className="bg-slate-800 hover:bg-emerald-500/20 text-emerald-400 text-xl font-black py-4 rounded-2xl active:scale-95 transition-all shadow-md"
+                          >
+                            000
+                          </button>
                        </div>
                     </div>
 
@@ -698,6 +786,73 @@ export default function OrderManagementPage() {
                   </button>
                </div>
              )}
+          </div>
+        </div>
+      )}
+
+      {/* Touch Numpad Modal for Quantity */}
+      {showNumpad && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-in fade-in" onClick={() => !isProcessing && setShowNumpad(null)} />
+          <div className="relative w-full max-w-sm bg-slate-900 rounded-[3rem] p-8 shadow-2xl border-2 border-slate-800 animate-in zoom-in-95">
+            <h3 className="text-xl font-black text-white text-center mb-6 truncate px-4">{showNumpad.title}</h3>
+            
+            <div className="bg-slate-950 rounded-3xl p-6 mb-6 border border-slate-800 flex items-center justify-center shadow-inner">
+               <span className="text-6xl font-black text-emerald-400">{numpadValue || '0'}</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              {[7, 8, 9, 4, 5, 6, 1, 2, 3].map(num => (
+                <button
+                  key={num}
+                  onClick={() => setNumpadValue(prev => (prev === '0' ? String(num) : prev + num).slice(0, 4))}
+                  className="bg-slate-800 hover:bg-slate-700 text-white text-3xl font-black py-6 rounded-2xl active:scale-95 transition-all shadow-md"
+                >
+                  {num}
+                </button>
+              ))}
+              <button
+                onClick={() => setNumpadValue('0')}
+                className="bg-slate-800/50 hover:bg-rose-500/20 text-rose-500 text-lg font-black py-6 rounded-2xl active:scale-95 transition-all shadow-md uppercase"
+              >
+                Borrar
+              </button>
+              <button
+                onClick={() => setNumpadValue(prev => (prev === '0' ? '0' : prev + '0').slice(0, 4))}
+                className="bg-slate-800 hover:bg-slate-700 text-white text-3xl font-black py-6 rounded-2xl active:scale-95 transition-all shadow-md"
+              >
+                0
+              </button>
+              <button
+                onClick={() => setNumpadValue(prev => prev.slice(0, -1) || '0')}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-400 flex flex-col items-center justify-center text-xl font-black py-6 rounded-2xl active:scale-95 transition-all shadow-md"
+              >
+                <Minus className="w-8 h-8" />
+              </button>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                disabled={isProcessing}
+                onClick={() => setShowNumpad(null)}
+                className="flex-1 bg-slate-800 text-white font-black uppercase py-5 rounded-2xl hover:bg-slate-700 active:scale-95 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={isProcessing}
+                onClick={() => {
+                   const val = parseInt(numpadValue || '0');
+                   if (val >= 0) {
+                      handleUpdateQuantity(showNumpad.orderId, showNumpad.itemId, val);
+                      setShowNumpad(null);
+                   }
+                }}
+                className="flex-1 bg-emerald-600 text-white font-black uppercase py-5 rounded-2xl hover:bg-emerald-500 active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-30 transition-all"
+              >
+                Guardar
+              </button>
+            </div>
           </div>
         </div>
       )}
