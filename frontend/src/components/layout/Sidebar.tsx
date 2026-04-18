@@ -5,7 +5,7 @@ import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, Clipb
 import { useState, useEffect } from 'react';
 
 const navItems = [
-  { name: 'Gestión Pedidos', href: '/dashboard/orders', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'RESTAURANT' },
+  { name: 'Gestión Pedidos', href: '/dashboard/orders', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'ORDERS' },
   { name: 'Caja (POS)', href: '/dashboard', icon: ShoppingCart, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'POS' },
   { name: 'Servicio a Mesas', href: '/dashboard/restaurant', icon: Utensils, roles: ['OWNER', 'ADMIN', 'CASHIER', 'WAITER', 'SUPER_ADMIN'], module: 'RESTAURANT' },
   { name: 'Cierre de Caja', href: '/dashboard/closure', icon: ClipboardCheck, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CLOSURE' },

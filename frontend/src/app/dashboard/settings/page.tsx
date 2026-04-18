@@ -35,6 +35,7 @@ export default function SettingsPage() {
     { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)', description: 'Venta a crédito y abonos' },
     { id: 'REFUNDS', name: 'Devoluciones y Reembolsos', description: 'Gestión de cambios de productos' },
     { id: 'ACCOUNTING', name: 'Módulo Contable', description: 'Libro de ingresos y egresos' },
+    { id: 'ORDERS', name: 'Gestión de Pedidos', description: 'Nueva sección para controlar órdenes pendientes' },
     { id: 'RESTAURANT', name: 'Servicio a Mesas', description: 'Atención por mesas, barra y PIN para meseros' },
   ];
   const [activeModules, setActiveModules] = useState<string[]>(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
@@ -98,7 +99,7 @@ interface SettingsUser {
           address: data.address || '',
         });
         // Load modules from backend or fall back to all if null
-        const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+        const defaultModules = ['ORDERS', 'POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'RESTAURANT'];
         setActiveModules(data.modules || defaultModules);
       }
     } catch (error) {
@@ -321,7 +322,7 @@ interface SettingsUser {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row gap-8">
         
         {/* Sidebar Mini - Tabs */}
@@ -575,41 +576,41 @@ interface SettingsUser {
               
               <div className="overflow-hidden bg-gray-50 dark:bg-slate-800/50 rounded-2xl border border-gray-100 dark:border-slate-800">
                 <table className="w-full text-left">
-                  <thead className="bg-gray-100 dark:bg-slate-800 text-xs font-black uppercase tracking-widest text-gray-500">
+                  <thead className="bg-gray-100 dark:bg-slate-800 text-[10px] font-black uppercase tracking-widest text-gray-500">
                     <tr>
-                      <th className="px-6 py-4">Usuario</th>
-                      <th className="px-6 py-4">Email</th>
-                      <th className="px-6 py-4">Rol</th>
-                      <th className="px-6 py-4">Estado</th>
-                      <th className="px-6 py-4 text-right">Acciones</th>
+                      <th className="px-3 py-3">Usuario</th>
+                      <th className="px-3 py-3">Email</th>
+                      <th className="px-3 py-3">Rol</th>
+                      <th className="px-3 py-3">Estado</th>
+                      <th className="px-3 py-3 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-sm">
                     {users.map((u: SettingsUser) => (
-                      <tr key={u.id}>
-                        <td className="px-6 py-4 font-bold text-gray-900 dark:text-white uppercase">{u.name}</td>
-                        <td className="px-6 py-4 text-gray-500">{u.email}</td>
-                        <td className="px-6 py-4">
-                           <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase ${u.role === 'OWNER' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                      <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/20 transition-colors">
+                        <td className="px-3 py-3 font-bold text-gray-900 dark:text-white uppercase text-xs truncate max-w-[100px]">{u.name}</td>
+                        <td className="px-3 py-3 text-gray-500 text-xs truncate max-w-[120px]">{u.email}</td>
+                        <td className="px-3 py-3">
+                           <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${u.role === 'OWNER' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                              {u.role}
                            </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-[10px] font-black">Activo</span>
+                        <td className="px-3 py-3">
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-[9px] font-black">Activo</span>
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
+                        <td className="px-3 py-3 text-right">
+                          <div className="flex justify-end gap-1.5">
                             <button 
                               onClick={() => handleEditUser(u)}
-                              className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 rounded-lg transition-all"
+                              className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 rounded-lg transition-all"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button 
                               onClick={() => handleDeleteUser(u.id)}
-                              className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 rounded-lg transition-all"
+                              className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600 rounded-lg transition-all"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>

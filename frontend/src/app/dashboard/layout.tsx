@@ -31,7 +31,6 @@ export default function DashboardLayout({
 
     const role = localStorage.getItem('user_role');
     const restrictedRoutes = [
-      '/dashboard/inventory',
       '/dashboard/reports',
       '/dashboard/suppliers',
       '/dashboard/accounting',

@@ -63,11 +63,12 @@ export default function SuperAdminPage() {
     { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)' },
     { id: 'REFUNDS', name: 'Devoluciones y Reembolsos' },
     { id: 'ACCOUNTING', name: 'Módulo Contable' },
+    { id: 'ORDERS', name: 'Gestión de Pedidos' },
     { id: 'RESTAURANT', name: 'Servicio a Mesas (Restaurante)' },
   ];
 
   const openModulesModal = (tenant: Tenant) => {
-    const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+    const defaultModules = ['ORDERS', 'POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'RESTAURANT'];
     setIsUserModulesMode(false);
     setSelectedTenantForModules(tenant);
     setEditingModules(tenant.modules || defaultModules);
@@ -75,7 +76,7 @@ export default function SuperAdminPage() {
   };
 
   const openUserModulesModal = (user: AdminUser) => {
-    const defaultModules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
+    const defaultModules = ['ORDERS', 'POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'RESTAURANT'];
     setIsUserModulesMode(true);
     setSelectedUserForModules(user);
     setEditingModules(user.modules || defaultModules);
