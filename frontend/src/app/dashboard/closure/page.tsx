@@ -322,7 +322,7 @@ export default function ClosurePage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-4 md:p-6 max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -352,64 +352,64 @@ export default function ClosurePage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-blue-500/10 p-2 rounded-xl">
-              <UserIcon className="w-5 h-5 text-blue-400" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-blue-500/10 p-1.5 rounded-lg">
+              <UserIcon className="w-4 h-4 text-blue-400" />
             </div>
-            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Responsable</span>
+            <span className="text-slate-500 font-black text-[9px] uppercase tracking-widest">Responsable</span>
           </div>
-          <p className="text-2xl font-black text-white uppercase tracking-tighter italic">{status.closure?.userName || 'Cajero'}</p>
-          <div className="flex items-center gap-2 mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+          <p className="text-xl font-black text-white uppercase tracking-tighter italic">{status.closure?.userName || 'Cajero'}</p>
+          <div className="flex items-center gap-2 mt-3 text-[9px] font-bold text-slate-500 uppercase tracking-widest">
             <Clock className="w-3 h-3 text-blue-500" />
             {status.closure?.openedAt ? new Date(status.closure.openedAt).toLocaleTimeString() : '---'}
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-orange-500/10 p-2 rounded-xl">
-              <Wallet className="w-5 h-5 text-orange-400" />
+        <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-orange-500/10 p-1.5 rounded-lg">
+              <Wallet className="w-4 h-4 text-orange-400" />
             </div>
-            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Base Inicial</span>
+            <span className="text-slate-500 font-black text-[9px] uppercase tracking-widest">Base Inicial</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${formatCurrency(status.openingAmount)}</p>
-          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Efectivo declarado al abrir</p>
+          <p className="text-2xl font-black text-white tracking-tighter">${formatCurrency(status.openingAmount)}</p>
+          <p className="text-[9px] font-bold text-slate-600 mt-2 uppercase tracking-widest">Efectivo inicial</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-green-500/10 p-2 rounded-xl">
-              <CircleDollarSign className="w-5 h-5 text-green-400" />
+        <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-green-500/10 p-1.5 rounded-lg">
+              <CircleDollarSign className="w-4 h-4 text-green-400" />
             </div>
-            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Ventas Efectivo</span>
+            <span className="text-slate-500 font-black text-[9px] uppercase tracking-widest">Ventas Efectivo</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${formatCurrency(status.totalCash)}</p>
-          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Pagos de Contado</p>
+          <p className="text-2xl font-black text-white tracking-tighter">${formatCurrency(status.totalCash)}</p>
+          <p className="text-[9px] font-bold text-slate-600 mt-2 uppercase tracking-widest">Pagos Contado</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-orange-500/10 p-2 rounded-xl">
-              <ArrowRightLeft className="w-5 h-5 text-orange-400" />
+        <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-orange-500/10 p-1.5 rounded-lg">
+              <ArrowRightLeft className="w-4 h-4 text-orange-400" />
             </div>
-            <span className="text-slate-500 font-black text-[10px] uppercase tracking-widest">Abonos Créditos</span>
+            <span className="text-slate-500 font-black text-[9px] uppercase tracking-widest">Abonos Créditos</span>
           </div>
-          <p className="text-3xl font-black text-white tracking-tighter">${formatCurrency(status.totalPayments || 0)}</p>
-          <p className="text-[10px] font-bold text-slate-600 mt-4 uppercase tracking-widest">Cartera Recaudada</p>
+          <p className="text-2xl font-black text-white tracking-tighter">${formatCurrency(status.totalPayments || 0)}</p>
+          <p className="text-[9px] font-bold text-slate-600 mt-2 uppercase tracking-widest">Recaudos</p>
         </div>
 
-        <div className="bg-blue-600 p-8 rounded-[2.5rem] shadow-2xl border border-blue-500/50 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 transition-all group-hover:scale-110"></div>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-white/20 p-2 rounded-xl">
-              <CheckCircle2 className="w-5 h-5 text-white" />
+        <div className="bg-blue-600 p-5 rounded-3xl shadow-2xl border border-blue-500/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 transition-all group-hover:scale-110"></div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-white/20 p-1.5 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 text-white" />
             </div>
-            <span className="text-blue-100 font-black text-[10px] uppercase tracking-widest">Total a Entregar</span>
+            <span className="text-blue-100 font-black text-[9px] uppercase tracking-widest">A Entregar</span>
           </div>
-          <p className="text-4xl font-black text-white tracking-tighter">${formatCurrency(status.totalToDeliver)}</p>
-          <p className="text-[11px] font-bold text-blue-100 mt-4 uppercase tracking-widest">DINERO REAL QUE DEBE HABER EN CAJA</p>
+          <p className="text-3xl font-black text-white tracking-tighter">${formatCurrency(status.totalToDeliver)}</p>
+          <p className="text-[9px] font-bold text-blue-100 mt-2 uppercase tracking-widest">Arqueo en Caja</p>
         </div>
       </div>
 
@@ -436,7 +436,7 @@ export default function ClosurePage() {
                   <th
                     key={col.key}
                     onClick={() => handleSort(col.key)}
-                    className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-blue-400 hover:bg-slate-800/30 select-none transition-colors"
+                    className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest cursor-pointer hover:text-blue-400 hover:bg-slate-800/30 select-none transition-colors"
                   >
                     {col.label}{' '}
                     <span className="text-slate-600">
@@ -444,21 +444,21 @@ export default function ClosurePage() {
                     </span>
                   </th>
                 ))}
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Acción</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
               {sortedSales.map((sale) => (
                 <tr key={sale.id} className="hover:bg-slate-800/30 transition-colors group">
-                  <td className="px-8 py-4">
-                    <p className="text-sm font-bold text-white uppercase tracking-tighter">#{sale.id.split('-')[0]}</p>
-                    <p className="text-[10px] text-slate-500">{new Date(sale.createdAt).toLocaleTimeString()}</p>
+                  <td className="px-4 py-3">
+                    <p className="text-xs font-bold text-white uppercase tracking-tighter">#{sale.id.split('-')[0]}</p>
+                    <p className="text-[9px] text-slate-500">{new Date(sale.createdAt).toLocaleTimeString()}</p>
                   </td>
-                  <td className="px-8 py-4">
-                    <span className="text-sm font-black text-white">${formatCurrency(sale.totalAmount)}</span>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-black text-white">${formatCurrency(sale.totalAmount)}</span>
                   </td>
-                  <td className="px-8 py-4">
-                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-full ${
+                  <td className="px-4 py-3">
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
                       sale.paymentMethod === 'credito' 
                       ? 'bg-orange-900/40 text-orange-400' 
                       : 'bg-green-900/40 text-green-400'
@@ -466,16 +466,16 @@ export default function ClosurePage() {
                       {sale.paymentMethod}
                     </span>
                   </td>
-                  <td className="px-8 py-4">
+                  <td className="px-4 py-3">
                     {sale.paymentMethod === 'credito' ? (
-                      <span className="text-sm font-bold text-white underline decoration-orange-500/50 underline-offset-4">
-                        {sale.customerName || 'Cliente Genérico'}
+                      <span className="text-xs font-bold text-white underline decoration-orange-500/50 underline-offset-4 truncate max-w-[100px] block">
+                        {sale.customerName || 'Contado'}
                       </span>
                     ) : (
-                      <span className="text-xs text-slate-600 italic">Pago al contado</span>
+                      <span className="text-[10px] text-slate-600 italic">Pago contado</span>
                     )}
                   </td>
-                  <td className="px-8 py-4 text-right">
+                  <td className="px-4 py-3 text-right">
                     {sale.paymentMethod === 'credito' && (
                       <button
                         onClick={() => handlePayCredit(sale.id)}

@@ -644,35 +644,35 @@ export default function InventoryPage() {
               <tr>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-3 py-3 text-left text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[70px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('barcode')}
                 >
                   Código {sortConfig?.key === 'barcode' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-3 py-3 text-left text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('name')}
                 >
                   Producto {sortConfig?.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-3 py-3 text-left text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('category')}
                 >
                   Categoría {sortConfig?.key === 'category' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-3 py-3 text-left text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('price')}
                 >
                   Precio Ventas {sortConfig?.key === 'price' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[80px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="px-3 py-3 text-left text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider min-w-[60px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                   onClick={() => requestSort('stock')}
                 >
                   Stock {sortConfig?.key === 'stock' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -694,43 +694,35 @@ export default function InventoryPage() {
                   const isLowStock = product.stock <= (product.lowStockThreshold || 5);
                   return (
                     <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-200">
+                      <td className="px-3 py-3 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-gray-200">
                         {product.barcode || <span className="text-gray-400 italic">Manual</span>}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className="font-semibold text-gray-900 dark:text-white leading-tight">{product.name}</span>
+                      <td className="px-3 py-3 whitespace-nowrap text-xs">
+                        <span className="font-semibold text-gray-900 dark:text-white leading-tight truncate max-w-[120px] block" title={product.name}>{product.name}</span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide bg-gray-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                          {product.category?.name || 'Sin Categoría'}
+                      <td className="px-3 py-3 whitespace-nowrap text-xs">
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                          {product.category?.name || 'S/C'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 font-black">
+                      <td className="px-3 py-3 whitespace-nowrap text-xs text-green-600 dark:text-green-400 font-black">
                         ${formatCurrency(product.price)}
-                        {product.sellByWeight && (
-                          <span className="text-[10px] text-gray-400 ml-1 font-bold uppercase">/ {product.unit}</span>
-                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded-full font-bold ${
+                      <td className="px-3 py-3 whitespace-nowrap text-xs">
+                        <span className={`px-2 py-0.5 rounded-full font-bold ${
                           isLowStock 
                             ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-pulse' 
                             : 'text-gray-900 dark:text-gray-300'
                         }`}>
-                          {product.stock} {product.sellByWeight ? product.unit : ''}
+                          {product.stock}
                         </span>
-                        {(product as any).localId && (
-                          <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black rounded uppercase tracking-tighter self-center">
-                            Pendiente
-                          </span>
-                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onClick={() => handleEdit(product)} title="Editar producto" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4">
-                          <Edit2 className="h-4 w-4" />
+                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => handleEdit(product)} title="Editar producto" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                          <Edit2 className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => handleDelete(product.id, product.name)} title="Eliminar producto" className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </td>
                     </tr>

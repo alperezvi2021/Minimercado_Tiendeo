@@ -233,32 +233,32 @@ export default function ReportsPage() {
               <thead className="bg-gray-50 dark:bg-slate-800/50">
                 <tr>
                   <th 
-                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[70px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                     onClick={() => requestSort('invoiceNumber')}
                   >
                     Factura {sortConfig?.key === 'invoiceNumber' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                   <th 
-                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[140px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                     onClick={() => requestSort('createdAt')}
                   >
-                    Fecha / Hora {sortConfig?.key === 'createdAt' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    Fecha/Hora {sortConfig?.key === 'createdAt' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                   <th 
-                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[120px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[90px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                     onClick={() => requestSort('user')}
                   >
                     Vendedor {sortConfig?.key === 'user' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
                   <th 
-                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[150px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[110px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                     onClick={() => requestSort('paymentMethod')}
                   >
-                    Método / Cliente {sortConfig?.key === 'paymentMethod' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    Método/Cliente {sortConfig?.key === 'paymentMethod' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest min-w-[200px]">Productos</th>
+                  <th className="px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[120px]">Productos</th>
                   <th 
-                    className="px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest text-right min-w-[100px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    className="px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right min-w-[80px] cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                     onClick={() => requestSort('totalAmount')}
                   >
                     Total {sortConfig?.key === 'totalAmount' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
@@ -268,36 +268,35 @@ export default function ReportsPage() {
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-slate-800">
                 {sortedSales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-4 py-4 whitespace-nowrap text-xs font-black text-blue-600 dark:text-blue-400">
+                    <td className="px-3 py-3 whitespace-nowrap text-[10px] font-black text-blue-600 dark:text-blue-400">
                       {sale.invoiceNumber || 'S/N'}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-300 font-medium">
+                    <td className="px-3 py-3 whitespace-nowrap text-[10px] text-gray-900 dark:text-gray-300 font-medium">
                       {new Date(sale.createdAt).toLocaleString('es-CO')}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                         <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase">
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                         <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-[8px] font-black text-blue-600 dark:text-blue-400 uppercase">
                             {(sale.sellerName || sale.user?.name || 'S')[0]}
                          </div>
-                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">
-                           {sale.sellerName || sale.user?.name || <span className="text-gray-400 italic font-medium">Sistema</span>}
+                         <span className="text-[10px] font-bold text-gray-700 dark:text-gray-300 truncate max-w-[70px]">
+                           {sale.sellerName || sale.user?.name || <span className="text-gray-400 italic">Sistema</span>}
                          </span>
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
                         sale.paymentMethod === 'credito' 
                           ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' 
                           : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                       }`}>
-                        {sale.paymentMethod === 'credito' ? <ArrowUpRight className="w-3 h-3 mr-1" /> : <Banknote className="w-3 h-3 mr-1" />}
                         {sale.paymentMethod} {sale.customerName ? `(${sale.customerName})` : ''}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-[250px] truncate" title={sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}>
+                    <td className="px-3 py-3 text-[10px] text-gray-500 dark:text-gray-400 max-w-[150px] truncate" title={sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}>
                       {sale.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-black text-gray-900 dark:text-white">
+                    <td className="px-3 py-3 whitespace-nowrap text-right text-[11px] font-black text-gray-900 dark:text-white">
                       {formatCurrency(Number(sale.totalAmount))}
                     </td>
                   </tr>

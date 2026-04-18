@@ -213,7 +213,7 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-2 md:p-6 max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -265,18 +265,18 @@ export default function CreditsPage() {
 
       {/* Filter and Content */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="px-8 py-6 border-b border-slate-800 bg-slate-950/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        <div className="px-4 py-4 border-b border-slate-800 bg-slate-950/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
             Deudas Pendientes
           </h2>
           <div className="relative w-full md:w-80">
-            <Search className="absolute left-4 top-3 w-5 h-5 text-slate-500" />
+            <Search className="absolute left-4 top-2.5 w-4 h-4 text-slate-500" />
             <input 
               type="text" 
               placeholder="Buscar cliente..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm"
             />
           </div>
         </div>
@@ -287,7 +287,7 @@ export default function CreditsPage() {
               <tr className="border-b border-slate-800/50">
                 <th 
                   onClick={() => requestSort('invoice')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[100px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest min-w-[80px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Factura #
@@ -296,7 +296,7 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('customerName')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[150px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest min-w-[120px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Cliente
@@ -305,7 +305,7 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('createdAt')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center min-w-[120px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center min-w-[100px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2 justify-center">
                     Fecha Deuda
@@ -314,7 +314,7 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('amount')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[120px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest min-w-[100px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Monto Original
@@ -323,47 +323,47 @@ export default function CreditsPage() {
                 </th>
                 <th 
                   onClick={() => requestSort('remaining')}
-                  className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[140px] cursor-pointer hover:text-blue-500 transition-colors"
+                  className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest min-w-[110px] cursor-pointer hover:text-blue-500 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     Saldo Pendiente
                     {sortConfig?.key === 'remaining' && (sortConfig.direction === 'ascending' ? '↑' : '↓')}
                   </div>
                 </th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[90px]">Estado</th>
-                <th className="px-8 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right min-w-[150px]">Acciones</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest min-w-[80px]">Estado</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right min-w-[120px]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50">
               {filteredCredits.map((credit) => (
                 <tr key={credit.id} className="hover:bg-slate-800/30 transition-colors group">
-                  <td className="px-8 py-4">
-                    <span className="text-xs font-black text-blue-500 bg-blue-500/10 px-2 py-1 rounded-lg">
+                  <td className="px-4 py-3">
+                    <span className="text-[10px] font-black text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-lg whitespace-nowrap">
                       {credit.sale?.invoiceNumber || 'S/N'}
                     </span>
                   </td>
-                  <td className="px-8 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-slate-800 p-2 rounded-xl group-hover:bg-slate-700 transition-colors">
-                        <User className="w-5 h-5 text-slate-400" />
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-slate-800 p-1.5 rounded-lg group-hover:bg-slate-700 transition-colors">
+                        <User className="w-4 h-4 text-slate-400" />
                       </div>
-                      <span className="text-sm font-black text-white">{credit.customerName}</span>
+                      <span className="text-xs font-black text-white truncate max-w-[120px]">{credit.customerName}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-4 text-center">
-                    <div className="inline-flex items-center gap-2 text-xs text-slate-500 font-bold bg-slate-950/50 px-3 py-1 rounded-full">
+                  <td className="px-4 py-3 text-center">
+                    <div className="inline-flex items-center gap-2 text-[10px] text-slate-500 font-bold bg-slate-950/50 px-2 py-0.5 rounded-full whitespace-nowrap">
                       <Calendar className="w-3 h-3" />
                       {new Date(credit.createdAt).toLocaleDateString()}
                     </div>
                   </td>
-                  <td className="px-8 py-4">
-                    <span className="text-sm font-bold text-slate-400">${formatCurrency(credit.amount)}</span>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-bold text-slate-400">${formatCurrency(credit.amount)}</span>
                   </td>
-                  <td className="px-8 py-4">
-                    <span className="text-xl font-black text-rose-500 shadow-rose-900/10">${formatCurrency(Number(credit.remainingAmount) || Number(credit.amount))}</span>
+                  <td className="px-4 py-3">
+                    <span className="text-sm font-black text-rose-500 shadow-rose-900/10">${formatCurrency(Number(credit.remainingAmount) || Number(credit.amount))}</span>
                   </td>
-                  <td className="px-8 py-4">
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${
+                  <td className="px-4 py-3">
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
                       credit.status === 'PARTIAL' 
                       ? 'bg-blue-900/40 text-blue-400 border-blue-500/20' 
                       : 'bg-orange-900/40 text-orange-400 border-orange-500/20'
@@ -371,25 +371,25 @@ export default function CreditsPage() {
                       {credit.status === 'PARTIAL' ? 'Abonado' : 'Pendiente'}
                     </span>
                   </td>
-                  <td className="px-8 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                       <button
                         onClick={() => { setSelectedCredit(credit); setIsAbonoModalOpen(true); }}
-                        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95"
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] flex items-center gap-2 shadow-lg shadow-blue-900/20 transition-all active:scale-95"
                       >
-                        <ArrowDownCircle className="w-4 h-4" />
+                        <ArrowDownCircle className="w-3.5 h-3.5" />
                         Abonar
                       </button>
                       <button
                         onClick={() => handlePay(credit.id)}
                         disabled={processingId === credit.id}
-                        className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-xl font-bold text-sm flex items-center gap-2 shadow-lg shadow-green-900/20 transition-all active:scale-95 disabled:opacity-50"
+                        className="bg-green-600 hover:bg-green-500 text-white p-1.5 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-green-900/20 transition-all active:scale-95 disabled:opacity-50"
                         title="Marcar como pagado totalmente"
                       >
                         {processingId === credit.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         ) : (
-                          <Banknote className="w-5 h-5" />
+                          <Banknote className="w-4 h-4" />
                         )}
                       </button>
                     </div>

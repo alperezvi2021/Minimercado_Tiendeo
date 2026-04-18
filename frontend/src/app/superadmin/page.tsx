@@ -436,29 +436,29 @@ export default function SuperAdminPage() {
         {/* Lists Container */}
         <div className={`${activeTab === 'backups' ? '' : 'bg-[#0a0a1a] border border-white/5 rounded-3xl md:rounded-[40px] overflow-hidden shadow-2xl'}`}>
           {activeTab === 'tenants' ? (
-            <div className="overflow-x-auto pb-4">
-              <table className="w-full text-left min-w-[900px]">
+            <div className="overflow-x-auto pb-4 scrollbar-hide">
+              <table className="w-full text-left">
               {/* ... table content remains the same ... */}
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                  <th className="px-8 py-6">ID Sistema / Tenant</th>
-                  <th className="px-8 py-6">Nombre de la Tienda</th>
-                  <th className="px-8 py-6">Usuarios</th>
-                  <th className="px-8 py-6">Fecha Creación</th>
-                  <th className="px-8 py-6">Estado</th>
-                  <th className="px-8 py-6">Acciones</th>
+                  <th className="px-4 py-6">ID Sistema / Tenant</th>
+                  <th className="px-4 py-6">Nombre de la Tienda</th>
+                  <th className="px-4 py-6">Usuarios</th>
+                  <th className="px-4 py-6">Fecha Creación</th>
+                  <th className="px-4 py-6">Estado</th>
+                  <th className="px-4 py-6">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filteredTenants.map((t: Tenant) => (
                   <tr key={t.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-8 py-6 text-xs font-mono text-gray-600 group-hover:text-blue-500 transition-colors">{t.id}</td>
-                    <td className="px-8 py-6 font-black text-white text-lg">{t.name}</td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 py-6 text-xs font-mono text-gray-600 group-hover:text-blue-500 transition-colors truncate max-w-[80px]">{t.id}</td>
+                    <td className="px-4 py-6 font-black text-white text-lg truncate max-w-[150px]">{t.name}</td>
+                    <td className="px-4 py-6">
                       <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">{t.userCount} Empleados</span>
                     </td>
-                    <td className="px-8 py-6 text-sm font-medium text-gray-500">{new Date(t.createdAt).toLocaleDateString()}</td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 py-6 text-sm font-medium text-gray-500 whitespace-nowrap">{new Date(t.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-6">
                       <div className="flex items-center gap-2">
                         <span className={`w-2.5 h-2.5 rounded-full ${t.isActive !== false ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]'}`}></span>
                         <span className={`text-[10px] font-black uppercase tracking-widest ${t.isActive !== false ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -466,7 +466,7 @@ export default function SuperAdminPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 py-6 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={() => handleToggleTenantStatus(t.id, t.isActive !== false)}
@@ -497,30 +497,30 @@ export default function SuperAdminPage() {
             </table>
             </div>
           ) : activeTab === 'users' ? (
-            <div className="overflow-x-auto pb-4">
-              <table className="w-full text-left min-w-[900px]">
+            <div className="overflow-x-auto pb-4 scrollbar-hide">
+              <table className="w-full text-left">
               {/* ... table content remains the same ... */}
               <thead>
                 <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                  <th className="px-8 py-6">Nombre Usuario</th>
-                  <th className="px-8 py-6">Email / Acceso</th>
-                  <th className="px-8 py-6">Negocio</th>
-                  <th className="px-8 py-6">Rol</th>
-                  <th className="px-8 py-6">Recuperación / Acciones</th>
+                  <th className="px-4 py-6">Nombre Usuario</th>
+                  <th className="px-4 py-6">Email / Acceso</th>
+                  <th className="px-4 py-6">Negocio</th>
+                  <th className="px-4 py-6">Rol</th>
+                  <th className="px-4 py-6">Recuperación / Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {filteredUsers.map((u: AdminUser) => (
                   <tr key={u.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-8 py-6 font-black text-white text-lg">{u.name}</td>
-                    <td className="px-8 py-6 text-sm font-medium text-blue-400">{u.email}</td>
-                    <td className="px-8 py-6 font-bold text-gray-400 uppercase tracking-tight">{u.tenant?.name || 'Sistema Core'}</td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 py-6 font-black text-white text-lg truncate max-w-[150px]">{u.name}</td>
+                    <td className="px-4 py-6 text-sm font-medium text-blue-400 truncate max-w-[200px]">{u.email}</td>
+                    <td className="px-4 py-6 font-bold text-gray-400 uppercase tracking-tight truncate max-w-[120px]">{u.tenant?.name || 'Sistema Core'}</td>
+                    <td className="px-4 py-6">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${u.role === 'SUPER_ADMIN' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : u.role === 'OWNER' ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-gray-800 text-gray-400 border border-white/5'}`}>
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-8 py-6">
+                    <td className="px-4 py-6 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => { setSelectedUser(u); setIsResetModalOpen(true); }}
@@ -735,7 +735,7 @@ export default function SuperAdminPage() {
       )}
 
       {/* Modules Configuration Modal */}
-      {isModulesModalOpen && selectedTenantForModules && (
+      {isModulesModalOpen && (selectedTenantForModules || selectedUserForModules) && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0a1a] border border-white/10 w-full max-w-xl rounded-[40px] p-10 shadow-3xl animate-in zoom-in-95 duration-200">
             <div className="flex items-center gap-4 mb-2">
