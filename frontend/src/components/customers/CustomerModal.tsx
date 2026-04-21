@@ -161,7 +161,9 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       if (payment >= debtAmount) fullyCovered++;
     }
 
-    return { map, count, fullyCovered, remaining };
+    const isAllSelectedCovered = selectedDebts.length > 0 && fullyCovered === selectedDebts.length;
+
+    return { map, count, fullyCovered, remaining, isAllSelectedCovered };
   };
 
   const distribution = calculateDistribution();
@@ -199,7 +201,11 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       });
 
       if (res.ok) {
-        alert('Abonos procesados correctamente');
+        if (distribution.isAllSelectedCovered && distribution.remaining > 0) {
+          alert(`Abonos procesados. RECUERDA ENTREGAR EL CAMBIO: $${formatCurrency(distribution.remaining)}`);
+        } else {
+          alert('Abonos procesados correctamente');
+        }
         setTotalAbono('');
         setSelectedDebts([]);
         fetchCustomerDebts();
@@ -429,12 +435,15 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                           <div className="mt-4 p-4 bg-slate-950/40 rounded-2xl border border-slate-700/50 animate-in fade-in slide-in-from-top-2 duration-300">
                              <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${distribution.remaining > 0 ? 'bg-blue-500' : 'bg-emerald-500'}`}>
-                                    <DollarSign className="w-4 h-4" />
+                                 <div className="flex items-center gap-2">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${distribution.isAllSelectedCovered ? 'bg-amber-500 animate-pulse' : distribution.remaining > 0 ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+                                    {distribution.isAllSelectedCovered ? <ArrowDownCircle className="w-4 h-4 rotate-180" /> : <DollarSign className="w-4 h-4" />}
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Saldo Disponible</p>
-                                    <p className={`text-sm font-black ${distribution.remaining > 0 ? 'text-blue-400' : 'text-emerald-400'}`}>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                      {distribution.isAllSelectedCovered ? 'Cambio a Devolver' : 'Saldo Disponible'}
+                                    </p>
+                                    <p className={`text-sm font-black ${distribution.isAllSelectedCovered ? 'text-amber-400' : distribution.remaining > 0 ? 'text-blue-400' : 'text-emerald-400'}`}>
                                       ${formatCurrency(distribution.remaining)}
                                     </p>
                                   </div>
