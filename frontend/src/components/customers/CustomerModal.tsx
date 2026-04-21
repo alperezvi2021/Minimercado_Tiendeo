@@ -140,9 +140,8 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
   // Distribution Preview Logic - MANUAL SELECTION MODE
   const calculateDistribution = () => {
     const amount = parseCurrency(totalAbono);
-    if (amount <= 0) return { map: {}, count: 0, fullyCovered: 0, remaining: amount };
-
-    const map: { [key: string]: number } = {};
+    const map: Record<string, number> = {};
+    if (amount <= 0) return { map, count: 0, fullyCovered: 0, remaining: amount, isAllSelectedCovered: false };
     let remaining = amount;
     let count = 0;
     let fullyCovered = 0;
@@ -178,7 +177,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
     }
 
     const payments = selectedDebts
-      .map(id => ({ creditId: id, amount: distribution.map[id] || 0 }))
+      .map(id => ({ creditId: id, amount: (distribution.map as any)[id] || 0 }))
       .filter(p => p.amount > 0);
 
     if (payments.length === 0) {
