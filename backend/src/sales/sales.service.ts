@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { Sale } from './entities/sale.entity';
 import { CreditSale } from './entities/credit-sale.entity';
 import { CreditPayment } from './entities/credit-payment.entity';
@@ -1100,5 +1100,69 @@ export class SalesService {
       relations: ['creditSale', 'creditSale.sale', 'creditSale.customer'],
       order: { paymentDate: 'ASC' },
     });
+  }
+
+  async bulkPayCreditSales(
+    tenantId: string,
+    creditIds: string[],
+    userId: string,
+    userName: string,
+  ): Promise<any> {
+    const results = [];
+    for (const id of creditIds) {
+      try {
+        const res = await this.payCreditSale(tenantId, id, userId, userName);
+        results.push({ id, success: true, amount: res.amount });
+      } catch (e) {
+        results.push({ id, success: false, error: e.message });
+      }
+    }
+    return results;
+  }
+
+  async payTotalCustomerDebt(
+    tenantId: string,
+    customerId: string,
+    amount: number,
+    userId: string,
+    userName: string,
+    notes?: string,
+  ): Promise<any> {
+    const pendingSales = await this.creditSalesRepository.find({
+      where: {
+        customerId,
+        tenantId,
+        status: In(['PENDING', 'PARTIAL']),
+      },
+      order: { createdAt: 'ASC' }, // FIFO: Pagar las más antiguas primero
+    });
+
+    let remainingPayment = Number(amount);
+    const payments = [];
+
+    for (const credit of pendingSales) {
+      if (remainingPayment <= 0) break;
+
+      const debt = Number(credit.remainingAmount);
+      const paymentAmount = Math.min(debt, remainingPayment);
+
+      const payment = await this.registerPartialPayment(
+        tenantId,
+        credit.id,
+        paymentAmount,
+        userId,
+        userName,
+        notes || `Abono a deuda total - distribuido automáticamente`,
+      );
+
+      payments.push(payment);
+      remainingPayment -= paymentAmount;
+    }
+
+    return {
+      totalDistributed: Number(amount) - remainingPayment,
+      change: remainingPayment,
+      paymentsCount: payments.length,
+    };
   }
 }

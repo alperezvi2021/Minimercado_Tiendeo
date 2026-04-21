@@ -163,6 +163,38 @@ export class SalesController {
     );
   }
 
+  @Post('credits/bulk-pay')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  bulkPay(@Request() req, @Body() body: { creditIds: string[] }) {
+    const { tenantId, userId, name } = req.user;
+    const userName = name || 'Cajero';
+    return this.salesService.bulkPayCreditSales(
+      tenantId,
+      body.creditIds,
+      userId,
+      userName,
+    );
+  }
+
+  @Post('credits/customer/:customerId/pay-debt')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  payDebt(
+    @Request() req,
+    @Param('customerId') customerId: string,
+    @Body() body: { amount: number; notes?: string },
+  ) {
+    const { tenantId, userId, name } = req.user;
+    const userName = name || 'Cajero';
+    return this.salesService.payTotalCustomerDebt(
+      tenantId,
+      customerId,
+      body.amount,
+      userId,
+      userName,
+      body.notes,
+    );
+  }
+
   @Get('credits/:id/history')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   getCreditHistory(@Request() req, @Param('id') id: string) {

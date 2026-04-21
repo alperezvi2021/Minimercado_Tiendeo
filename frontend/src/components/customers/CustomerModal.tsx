@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, CreditCard, Loader2, Banknote, ArrowDownCircle } from 'lucide-react';
+import { X, User, Phone, Mail, MapPin, CreditCard, Loader2, Banknote, ArrowDownCircle, CheckSquare, Square, DollarSign, ClipboardCheck } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
 import AbonoModal from './AbonoModal';
 import { formatCurrency, parseCurrency } from '@/utils/formatters';
@@ -29,6 +29,12 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
   const [selectedCredit, setSelectedCredit] = useState<any>(null);
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  
+  // Bulk and Total Debt payment states
+  const [selectedDebts, setSelectedDebts] = useState<string[]>([]);
+  const [totalAbono, setTotalAbono] = useState('');
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  const [isProcessingTotalDebt, setIsProcessingTotalDebt] = useState(false);
 
   useEffect(() => {
     if (customer) {
@@ -96,6 +102,89 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       alert('Error de conexión');
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const handleBulkPay = async () => {
+    if (selectedDebts.length === 0) return;
+    if (!confirm(`¿Pagar totalmente las ${selectedDebts.length} facturas seleccionadas?`)) return;
+
+    setIsProcessingBulk(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/credits/bulk-pay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ creditIds: selectedDebts })
+      });
+
+      if (res.ok) {
+        alert('Pagos procesados correctamente');
+        setSelectedDebts([]);
+        fetchCustomerDebts();
+        onSave();
+      } else {
+        alert('Error al procesar pagos masivos');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión');
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
+
+  const handlePayTotalDebt = async () => {
+    const amount = parseCurrency(totalAbono);
+    if (amount <= 0) return;
+    
+    if (!confirm(`¿Abonar $${formatCurrency(amount)} a la deuda total del cliente?`)) return;
+
+    setIsProcessingTotalDebt(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/credits/customer/${customer.id}/pay-debt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ amount })
+      });
+
+      if (res.ok) {
+        alert('Abono procesado correctamente');
+        setTotalAbono('');
+        fetchCustomerDebts();
+        onSave();
+      } else {
+        alert('Error al procesar el abono a la deuda total');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error de conexión');
+    } finally {
+      setIsProcessingTotalDebt(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    const pendingDebts = debts.filter(d => d.remainingAmount > 0).map(d => d.id);
+    if (selectedDebts.length === pendingDebts.length && pendingDebts.length > 0) {
+      setSelectedDebts([]);
+    } else {
+      setSelectedDebts(pendingDebts);
+    }
+  };
+
+  const toggleDebtSelection = (id: string) => {
+    if (selectedDebts.includes(id)) {
+      setSelectedDebts(selectedDebts.filter(d => d !== id));
+    } else {
+      setSelectedDebts([...selectedDebts, id]);
     }
   };
 
@@ -255,6 +344,75 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                   Estado de Cuenta Detallado
                 </h4>
 
+                {/* TOTAL DEBT PAYMENT BOX */}
+                {debts.some(d => d.remainingAmount > 0) && (
+                   <div className="mb-6 p-5 bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2rem] border border-slate-700 shadow-xl overflow-hidden relative group">
+                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                         <DollarSign className="w-16 h-16 text-emerald-400" />
+                      </div>
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-3 text-emerald-400">
+                          <Banknote className="w-4 h-4" />
+                          <span className="text-xs font-black uppercase tracking-widest">Abono a Deuda Total</span>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="relative flex-1">
+                             <DollarSign className="absolute left-4 top-3.5 w-5 h-5 text-slate-500" />
+                             <input
+                              type="text"
+                              placeholder="Monto a abonar..."
+                              className="w-full bg-slate-950/50 text-white border border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all font-black text-lg placeholder:text-slate-600"
+                              value={formatCurrency(totalAbono)}
+                              onChange={(e) => setTotalAbono(parseCurrency(e.target.value).toString())}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            disabled={isProcessingTotalDebt || !totalAbono || totalAbono === '0'}
+                            onClick={handlePayTotalDebt}
+                            className="px-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:grayscale"
+                          >
+                            {isProcessingTotalDebt ? <Loader2 className="w-5 h-5 animate-spin" /> : <ClipboardCheck className="w-5 h-5" />}
+                            <span>Abonar</span>
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-3 italic">
+                          * El sistema distribuirá este monto automáticamente entre las facturas más antiguas.
+                        </p>
+                      </div>
+                   </div>
+                )}
+
+                {/* BULK ACTIONS HEADER */}
+                {debts.filter(d => d.remainingAmount > 0).length > 1 && (
+                  <div className="flex items-center justify-between mb-4 px-2">
+                    <button 
+                      type="button"
+                      onClick={toggleSelectAll}
+                      className="flex items-center gap-2 text-xs font-black text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-widest"
+                    >
+                      {selectedDebts.length === debts.filter(d => d.remainingAmount > 0).length ? (
+                        <CheckSquare className="w-4 h-4 text-blue-600" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                      Seleccionar Todo ({debts.filter(d => d.remainingAmount > 0).length})
+                    </button>
+
+                    {selectedDebts.length > 0 && (
+                      <button
+                        type="button"
+                        disabled={isProcessingBulk}
+                        onClick={handleBulkPay}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 hover:bg-blue-500 transition-all animate-in slide-in-from-right-4"
+                      >
+                        {isProcessingBulk ? <Loader2 className="w-4 h-4 animate-spin" /> : <Banknote className="w-4 h-4" />}
+                        Pagar Seleccionados ({selectedDebts.length})
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {loadingDebts ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
@@ -268,9 +426,22 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                     {debts.map((debt) => {
                       const totalPaid = debt.payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
                       return (
-                        <div key={debt.id} className="p-4 bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-100 dark:border-slate-700 space-y-3">
+                        <div key={debt.id} className={`p-4 rounded-2xl border transition-all duration-200 ${selectedDebts.includes(debt.id) ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-md' : 'bg-gray-50 dark:bg-slate-800/80 border-gray-100 dark:border-slate-700'}`}>
                           <div className="flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
+                               {debt.remainingAmount > 0 && (
+                                 <button
+                                  type="button"
+                                  onClick={() => toggleDebtSelection(debt.id)}
+                                  className="p-1 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                 >
+                                   {selectedDebts.includes(debt.id) ? (
+                                      <CheckSquare className="w-5 h-5 text-blue-600" />
+                                   ) : (
+                                      <Square className="w-5 h-5 text-gray-300 dark:text-slate-600" />
+                                   )}
+                                 </button>
+                               )}
                                <div className={`p-2 rounded-lg ${debt.status === 'PAID' ? 'bg-green-100 text-green-600' : 'bg-rose-100 text-rose-600'}`}>
                                  <CreditCard className="w-4 h-4" />
                                </div>
