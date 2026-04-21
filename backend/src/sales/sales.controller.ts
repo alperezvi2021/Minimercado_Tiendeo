@@ -195,6 +195,22 @@ export class SalesController {
     );
   }
 
+  @Post('credits/bulk-abono')
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
+  bulkAbono(
+    @Request() req,
+    @Body() body: { payments: { creditId: string; amount: number }[] },
+  ) {
+    const { tenantId, userId, name } = req.user;
+    const userName = name || 'Cajero';
+    return this.salesService.bulkRegisterPartialPayments(
+      tenantId,
+      body.payments,
+      userId,
+      userName,
+    );
+  }
+
   @Get('credits/:id/history')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   getCreditHistory(@Request() req, @Param('id') id: string) {

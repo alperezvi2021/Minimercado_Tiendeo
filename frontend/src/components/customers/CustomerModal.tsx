@@ -137,31 +137,75 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
     }
   };
 
+  // Distribution Preview Logic - MANUAL SELECTION MODE
+  const calculateDistribution = () => {
+    const amount = parseCurrency(totalAbono);
+    if (amount <= 0) return { map: {}, count: 0, fullyCovered: 0, remaining: amount };
+
+    const map: { [key: string]: number } = {};
+    let remaining = amount;
+    let count = 0;
+    let fullyCovered = 0;
+
+    // We use the order in which the user selected the invoices
+    for (const debtId of selectedDebts) {
+      const debt = debts.find(d => d.id === debtId);
+      if (!debt || debt.remainingAmount <= 0) continue;
+
+      const debtAmount = Number(debt.remainingAmount);
+      const payment = Math.min(debtAmount, remaining);
+      
+      map[debtId] = payment;
+      remaining -= payment;
+      if (payment > 0) count++;
+      if (payment >= debtAmount) fullyCovered++;
+    }
+
+    return { map, count, fullyCovered, remaining };
+  };
+
+  const distribution = calculateDistribution();
+
   const handlePayTotalDebt = async () => {
     const amount = parseCurrency(totalAbono);
     if (amount <= 0) return;
     
-    if (!confirm(`¿Abonar $${formatCurrency(amount)} a la deuda total del cliente?`)) return;
+    if (selectedDebts.length === 0) {
+      alert('Por favor, selecciona las facturas a las que deseas aplicar este abono.');
+      return;
+    }
+
+    const payments = selectedDebts
+      .map(id => ({ creditId: id, amount: distribution.map[id] || 0 }))
+      .filter(p => p.amount > 0);
+
+    if (payments.length === 0) {
+      alert('No hay facturas seleccionadas con saldo pendiente suficiente para aplicar el abono.');
+      return;
+    }
+
+    if (!confirm(`¿Aplicar abono manual de $${formatCurrency(amount)} a ${payments.length} facturas seleccionadas?`)) return;
 
     setIsProcessingTotalDebt(true);
     try {
       const token = localStorage.getItem('access_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/credits/customer/${customer.id}/pay-debt`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/sales/credits/bulk-abono`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ amount })
+        body: JSON.stringify({ payments })
       });
 
       if (res.ok) {
-        alert('Abono procesado correctamente');
+        alert('Abonos procesados correctamente');
         setTotalAbono('');
+        setSelectedDebts([]);
         fetchCustomerDebts();
         onSave();
       } else {
-        alert('Error al procesar el abono a la deuda total');
+        alert('Error al procesar los abonos manuales');
       }
     } catch (e) {
       console.error(e);
@@ -187,35 +231,6 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       setSelectedDebts([...selectedDebts, id]);
     }
   };
-
-  // Distribution Preview Logic
-  const calculateDistribution = () => {
-    const amount = parseCurrency(totalAbono);
-    if (amount <= 0) return { map: {}, count: 0, fullyCovered: 0 };
-
-    const map: { [key: string]: number } = {};
-    let remaining = amount;
-    let count = 0;
-    let fullyCovered = 0;
-
-    const pendingDebts = [...debts]
-      .filter(d => d.remainingAmount > 0)
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-
-    for (const debt of pendingDebts) {
-      if (remaining <= 0) break;
-      const debtAmount = Number(debt.remainingAmount);
-      const payment = Math.min(debtAmount, remaining);
-      map[debt.id] = payment;
-      remaining -= payment;
-      count++;
-      if (payment >= debtAmount) fullyCovered++;
-    }
-
-    return { map, count, fullyCovered };
-  };
-
-  const distribution = calculateDistribution();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -410,24 +425,35 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                         </p>
 
                         {/* PREVIEW SUMMARY */}
-                        {distribution.count > 0 && (
-                          <div className="mt-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                             <div className="flex -space-x-2">
-                                {[...Array(Math.min(distribution.count, 5))].map((_, i) => (
-                                  <div key={i} className="w-8 h-8 rounded-full border-2 border-slate-900 bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white">
-                                    <ClipboardCheck className="w-4 h-4" />
+                        {parseCurrency(totalAbono) > 0 && (
+                          <div className="mt-4 p-4 bg-slate-950/40 rounded-2xl border border-slate-700/50 animate-in fade-in slide-in-from-top-2 duration-300">
+                             <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${distribution.remaining > 0 ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+                                    <DollarSign className="w-4 h-4" />
                                   </div>
-                                ))}
-                                {distribution.count > 5 && (
-                                  <div className="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">
-                                    +{distribution.count - 5}
+                                  <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Saldo Disponible</p>
+                                    <p className={`text-sm font-black ${distribution.remaining > 0 ? 'text-blue-400' : 'text-emerald-400'}`}>
+                                      ${formatCurrency(distribution.remaining)}
+                                    </p>
                                   </div>
-                                )}
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Facturas a Pagar</p>
+                                  <p className="text-sm font-black text-white">{distribution.count}</p>
+                                </div>
                              </div>
-                             <div>
-                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">Vista Previa de Pago</p>
-                                <p className="text-xs text-slate-300">Se abonará a <span className="text-emerald-400 font-black">{distribution.count}</span> facturas ({distribution.fullyCovered} saldadas)</p>
-                             </div>
+                             
+                             {selectedDebts.length === 0 ? (
+                               <p className="text-[10px] text-amber-400 font-bold italic animate-pulse">
+                                 * Selecciona las facturas de la lista para asignarles este abono.
+                               </p>
+                             ) : (
+                               <p className="text-xs text-slate-300">
+                                 Se saldarán <span className="text-emerald-400 font-black">{distribution.fullyCovered}</span> facturas completamente.
+                               </p>
+                             )}
                           </div>
                         )}
                       </div>

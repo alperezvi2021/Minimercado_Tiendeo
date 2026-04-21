@@ -1165,4 +1165,31 @@ export class SalesService {
       paymentsCount: payments.length,
     };
   }
+
+  async bulkRegisterPartialPayments(
+    tenantId: string,
+    payments: { creditId: string; amount: number }[],
+    userId: string,
+    userName: string,
+    notes?: string,
+  ): Promise<any> {
+    const results = [];
+    for (const p of payments) {
+      if (Number(p.amount) <= 0) continue;
+      try {
+        const res = await this.registerPartialPayment(
+          tenantId,
+          p.creditId,
+          p.amount,
+          userId,
+          userName,
+          notes || 'Abono manual seleccionado',
+        );
+        results.push({ id: p.creditId, success: true, amount: p.amount });
+      } catch (e) {
+        results.push({ id: p.creditId, success: false, error: e.message });
+      }
+    }
+    return results;
+  }
 }
