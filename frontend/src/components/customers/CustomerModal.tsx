@@ -188,6 +188,35 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
     }
   };
 
+  // Distribution Preview Logic
+  const calculateDistribution = () => {
+    const amount = parseCurrency(totalAbono);
+    if (amount <= 0) return { map: {}, count: 0, fullyCovered: 0 };
+
+    const map: { [key: string]: number } = {};
+    let remaining = amount;
+    let count = 0;
+    let fullyCovered = 0;
+
+    const pendingDebts = [...debts]
+      .filter(d => d.remainingAmount > 0)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    for (const debt of pendingDebts) {
+      if (remaining <= 0) break;
+      const debtAmount = Number(debt.remainingAmount);
+      const payment = Math.min(debtAmount, remaining);
+      map[debt.id] = payment;
+      remaining -= payment;
+      count++;
+      if (payment >= debtAmount) fullyCovered++;
+    }
+
+    return { map, count, fullyCovered };
+  };
+
+  const distribution = calculateDistribution();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -379,6 +408,28 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                         <p className="text-[10px] text-slate-400 mt-3 italic">
                           * El sistema distribuirá este monto automáticamente entre las facturas más antiguas.
                         </p>
+
+                        {/* PREVIEW SUMMARY */}
+                        {distribution.count > 0 && (
+                          <div className="mt-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                             <div className="flex -space-x-2">
+                                {[...Array(Math.min(distribution.count, 5))].map((_, i) => (
+                                  <div key={i} className="w-8 h-8 rounded-full border-2 border-slate-900 bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-white">
+                                    <ClipboardCheck className="w-4 h-4" />
+                                  </div>
+                                ))}
+                                {distribution.count > 5 && (
+                                  <div className="w-8 h-8 rounded-full border-2 border-slate-900 bg-slate-700 flex items-center justify-center text-[10px] font-bold text-white">
+                                    +{distribution.count - 5}
+                                  </div>
+                                )}
+                             </div>
+                             <div>
+                                <p className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">Vista Previa de Pago</p>
+                                <p className="text-xs text-slate-300">Se abonará a <span className="text-emerald-400 font-black">{distribution.count}</span> facturas ({distribution.fullyCovered} saldadas)</p>
+                             </div>
+                          </div>
+                        )}
                       </div>
                    </div>
                 )}
@@ -425,8 +476,26 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
                   <div className="space-y-3">
                     {debts.map((debt) => {
                       const totalPaid = debt.payments?.reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
+                      const previewAmount = distribution.map[debt.id] || 0;
+                      const isAffected = previewAmount > 0;
+                      const isFullyCoveredByPreview = previewAmount >= Number(debt.remainingAmount);
+
                       return (
-                        <div key={debt.id} className={`p-4 rounded-2xl border transition-all duration-200 ${selectedDebts.includes(debt.id) ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-md' : 'bg-gray-50 dark:bg-slate-800/80 border-gray-100 dark:border-slate-700'}`}>
+                        <div key={debt.id} className={`p-4 rounded-2xl border transition-all duration-300 relative overflow-hidden ${
+                          isAffected 
+                            ? 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-500/50 shadow-lg shadow-emerald-500/5' 
+                            : selectedDebts.includes(debt.id) 
+                              ? 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 shadow-md' 
+                              : 'bg-gray-50 dark:bg-slate-800/80 border-gray-100 dark:border-slate-700'
+                        }`}>
+                          
+                          {/* PREVIEW INDICATOR */}
+                          {isAffected && (
+                            <div className="absolute top-0 right-0 px-4 py-1 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-bl-xl shadow-sm animate-in slide-in-from-right-full duration-300">
+                              {isFullyCoveredByPreview ? 'Saldará Total' : `Abonará $${formatCurrency(previewAmount)}`}
+                            </div>
+                          )}
+
                           <div className="flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
                                {debt.remainingAmount > 0 && (
