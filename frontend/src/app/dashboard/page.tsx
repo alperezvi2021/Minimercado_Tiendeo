@@ -415,6 +415,24 @@ export default function PosPage() {
 
   const processSale = async () => {
     if (cart.length === 0 || isProcessing) return;
+
+    const roundedTotal = calculateRoundedTotal();
+    
+    // VALIDACIÓN: Efectivo insuficiente
+    if (paymentMethod === 'efectivo') {
+      const received = parseCurrency(cashReceived);
+      if (received < roundedTotal) {
+        alert(`Falta dinero: El total es $${formatCurrency(roundedTotal)} y se recibió $${formatCurrency(received)}`);
+        return;
+      }
+    }
+
+    // VALIDACIÓN: Crédito sin cliente
+    if (paymentMethod === 'credito' && !selectedCustomerId && !customerName) {
+      alert('Debes seleccionar o escribir un nombre de cliente para ventas a crédito.');
+      return;
+    }
+
     setIsProcessing(true);
     const finalCustomerId = selectedCustomerId;
     const finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
@@ -1136,7 +1154,7 @@ export default function PosPage() {
               disabled={
                 cart.length === 0 || 
                 isProcessing || 
-                (posState === 'payment' && paymentMethod === 'efectivo' && Number(cashReceived) < Math.round(calculateTotal())) ||
+                (posState === 'payment' && paymentMethod === 'efectivo' && parseCurrency(cashReceived) < calculateRoundedTotal()) ||
                 (posState === 'payment' && paymentMethod === 'credito' && !selectedCustomerId && !customerName)
               }
               tabIndex={0}
