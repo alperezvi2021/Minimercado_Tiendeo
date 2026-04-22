@@ -438,7 +438,6 @@ export default function PosPage() {
     const finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
 
     const rawTotal = calculateTotal();
-    const roundedTotal = calculateRoundedTotal();
     const adjustment = calculateRoundingAdjustment();
 
     const saleItems = cart.map(i => ({
