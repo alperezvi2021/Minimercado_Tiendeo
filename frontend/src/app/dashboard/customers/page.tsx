@@ -284,7 +284,7 @@ export default function CustomersPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-lg font-black text-gray-900 dark:text-white leading-tight">{c.name}</p>
-                          {(c as any).localId && (
+                          {typeof (c as any).localId === 'string' && (c as any).localId.startsWith('temp-cust-') && (
                             <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-[10px] font-black rounded uppercase">Pendiente</span>
                           )}
                         </div>
