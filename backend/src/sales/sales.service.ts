@@ -681,14 +681,7 @@ export class SalesService {
     return this.creditSalesRepository.save(creditSale);
   }
 
-  async getCurrentClosureStatus(
-    tenantId: string,
-    userId?: string,
-  ): Promise<any> {
-    const closure = await this.getOpenClosure(tenantId, userId);
-
-    if (!closure) return null;
-
+  async getClosureMetrics(tenantId: string, closure: CashClosure): Promise<any> {
     const sales = await this.salesRepository.find({
       where: { tenantId, closureId: closure.id },
     });
@@ -708,18 +701,35 @@ export class SalesService {
     );
     const totalPayments = Number(closure.totalCreditPayments || 0);
     const openingAmount = Number(closure.openingAmount || 0);
+    const totalExpenses = Number(closure.totalExpenses || 0);
 
-    // El efectivo que DEBE haber en caja es: Base + Ventas Efectivo + Abonos de créditos
-    const totalToDeliver = openingAmount + totalCash + totalPayments;
+    // El efectivo que DEBE haber en caja es: Base + Ventas Efectivo + Abonos - Gastos
+    const totalToDeliver = openingAmount + totalCash + totalPayments - totalExpenses;
 
     return {
-      closure,
-      openingAmount,
       totalCash,
       totalCredit,
       totalPayments,
+      totalExpenses,
       totalToDeliver,
       salesCount: sales.length,
+    };
+  }
+
+  async getCurrentClosureStatus(
+    tenantId: string,
+    userId?: string,
+  ): Promise<any> {
+    const closure = await this.getOpenClosure(tenantId, userId);
+
+    if (!closure) return null;
+
+    const metrics = await this.getClosureMetrics(tenantId, closure);
+
+    return {
+      closure,
+      openingAmount: Number(closure.openingAmount || 0),
+      ...metrics,
     };
   }
 
@@ -763,15 +773,35 @@ export class SalesService {
   async findAllClosures(
     tenantId: string,
     status?: string,
-  ): Promise<CashClosure[]> {
+  ): Promise<any[]> {
     const where: any = { tenantId };
     if (status) where.status = status;
 
-    return this.cashClosureRepository.find({
+    const closures = await this.cashClosureRepository.find({
       where,
       relations: ['user'],
       order: { openedAt: 'DESC' },
     });
+
+    // Enriquecer cierres abiertos con datos en tiempo real
+    const results = [];
+    for (const closure of closures) {
+      if (closure.status === 'OPEN') {
+        const metrics = await this.getClosureMetrics(tenantId, closure);
+        results.push({
+          ...closure,
+          totalCashSales: metrics.totalCash,
+          totalCreditSales: metrics.totalCredit,
+          totalCreditPayments: metrics.totalPayments,
+          totalExpenses: metrics.totalExpenses,
+          totalAmount: metrics.totalToDeliver,
+        });
+      } else {
+        results.push(closure);
+      }
+    }
+
+    return results;
   }
 
   async findAllPayments(tenantId: string): Promise<CreditPayment[]> {
