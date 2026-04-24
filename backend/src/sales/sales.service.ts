@@ -74,6 +74,33 @@ export class SalesService {
     return await this.cashClosureRepository.save(closure);
   }
 
+  /**
+   * Busca un cliente por nombre (insensible a mayúsculas) dentro del tenant.
+   * Si no existe, lo crea automáticamente.
+   * Esto garantiza que cualquier venta a crédito siempre genere un registro en 'customers'.
+   */
+  private async findOrCreateCustomer(
+    tenantId: string,
+    customerName: string,
+  ): Promise<string> {
+    const normalizedName = customerName.trim();
+    let customer = await this.customerRepository
+      .createQueryBuilder('customer')
+      .where('LOWER(customer.name) = LOWER(:name)', { name: normalizedName })
+      .andWhere('customer.tenantId = :tenantId', { tenantId })
+      .getOne();
+
+    if (!customer) {
+      customer = this.customerRepository.create({
+        tenantId,
+        name: normalizedName,
+      });
+      customer = await this.customerRepository.save(customer);
+    }
+
+    return customer.id;
+  }
+
   private async generateNextInvoiceNumber(
     tenantId: string,
     transactionalEntityManager: any,
@@ -141,11 +168,19 @@ export class SalesService {
         const savedSale = await transactionalEntityManager.save<Sale>(sale);
 
         if (createSaleDto.paymentMethod === 'credito') {
+          const creditCustomerName = createSaleDto.customerName || 'Cliente Genérico';
+          // AUTO-VINCULAR: Si viene nombre pero no id, buscar/crear el cliente automáticamente
+          const resolvedCustomerId =
+            createSaleDto.customerId ||
+            (creditCustomerName !== 'Cliente Genérico'
+              ? await this.findOrCreateCustomer(tenantId, creditCustomerName)
+              : undefined);
+
           const creditSale = transactionalEntityManager.create(CreditSale, {
             tenantId,
             saleId: savedSale.id,
-            customerName: createSaleDto.customerName || 'Cliente Genérico',
-            customerId: createSaleDto.customerId,
+            customerName: creditCustomerName,
+            customerId: resolvedCustomerId,
             amount: savedSale.totalAmount,
             remainingAmount: savedSale.totalAmount,
             status: 'PENDING',
@@ -480,11 +515,19 @@ export class SalesService {
 
         // Soporte para Ventas a Crédito (Igual que en POS normal)
         if (dto.paymentMethod === 'credito') {
+          const creditCustomerName = dto.customerName || 'Cliente Restaurante';
+          // AUTO-VINCULAR: Si viene nombre pero no id, buscar/crear el cliente automáticamente
+          const resolvedCustomerId =
+            dto.customerId ||
+            (creditCustomerName !== 'Cliente Restaurante'
+              ? await this.findOrCreateCustomer(tenantId, creditCustomerName)
+              : undefined);
+
           const creditSale = transactionalEntityManager.create(CreditSale, {
             tenantId,
             saleId: savedSale.id,
-            customerName: dto.customerName || 'Cliente Restaurante',
-            customerId: dto.customerId,
+            customerName: creditCustomerName,
+            customerId: resolvedCustomerId,
             amount: savedSale.totalAmount,
             remainingAmount: savedSale.totalAmount,
             status: 'PENDING',
@@ -622,11 +665,16 @@ export class SalesService {
     sale.customerName = customerName;
     await this.salesRepository.save(sale);
 
+    // AUTO-VINCULAR: buscar/crear siempre el cliente al marcar como crédito
+    const resolvedCustomerId = await this.findOrCreateCustomer(tenantId, customerName);
+
     const creditSale = this.creditSalesRepository.create({
       tenantId,
       saleId: sale.id,
       customerName,
+      customerId: resolvedCustomerId,
       amount: sale.totalAmount,
+      remainingAmount: sale.totalAmount,
       status: 'PENDING',
     });
 
