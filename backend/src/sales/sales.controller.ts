@@ -60,6 +60,13 @@ export class SalesController {
     );
   }
 
+  @Get('closures')
+  @Roles(Role.ADMIN, Role.OWNER)
+  getClosures(@Request() req) {
+    const { tenantId } = req.user;
+    return this.salesService.findAllClosures(tenantId);
+  }
+
   @Post('mark-credit')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   markAsCredit(

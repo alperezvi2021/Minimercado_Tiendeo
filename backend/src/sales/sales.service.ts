@@ -760,6 +760,20 @@ export class SalesService {
     });
   }
 
+  async findAllClosures(
+    tenantId: string,
+    status?: string,
+  ): Promise<CashClosure[]> {
+    const where: any = { tenantId };
+    if (status) where.status = status;
+
+    return this.cashClosureRepository.find({
+      where,
+      relations: ['user'],
+      order: { openedAt: 'DESC' },
+    });
+  }
+
   async findAllPayments(tenantId: string): Promise<CreditPayment[]> {
     return this.creditPaymentsRepository.find({
       where: { tenantId },
