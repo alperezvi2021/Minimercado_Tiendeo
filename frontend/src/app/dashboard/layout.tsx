@@ -5,18 +5,14 @@ import SyncManager from '@/components/offline/SyncManager';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const accessToken = localStorage.getItem('access_token');
-    
+
     // Auth Check: Si no hay token, expulsar al login
     if (!accessToken) {
       router.replace('/login');
@@ -34,11 +30,11 @@ export default function DashboardLayout({
       '/dashboard/reports',
       '/dashboard/suppliers',
       '/dashboard/accounting',
-      '/dashboard/settings'
+      '/dashboard/settings',
     ];
 
     if (role === 'CASHIER') {
-      if (restrictedRoutes.some(route => pathname.startsWith(route))) {
+      if (restrictedRoutes.some((route) => pathname.startsWith(route))) {
         router.push('/dashboard');
       }
     }
@@ -53,14 +49,14 @@ export default function DashboardLayout({
     <div className="flex h-screen bg-gray-50 dark:bg-slate-950 overflow-hidden transition-colors duration-200">
       {/* Sidebar Overlay for Mobile */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      
+
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <SyncManager />
         <Header onMenuClick={() => setIsSidebarOpen(true)} />

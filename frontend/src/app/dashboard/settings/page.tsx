@@ -36,6 +36,7 @@ export default function SettingsPage() {
     { id: 'REFUNDS', name: 'Devoluciones y Reembolsos', description: 'Gestión de cambios de productos' },
     { id: 'ACCOUNTING', name: 'Módulo Contable', description: 'Libro de ingresos y egresos' },
     { id: 'ORDERS', name: 'Gestión de Pedidos', description: 'Nueva sección para controlar órdenes pendientes' },
+    { id: 'CASHIER_MONITOR', name: 'Monitoreo de Cajeros', description: 'Seguimiento de actividad y efectivo en tiempo real' },
     { id: 'RESTAURANT', name: 'Servicio a Mesas', description: 'Atención por mesas, barra y PIN para meseros' },
   ];
   const [activeModules, setActiveModules] = useState<string[]>(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
@@ -99,7 +100,7 @@ interface SettingsUser {
           address: data.address || '',
         });
         // Load modules from backend or fall back to all if null
-        const defaultModules = ['ORDERS', 'POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'RESTAURANT'];
+        const defaultModules = ['ORDERS', 'POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'RESTAURANT', 'CASHIER_MONITOR'];
         setActiveModules(data.modules || defaultModules);
       }
     } catch (error) {

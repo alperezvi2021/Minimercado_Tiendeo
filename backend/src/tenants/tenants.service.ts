@@ -22,6 +22,7 @@ export class TenantsService {
       'CREDITS',
       'REFUNDS',
       'ACCOUNTING',
+      'CASHIER_MONITOR',
     ];
     const tenant = this.tenantsRepository.create({
       name,
