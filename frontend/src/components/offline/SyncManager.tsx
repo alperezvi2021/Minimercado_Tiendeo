@@ -153,7 +153,12 @@ export default function SyncManager() {
           const res = await fetch(`${apiUrl}/sales`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ ...sale, customerId: finalCustomerId })
+            body: JSON.stringify({ 
+              ...sale, 
+              totalAmount: sale.total, // Corregir mapeo para el backend
+              customerId: finalCustomerId,
+              customerName: sale.customerName // Asegurar que se envíe el nombre para créditos
+            })
           });
           if (res.ok) {
             const savedSale = await res.json();

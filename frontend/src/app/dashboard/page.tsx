@@ -560,6 +560,7 @@ export default function PosPage() {
       receivedAmount: paymentMethod === 'efectivo' ? Number(cashReceived) : 0,
       changeAmount: paymentMethod === 'efectivo' ? Math.max(0, Number(cashReceived) - calculateTotal()) : 0,
       customerId: (payload.customerId as string | null | undefined) ?? undefined,
+      customerName: (payload.customerName as string | null | undefined) ?? undefined,
     };
     offlineStore.addPendingSale(saleToStore);
     
