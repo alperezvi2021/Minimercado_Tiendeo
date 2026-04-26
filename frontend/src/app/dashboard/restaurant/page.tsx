@@ -122,7 +122,7 @@ export default function RestaurantDashboard() {
         <div>
           <h1 className="text-4xl font-black tracking-tight text-white flex items-center gap-4">
             <Utensils className="w-10 h-10 text-blue-500" />
-            Servicio a Mesas
+            Servicio a {aliasPlural}
           </h1>
           <p className="text-slate-400 mt-2 text-lg">
             Control de consumos activos y atención en barra.
@@ -134,7 +134,7 @@ export default function RestaurantDashboard() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
             <input
               type="text"
-              placeholder={`Buscar mesa o ${aliasSingular.toLowerCase()}...`}
+              placeholder={`Buscar ${aliasSingular.toLowerCase()} o servicio...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -145,7 +145,7 @@ export default function RestaurantDashboard() {
             className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-xl shadow-blue-900/30 active:scale-95"
           >
             <Plus className="w-6 h-6" />
-            Abrir Mesa
+            Abrir Servicio
           </button>
         </div>
       </div>
@@ -197,12 +197,12 @@ export default function RestaurantDashboard() {
           {filteredTables.length === 0 && (
             <div className="col-span-full py-32 bg-slate-800/10 border-2 border-dashed border-slate-700/50 rounded-[3rem] flex flex-col items-center justify-center text-slate-500">
                <Utensils className="w-20 h-20 mb-6 opacity-20" />
-               <p className="text-xl font-bold">No hay mesas activas en este momento</p>
+               <p className="text-xl font-bold">No hay servicios activos en este momento</p>
                <button 
                 onClick={() => { setNewAlias(''); setSelectedWaiterId(''); setWaiterPin(''); setError(''); setShowOpenModal(true); }}
                 className="mt-4 text-blue-500 hover:text-blue-400 font-bold transition-colors"
                >
-                 Abrir mi primera mesa del turno
+                 Comenzar mi primer servicio del turno
                </button>
             </div>
           )}
@@ -219,7 +219,7 @@ export default function RestaurantDashboard() {
               <X className="w-6 h-6" />
             </button>
 
-            <h2 className="text-3xl font-black text-white mb-8">Abrir Nueva Mesa</h2>
+            <h2 className="text-3xl font-black text-white mb-8">Abrir Nuevo Servicio</h2>
             
             <form onSubmit={handleOpenTable} className="space-y-8">
               {/* Campos ocultos para "atrapar" el autocompletado del navegador y evitar que ensucie los campos reales */}
