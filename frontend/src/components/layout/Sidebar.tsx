@@ -25,6 +25,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
   const [userRole, setUserRole] = useState('CASHIER');
   const [tenantModules, setTenantModules] = useState<string[]>([]);
   const [userName, setUserName] = useState('Usuario');
+  const [waiterAliasSingular, setWaiterAliasSingular] = useState('Mesero');
+  const [waiterAliasPlural, setWaiterAliasPlural] = useState('Meseros');
 
   useEffect(() => {
     const role = localStorage.getItem('user_role');
@@ -46,11 +48,26 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
       }
     } else {
        // SuperAdmin sees everything, others default to full for now
-       setTenantModules(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'CASHIER_MONITOR']);
+        setTenantModules(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'CASHIER_MONITOR']);
     }
+
+    const aliasSingular = localStorage.getItem('waiter_alias_singular');
+    const aliasPlural = localStorage.getItem('waiter_alias_plural');
+    if (aliasSingular) setWaiterAliasSingular(aliasSingular);
+    if (aliasPlural) setWaiterAliasPlural(aliasPlural);
   }, []);
 
-  const filteredItems = navItems.filter(item => {
+  const dynamicNavItems = navItems.map(item => {
+    if (item.href === '/dashboard/restaurant/waiters') {
+      return { ...item, name: `Gestionar ${waiterAliasPlural}` };
+    }
+    if (item.href === '/dashboard/restaurant') {
+       return { ...item, name: `Servicio a ${waiterAliasPlural}` };
+    }
+    return item;
+  });
+
+  const filteredItems = dynamicNavItems.filter(item => {
     const hasRole = item.roles.includes(userRole);
     // SUPER_ADMIN skips module filtering
     if (userRole === 'SUPER_ADMIN') return hasRole;

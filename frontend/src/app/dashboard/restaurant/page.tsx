@@ -29,9 +29,15 @@ export default function RestaurantDashboard() {
   const [selectedWaiterId, setSelectedWaiterId] = useState('');
   const [waiterPin, setWaiterPin] = useState('');
   const [error, setError] = useState('');
+  const [aliasSingular, setAliasSingular] = useState('Mesero');
+  const [aliasPlural, setAliasPlural] = useState('Meseros');
 
   useEffect(() => {
     fetchData();
+    const savedSingular = localStorage.getItem('waiter_alias_singular');
+    const savedPlural = localStorage.getItem('waiter_alias_plural');
+    if (savedSingular) setAliasSingular(savedSingular);
+    if (savedPlural) setAliasPlural(savedPlural);
   }, []);
 
   const fetchData = async () => {
@@ -74,13 +80,13 @@ export default function RestaurantDashboard() {
       });
 
       if (!resVal.ok) {
-        setError('PIN de mesero incorrecto');
+        setError(`PIN de ${aliasSingular.toLowerCase()} incorrecto`);
         return;
       }
 
       const waiter = await resVal.json();
       if (waiter.id !== selectedWaiterId) {
-        setError('Ese PIN no pertenece al mesero seleccionado');
+        setError(`Ese PIN no pertenece al ${aliasSingular.toLowerCase()} seleccionado`);
         return;
       }
 
@@ -128,7 +134,7 @@ export default function RestaurantDashboard() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
             <input
               type="text"
-              placeholder="Buscar mesa o mesero..."
+              placeholder={`Buscar mesa o ${aliasSingular.toLowerCase()}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl py-3 pl-12 pr-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -237,7 +243,7 @@ export default function RestaurantDashboard() {
 
               <div className="space-y-4">
                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-black uppercase tracking-widest text-slate-500 ml-1">Seleccionar Mesero</label>
+                    <label className="text-sm font-black uppercase tracking-widest text-slate-500 ml-1">Seleccionar {aliasSingular}</label>
                     <select
                       required
                       value={selectedWaiterId}

@@ -16,9 +16,15 @@ export default function WaitersPage() {
   const [newWaiterPin, setNewWaiterPin] = useState('');
   const [editingWaiter, setEditingWaiter] = useState<Waiter | null>(null);
   const [error, setError] = useState('');
+  const [aliasSingular, setAliasSingular] = useState('Mesero');
+  const [aliasPlural, setAliasPlural] = useState('Meseros');
 
   useEffect(() => {
     fetchWaiters();
+    const savedSingular = localStorage.getItem('waiter_alias_singular');
+    const savedPlural = localStorage.getItem('waiter_alias_plural');
+    if (savedSingular) setAliasSingular(savedSingular);
+    if (savedPlural) setAliasPlural(savedPlural);
   }, []);
 
   const fetchWaiters = async () => {
@@ -64,7 +70,7 @@ export default function WaitersPage() {
         fetchWaiters();
       } else {
         const data = await res.json();
-        setError(data.message || 'Error al crear mesero');
+        setError(data.message || `Error al crear ${aliasSingular.toLowerCase()}`);
       }
     } catch (err) {
       setError('Fallo de conexión');
@@ -96,7 +102,7 @@ export default function WaitersPage() {
         fetchWaiters();
       } else {
         const data = await res.json();
-        setError(data.message || 'Error al actualizar mesero');
+        setError(data.message || `Error al actualizar ${aliasSingular.toLowerCase()}`);
       }
     } catch (err) {
       setError('Fallo de conexión');
@@ -104,7 +110,7 @@ export default function WaitersPage() {
   };
 
   const handleDeleteWaiter = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar a este mesero?')) return;
+    if (!confirm(`¿Estás seguro de eliminar a este ${aliasSingular.toLowerCase()}?`)) return;
     
     try {
       const token = localStorage.getItem('access_token');
@@ -123,11 +129,11 @@ export default function WaitersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-            Gestión de Meseros
+            Gestión de {aliasPlural}
           </h1>
           <p className="text-slate-400 mt-1 flex items-center gap-2">
             <Info className="w-4 h-4" />
-            Configura los accesos rápidos por PIN para tu personal de mesas.
+            Configura los accesos rápidos por PIN para tu personal.
           </p>
         </div>
         <button
@@ -135,7 +141,7 @@ export default function WaitersPage() {
           className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20 active:scale-95"
         >
           <Plus className="w-5 h-5" />
-          Nuevo Mesero
+          Nuevo {aliasSingular}
         </button>
       </div>
 
@@ -186,7 +192,7 @@ export default function WaitersPage() {
           {waiters.length === 0 && (
             <div className="col-span-full py-20 bg-slate-800/20 border-2 border-dashed border-slate-700 rounded-3xl flex flex-col items-center text-slate-500 font-medium">
               <User className="w-16 h-16 mb-4 opacity-20" />
-              Todavía no has creado ningún mesero.
+              Todavía no has creado ningún {aliasSingular.toLowerCase()}.
             </div>
           )}
         </div>
@@ -196,7 +202,7 @@ export default function WaitersPage() {
       {showAddModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-200">
-            <h2 className="text-2xl font-bold text-white mb-6">Nuevo Mesero</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Nuevo {aliasSingular}</h2>
             <form onSubmit={handleCreateWaiter} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-400 mb-2 px-1">Nombre Completo</label>
@@ -252,7 +258,7 @@ export default function WaitersPage() {
       {editingWaiter && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md p-8 rounded-[2.5rem] shadow-2xl animate-in zoom-in-95 duration-200">
-            <h2 className="text-2xl font-bold text-white mb-6">Editar Mesero</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Editar {aliasSingular}</h2>
             <form onSubmit={handleUpdateWaiter} className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-400 mb-2 px-1">Nombre Completo</label>

@@ -9,4 +9,6 @@ export class CreateTenantDto {
   phone?: string;
   location?: string;
   modules?: string[];
+  waiterAliasSingular?: string;
+  waiterAliasPlural?: string;
 }

@@ -49,6 +49,12 @@ export class Tenant {
   @Column({ type: 'simple-array', nullable: true })
   modules: string[];
 
+  @Column({ default: 'Mesero' })
+  waiterAliasSingular: string;
+
+  @Column({ default: 'Meseros' })
+  waiterAliasPlural: string;
+
   @OneToMany(() => User, (user) => user.tenant)
   users: User[];
 
