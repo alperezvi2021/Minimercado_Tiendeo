@@ -216,16 +216,23 @@ export default function RestaurantDashboard() {
             <h2 className="text-3xl font-black text-white mb-8">Abrir Nueva Mesa</h2>
             
             <form onSubmit={handleOpenTable} className="space-y-8">
+              {/* Campos ocultos para "atrapar" el autocompletado del navegador y evitar que ensucie los campos reales */}
+              <input type="text" name="prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+              <input type="password" name="password_fake" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+              
               <div className="space-y-2">
                 <label className="text-sm font-black uppercase tracking-widest text-slate-500 ml-1">Alias o Nombre</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Barra Principal / Mesa Terraza 4"
-                  value={newAlias}
-                  onChange={(e) => setNewAlias(e.target.value)}
-                  className="w-full bg-slate-800/50 border border-slate-700 rounded-3xl p-5 text-xl text-white focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                />
+                  <input
+                    type="text"
+                    name="table_alias_name_unique"
+                    id="table_alias_name_unique"
+                    required
+                    autoComplete="off"
+                    placeholder="Ej: Barra Principal / Mesa Terraza 4"
+                    value={newAlias}
+                    onChange={(e) => setNewAlias(e.target.value)}
+                    className="w-full bg-slate-800/50 border border-slate-700 rounded-3xl p-5 text-xl text-white focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  />
               </div>
 
               <div className="space-y-4">
@@ -248,8 +255,11 @@ export default function RestaurantDashboard() {
                     <label className="text-sm font-black uppercase tracking-widest text-slate-500 ml-1 text-center">Ingresa tu PIN de 4 dígitos</label>
                     <input
                       type="password"
+                      name="waiter_pin_code_unique"
+                      id="waiter_pin_code_unique"
                       maxLength={4}
                       required
+                      autoComplete="new-password"
                       value={waiterPin}
                       onChange={(e) => setWaiterPin(e.target.value.replace(/\D/g, ''))}
                       className="w-full bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 text-center text-4xl font-mono tracking-[2rem] text-blue-400 focus:outline-none focus:border-blue-500 transition-all"
