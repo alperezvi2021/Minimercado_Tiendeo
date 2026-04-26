@@ -38,8 +38,9 @@ export default function SettingsPage() {
     { id: 'REFUNDS', name: 'Devoluciones y Reembolsos', description: 'Gestión de cambios de productos' },
     { id: 'ACCOUNTING', name: 'Módulo Contable', description: 'Libro de ingresos y egresos' },
     { id: 'ORDERS', name: 'Gestión de Pedidos', description: 'Nueva sección para controlar órdenes pendientes' },
+    { id: 'RESTAURANT', name: 'Servicio a Mesas', description: 'Atención por mesas, barra y PIN para personal' },
+    { id: 'WAITERS', name: 'Gestión de Personal', description: 'Configuración de nombres y PIN de acceso' },
     { id: 'CASHIER_MONITOR', name: 'Monitoreo de Cajeros', description: 'Seguimiento de actividad y efectivo en tiempo real' },
-    { id: 'RESTAURANT', name: 'Servicio a Mesas', description: 'Atención por mesas, barra y PIN para meseros' },
   ];
   const [activeModules, setActiveModules] = useState<string[]>(['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']);
 
@@ -443,28 +444,37 @@ interface SettingsUser {
                       className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
                     />
                   </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Alias Personal (Singular)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ej. Mesero / Lavador"
-                      value={tenantData.waiterAliasSingular}
-                      onChange={(e) => setTenantData({...tenantData, waiterAliasSingular: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Alias Personal (Plural)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ej. Meseros / Lavadores"
-                      value={tenantData.waiterAliasPlural}
-                      onChange={(e) => setTenantData({...tenantData, waiterAliasPlural: e.target.value})}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
-                    />
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-6">
+                  <h4 className="text-sm font-black text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    Personalización de Nombres (Alias)
+                  </h4>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Define cómo llamarás a tu personal en el sistema (Ej: Meseros, Lavadores, Cajeros).</p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Nombre del Personal (Singular)</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ej. Mesero / Lavador"
+                        value={tenantData.waiterAliasSingular}
+                        onChange={(e) => setTenantData({...tenantData, waiterAliasSingular: e.target.value})}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Nombre del Personal (Plural)</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ej. Meseros / Lavadores"
+                        value={tenantData.waiterAliasPlural}
+                        onChange={(e) => setTenantData({...tenantData, waiterAliasPlural: e.target.value})}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all font-bold dark:text-white"
+                      />
+                    </div>
                   </div>
                 </div>
 

@@ -65,6 +65,7 @@ export default function SuperAdminPage() {
     { id: 'ACCOUNTING', name: 'Módulo Contable' },
     { id: 'ORDERS', name: 'Gestión de Pedidos' },
     { id: 'RESTAURANT', name: 'Servicio a Mesas (Restaurante)' },
+    { id: 'WAITERS', name: 'Gestión de Personal (Nombres/PIN)' },
     { id: 'CASHIER_MONITOR', name: 'Monitoreo de Cajeros' },
   ];
 
