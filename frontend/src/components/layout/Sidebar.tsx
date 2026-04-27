@@ -89,8 +89,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
       fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-64 md:flex md:shadow-xl
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
     `}>
-      <div className="h-16 flex items-center justify-center border-b border-slate-800 px-6 bg-slate-950">
-        <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-10 object-contain" />
+      <div className="h-20 flex items-center justify-center border-b border-slate-800 px-6 bg-slate-950">
+        <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-14 object-contain" />
       </div>
       <div className="flex-1 overflow-y-auto py-6 px-4 flex flex-col justify-between">
         <nav className="space-y-2">

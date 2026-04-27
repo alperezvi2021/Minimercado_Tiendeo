@@ -300,14 +300,8 @@ export default function SuperAdminPage() {
       {/* Sidebar Navigation */}
       <aside className={`fixed left-0 top-0 bottom-0 w-72 bg-[#0a0a1a] border-r border-white/5 p-6 flex flex-col z-50 transform transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center justify-between gap-3 mb-10 px-2 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-white tracking-tight">TIENDEO <span className="text-blue-500">PRO</span></h1>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">SuperAdmin Console</p>
-            </div>
+          <div className="flex items-center group cursor-pointer">
+            <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-14 object-contain group-hover:scale-105 transition-transform" />
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} title="Cerrar menú" aria-label="Cerrar menú" className="md:hidden p-2 text-gray-500 hover:text-white transition-colors">
             <X className="w-6 h-6" />
@@ -372,7 +366,9 @@ export default function SuperAdminPage() {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div className="ml-2 font-black text-white tracking-tight">TIENDEO <span className="text-blue-500">PRO</span></div>
+          <div className="ml-2">
+            <img src="/logo-dark.jpeg" alt="TiendeoPOS Pro" className="h-10 object-contain" />
+          </div>
         </div>
 
         {/* Header Section */}
