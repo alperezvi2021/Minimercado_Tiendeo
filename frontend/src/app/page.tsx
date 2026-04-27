@@ -187,7 +187,7 @@ export default function LandingPage() {
               {/* Plan Mensual */}
               <div className="bg-white/5 border border-white/10 rounded-[3rem] p-10 flex flex-col items-center text-center hover:bg-white/10 transition-all group">
                 <h4 className="text-2xl font-black text-white mb-6">Plan Mensual</h4>
-                <p className="text-5xl font-black text-white tracking-tighter mb-4">$190.000 <span className="text-lg text-slate-500">/ mes</span></p>
+                <p className="text-5xl font-black text-white tracking-tighter mb-4">$140.000 <span className="text-lg text-slate-500">/ mes</span></p>
                 <div className="bg-blue-600/10 text-blue-400 px-4 py-1.5 rounded-full text-xs font-black mb-10 tracking-widest uppercase">Sin Permanencia</div>
                 <ul className="space-y-4 mb-12 text-slate-400 font-bold text-sm w-full">
                   <li className="flex items-center justify-center gap-2 tracking-tight">Sin Cláusulas de Permanencia</li>
@@ -202,7 +202,7 @@ export default function LandingPage() {
               <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[3rem] p-10 flex flex-col items-center text-center shadow-[0_30px_60px_-15px_rgba(37,99,235,0.4)] transform lg:scale-105">
                 <div className="absolute top-8 right-8 bg-white text-blue-600 px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase shadow-xl">Best Value</div>
                 <h4 className="text-2xl font-black text-white mb-6">Plan Anual</h4>
-                <p className="text-5xl font-black text-white tracking-tighter mb-4">$1.800.000 <span className="text-lg text-blue-200">/ año</span></p>
+                <p className="text-5xl font-black text-white tracking-tighter mb-4">$1'440.000 <span className="text-lg text-blue-200">/ año</span></p>
                 <div className="bg-white/20 text-white px-4 py-1.5 rounded-full text-xs font-black mb-10 tracking-widest uppercase">Ahorro Extremo</div>
                 <ul className="space-y-4 mb-12 text-blue-100 font-bold text-sm w-full">
                   <li className="flex items-center justify-center gap-2">Pago único por adelantado</li>
