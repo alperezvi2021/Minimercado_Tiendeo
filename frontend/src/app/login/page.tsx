@@ -55,8 +55,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950 transition-colors duration-200">
       <div className="max-w-md w-full space-y-8 p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-gray-100 dark:border-slate-800 transition-all">
         <div className="flex flex-col items-center">
-          <img src="/logo-light.jpeg" alt="TiendeoPOS" className="h-64 object-contain dark:hidden mt-4" />
-          <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-64 object-contain hidden dark:block mt-4" />
+          <img src="/logo-light.jpeg" alt="TiendeoPOS" className="h-32 object-contain dark:hidden mt-4" />
+          <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-32 object-contain hidden dark:block mt-4" />
           <p className="mt-4 text-center text-sm text-gray-500 dark:text-slate-400 font-medium">
             Inicia sesión para acceder a tu caja
           </p>
