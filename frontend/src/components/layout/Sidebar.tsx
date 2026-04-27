@@ -17,7 +17,7 @@ const navItems = [
   { name: 'Créditos', href: '/dashboard/credits', icon: ArrowRightLeft, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'CREDITS' },
   { name: 'Devoluciones', href: '/dashboard/sales/refunds', icon: RotateCcw, roles: ['OWNER', 'ADMIN', 'CASHIER', 'SUPER_ADMIN'], module: 'REFUNDS' },
   { name: 'Contabilidad', href: '/dashboard/accounting', icon: Receipt, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'ACCOUNTING' },
-  { name: 'Gestionar Meseros', href: '/dashboard/restaurant/waiters', icon: Users, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'RESTAURANT' },
+  { name: 'Gestionar Meseros', href: '/dashboard/restaurant/waiters', icon: Users, roles: ['OWNER', 'ADMIN', 'SUPER_ADMIN'], module: 'WAITERS' },
 ];
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose?: () => void }) {

@@ -62,6 +62,9 @@ export default function OrderManagementPage() {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'success'} | null>(null);
+  const [waiterAliasSingular, setWaiterAliasSingular] = useState('Mesero');
+  const [waiterAliasPlural, setWaiterAliasPlural] = useState('Meseros');
+  const [showNewOrderWaiterModal, setShowNewOrderWaiterModal] = useState(false);
 
   // Numpad State (Quantity Editing)
   const [showNumpad, setShowNumpad] = useState<{
@@ -85,6 +88,8 @@ export default function OrderManagementPage() {
 
   useEffect(() => {
     fetchInitialData();
+    setWaiterAliasSingular(localStorage.getItem('waiter_alias_singular') || 'Mesero');
+    setWaiterAliasPlural(localStorage.getItem('waiter_alias_plural') || 'Meseros');
   }, []);
 
   // Auto-hide notification
@@ -400,7 +405,7 @@ export default function OrderManagementPage() {
           </div>
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Caja Registradora</h1>
-            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Gestión de Pedidos en Barra</p>
+            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Gestión de {waiterAliasPlural} / Pedidos</p>
           </div>
         </div>
 
@@ -469,7 +474,13 @@ export default function OrderManagementPage() {
         </div>
 
         <button 
-          onClick={() => handleCreateOrder()}
+          onClick={() => {
+            if (waiters.length > 0) {
+              setShowNewOrderWaiterModal(true);
+            } else {
+              handleCreateOrder();
+            }
+          }}
           className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-5 rounded-[2rem] font-black flex items-center gap-3 transition-all shadow-xl shadow-blue-900/40 active:scale-95 whitespace-nowrap min-h-[70px] text-lg"
         >
           <Plus className="w-7 h-7" />
@@ -514,7 +525,7 @@ export default function OrderManagementPage() {
                   {/* Waiter Information */}
                   <div className="min-w-[180px] w-full md:w-auto">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2 mb-2">
-                       Mesero
+                       {waiterAliasSingular}
                     </p>
                     <div className="flex items-center gap-3">
                        <div className={`p-3 rounded-2xl ${isSelected ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-800 text-slate-400'}`}>
@@ -853,6 +864,52 @@ export default function OrderManagementPage() {
                 Guardar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Select Waiter Modal for New Order */}
+      {showNewOrderWaiterModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md animate-in fade-in" onClick={() => setShowNewOrderWaiterModal(false)} />
+          <div className="relative w-full max-w-lg bg-slate-900 rounded-[3rem] p-10 shadow-2xl border-2 border-slate-800 animate-in zoom-in-95">
+             <div className="flex justify-between items-center mb-8">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight">Seleccionar {waiterAliasSingular}</h3>
+                <button onClick={() => setShowNewOrderWaiterModal(false)} className="text-slate-500 hover:text-white transition-colors">
+                   <X className="w-8 h-8" />
+                </button>
+             </div>
+             
+             <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {waiters.map(w => (
+                   <button
+                    key={w.id}
+                    onClick={() => {
+                      handleCreateOrder(w.id);
+                      setShowNewOrderWaiterModal(false);
+                    }}
+                    className="flex items-center gap-5 p-6 bg-slate-800 hover:bg-blue-600 text-white rounded-3xl transition-all group active:scale-95 text-left border-2 border-transparent hover:border-blue-400"
+                   >
+                      <div className="bg-slate-900 p-4 rounded-2xl group-hover:bg-blue-500 transition-colors">
+                         <User className="w-6 h-6 text-slate-400 group-hover:text-white" />
+                      </div>
+                      <div>
+                         <p className="text-xl font-black">{w.name}</p>
+                         <p className="text-slate-400 text-xs font-bold uppercase tracking-widest group-hover:text-blue-200">{waiterAliasSingular} Activo</p>
+                      </div>
+                   </button>
+                ))}
+             </div>
+             
+             <button 
+                onClick={() => {
+                  handleCreateOrder();
+                  setShowNewOrderWaiterModal(false);
+                }}
+                className="w-full mt-8 py-5 rounded-2xl bg-slate-800 text-slate-400 font-bold hover:text-white hover:bg-slate-700 transition-all border border-slate-700"
+             >
+                Crear sin {waiterAliasSingular} específico
+             </button>
           </div>
         </div>
       )}
