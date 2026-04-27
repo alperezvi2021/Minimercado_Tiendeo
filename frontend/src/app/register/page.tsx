@@ -14,7 +14,7 @@ export default function RegisterPage() {
     userName: '',
     email: '',
     password: '',
-    modules: ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING']
+    modules: ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'ORDERS', 'RESTAURANT', 'WAITERS', 'CASHIER_MONITOR']
   });
 
   const modulesList = [
@@ -27,6 +27,10 @@ export default function RegisterPage() {
     { id: 'CREDITS', name: 'Créditos (Cuentas por Cobrar)', description: 'Venta a crédito y abonos' },
     { id: 'REFUNDS', name: 'Devoluciones y Reembolsos', description: 'Gestión de cambios de productos' },
     { id: 'ACCOUNTING', name: 'Módulo Contable', description: 'Libro de ingresos y egresos' },
+    { id: 'ORDERS', name: 'Gestión de Pedidos', description: 'Control de pedidos y entregas' },
+    { id: 'RESTAURANT', name: 'Servicio a Mesas (Restaurante)', description: 'Comandas, mesas y cuentas' },
+    { id: 'WAITERS', name: 'Gestión de Personal (Nombres/PIN)', description: 'Control de acceso y seguridad' },
+    { id: 'CASHIER_MONITOR', name: 'Monitoreo de Cajeros', description: 'Supervisión de actividad en tiempo real' },
   ];
 
   const toggleModule = (id: string) => {
@@ -173,6 +177,7 @@ export default function RegisterPage() {
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
                       className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-slate-800 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-bold text-gray-900 dark:text-white"
                       required
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -188,6 +193,7 @@ export default function RegisterPage() {
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                       className="w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-slate-800 border-0 rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all font-bold text-gray-900 dark:text-white"
                       required
+                      autoComplete="new-password"
                     />
                     <button 
                       type="button"
