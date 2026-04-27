@@ -301,7 +301,7 @@ export default function SuperAdminPage() {
       <aside className={`fixed left-0 top-0 bottom-0 w-72 bg-[#0a0a1a] border-r border-white/5 p-6 flex flex-col z-50 transform transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center justify-between gap-3 mb-10 px-2 shrink-0">
           <div className="flex items-center group cursor-pointer">
-            <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-14 object-contain group-hover:scale-105 transition-transform" />
+            <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-24 object-contain group-hover:scale-105 transition-transform" />
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)} title="Cerrar menú" aria-label="Cerrar menú" className="md:hidden p-2 text-gray-500 hover:text-white transition-colors">
             <X className="w-6 h-6" />
@@ -357,7 +357,7 @@ export default function SuperAdminPage() {
       <main className="md:pl-72 p-4 md:p-10 max-w-[1600px] mx-auto pt-24 md:pt-10">
         
         {/* Mobile Header Toggle */}
-        <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-[#0a0a1a]/90 backdrop-blur-xl border-b border-white/5 z-30 flex items-center px-4">
+        <div className="md:hidden fixed top-0 left-0 right-0 h-24 bg-[#0a0a1a]/90 backdrop-blur-xl border-b border-white/5 z-30 flex items-center px-4">
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
             title="Abrir menú"
@@ -367,7 +367,7 @@ export default function SuperAdminPage() {
             <Menu className="w-6 h-6" />
           </button>
           <div className="ml-2">
-            <img src="/logo-dark.jpeg" alt="TiendeoPOS Pro" className="h-10 object-contain" />
+            <img src="/logo-dark.jpeg" alt="TiendeoPOS Pro" className="h-20 object-contain" />
           </div>
         </div>
 

@@ -15,9 +15,9 @@ export default function LandingPage() {
 
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-[100] bg-[#020617]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-28 flex items-center justify-between">
           <div className="flex items-center group cursor-pointer">
-            <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-16 object-contain group-hover:scale-105 transition-transform" />
+            <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-24 object-contain group-hover:scale-105 transition-transform" />
           </div>
           
           <div className="hidden md:flex items-center gap-8 text-sm font-bold">

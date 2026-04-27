@@ -91,8 +91,8 @@ export default function RegisterPage() {
       
       {/* Brand Header */}
       <Link href="/" className="flex items-center mb-12 hover:opacity-80 transition-opacity">
-        <img src="/logo-light.jpeg" alt="TiendeoPOS" className="h-20 object-contain dark:hidden" />
-        <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-20 object-contain hidden dark:block" />
+        <img src="/logo-light.jpeg" alt="TiendeoPOS" className="h-40 object-contain dark:hidden" />
+        <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-40 object-contain hidden dark:block" />
       </Link>
 
       <div className={`w-full ${step === 3 ? 'max-w-2xl' : 'max-w-md'}`}>
