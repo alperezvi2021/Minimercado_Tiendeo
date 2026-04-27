@@ -90,13 +90,9 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-[#0f172a] flex flex-col justify-center items-center p-6">
       
       {/* Brand Header */}
-      <Link href="/" className="flex items-center gap-2 mb-12 hover:opacity-80 transition-opacity">
-        <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20">
-          <ShoppingBag className="w-6 h-6 text-white" />
-        </div>
-        <span className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter">
-          Tiendeo<span className="text-blue-500">POS</span>
-        </span>
+      <Link href="/" className="flex items-center mb-12 hover:opacity-80 transition-opacity">
+        <img src="/logo-light.jpeg" alt="TiendeoPOS" className="h-14 object-contain dark:hidden" />
+        <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-14 object-contain hidden dark:block" />
       </Link>
 
       <div className={`w-full ${step === 3 ? 'max-w-2xl' : 'max-w-md'}`}>

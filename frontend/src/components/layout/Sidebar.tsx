@@ -90,9 +90,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
     `}>
       <div className="h-16 flex items-center justify-center border-b border-slate-800 px-6 bg-slate-950">
-        <h1 className="text-xl font-bold tracking-tight text-white">
-          Tiendeo<span className="text-blue-500">POS</span>
-        </h1>
+        <img src="/logo-dark.jpeg" alt="TiendeoPOS" className="h-10 object-contain" />
       </div>
       <div className="flex-1 overflow-y-auto py-6 px-4 flex flex-col justify-between">
         <nav className="space-y-2">
