@@ -103,19 +103,8 @@ export default function LandingPage() {
           <div className="relative animate-in fade-in zoom-in duration-1000 hidden lg:block">
             <div className="absolute -inset-10 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-full blur-[100px] opacity-50"></div>
             <div className="relative bg-white/5 rounded-[3rem] border border-white/10 shadow-2xl p-6 backdrop-blur-3xl">
-               <div className="bg-slate-950/80 rounded-[2rem] h-[500px] flex flex-col items-center justify-center p-12 text-center border border-white/5 shadow-inner">
-                  <div className="w-24 h-24 bg-blue-600/20 rounded-3xl flex items-center justify-center mb-8">
-                    <BarChart3 className="w-12 h-12 text-blue-500 animate-pulse" />
-                  </div>
-                  <div className="space-y-4 w-full">
-                    <div className="h-5 w-full bg-slate-800 rounded-full" />
-                    <div className="h-5 w-4/5 bg-slate-800 rounded-full mx-auto opacity-60" />
-                    <div className="h-5 w-3/4 bg-slate-800 rounded-full mx-auto opacity-30" />
-                  </div>
-                  <div className="mt-16 grid grid-cols-2 gap-6 w-full">
-                    <div className="h-28 bg-white/5 rounded-[1.5rem] border border-white/5" />
-                    <div className="h-28 bg-white/5 rounded-[1.5rem] border border-white/5" />
-                  </div>
+               <div className="bg-slate-950/80 rounded-[2rem] h-[500px] w-full overflow-hidden border border-white/5 shadow-inner relative group">
+                  <img src="/hero-image.jpeg" alt="TiendeoPOS Dashboard" className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700" />
                </div>
             </div>
           </div>
