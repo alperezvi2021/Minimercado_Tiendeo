@@ -2,13 +2,19 @@
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import SyncManager from '@/components/offline/SyncManager';
-import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useScaleStore } from '@/store/useScaleStore';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const { autoReconnect } = useScaleStore();
+
+  useEffect(() => {
+    // Intentar auto-conectar la báscula al cargar el dashboard
+    autoReconnect();
+  }, [autoReconnect]);
 
   useEffect(() => {
     const accessToken = localStorage.getItem('access_token');
