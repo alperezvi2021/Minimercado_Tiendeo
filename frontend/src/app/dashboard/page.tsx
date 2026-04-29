@@ -118,15 +118,19 @@ export default function PosPage() {
         if (done) break;
         if (value) {
           buffer += value;
-          if (buffer.includes('\n') || buffer.includes('\r')) {
-            const lines = buffer.split(/[\r\n]+/);
+          // Las básculas pueden usar Newline, Carriage Return o caracteres STX/ETX (0x02, 0x03)
+          const lines = buffer.split(/[\r\n\x02\x03]+/);
+          
+          if (lines.length > 1) {
             buffer = lines.pop() || ''; 
             
             for (const line of lines) {
-              const cleanedLine = line.replace(/[^\d.]/g, ''); 
-              if (cleanedLine) {
-                const weight = parseFloat(cleanedLine);
-                if (!isNaN(weight) && weight >= 0) {
+              // Buscamos un patrón numérico (ej: 0.145 o 0.00) que represente el peso
+              // Algunos protocolos envían: "WW,0.145kg" o "+  0.145"
+              const match = line.match(/(\d+\.\d+)/);
+              if (match) {
+                const weight = parseFloat(match[1]);
+                if (!isNaN(weight) && weight >= 0 && weight < 500) { // Validar rango razonable
                   setScaleWeight(weight);
                 }
               }
