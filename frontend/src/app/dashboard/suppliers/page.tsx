@@ -1,7 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Plus, Search, Truck, Receipt, Eye, Edit3, Trash2, Calendar, User, FileText, CheckCircle2, Clock, Wallet, CalendarDays, DollarSign, CreditCard } from 'lucide-react';
+import { Plus, Search, Truck, Receipt, Eye, Edit3, Trash2, Calendar, User, FileText, CheckCircle2, Clock, Wallet, CalendarDays, DollarSign, CreditCard, Download, FileSpreadsheet } from 'lucide-react';
 import { formatCurrency, parseCurrency } from '@/utils/formatters';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 
 interface Supplier {
@@ -375,6 +378,56 @@ export default function SuppliersPage() {
     return 0;
   });
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const title = `Informe de Proveedores - ${new Date().toLocaleDateString()}`;
+    
+    doc.setFontSize(18);
+    doc.text('TIENDEO POS - Reporte de Compras', 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+    doc.text(title, 14, 30);
+
+    const tableData = suppliers.map(s => {
+      const supInvoices = invoices.filter(i => i.supplier?.id === s.id);
+      const total = supInvoices.reduce((sum, i) => sum + Number(i.totalAmount || 0), 0);
+      return [
+        s.name,
+        s.taxId || 'N/A',
+        supInvoices.length.toString(),
+        `$${formatCurrency(total)}`
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Proveedor', 'NIT/ID', 'Facturas', 'Total Compras']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [37, 99, 235] },
+    });
+
+    doc.save(`Reporte_Proveedores_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const exportToExcel = () => {
+    const data = suppliers.map(s => {
+      const supInvoices = invoices.filter(i => i.supplier?.id === s.id);
+      const total = supInvoices.reduce((sum, i) => sum + Number(i.totalAmount || 0), 0);
+      return {
+        'Proveedor': s.name,
+        'NIT/ID': s.taxId || 'N/A',
+        'Facturas Registradas': supInvoices.length,
+        'Total Compras': total
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Proveedores');
+    XLSX.writeFile(wb, `Reporte_Proveedores_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -666,8 +719,24 @@ export default function SuppliersPage() {
                      </div>
 
                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-xl">
-                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                            <h4 className="font-bold text-slate-900 dark:text-white uppercase text-xs tracking-widest">Resumen por Proveedor</h4>
+                           <div className="flex gap-2">
+                             <button 
+                               onClick={exportToPDF}
+                               type="button"
+                               className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-xl text-[10px] font-black border border-rose-100 dark:border-rose-800/50 hover:bg-rose-100 transition-all"
+                             >
+                               <FileText className="w-3 h-3" /> PDF
+                             </button>
+                             <button 
+                               onClick={exportToExcel}
+                               type="button"
+                               className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-[10px] font-black border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-all"
+                             >
+                               <FileSpreadsheet className="w-3 h-3" /> EXCEL
+                             </button>
+                           </div>
                         </div>
                         <table className="w-full text-left">
                           <thead>

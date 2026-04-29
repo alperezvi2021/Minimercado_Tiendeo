@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft, AlertCircle, Utensils } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, Tag, Wifi, WifiOff, CloudSync, ArrowRightLeft, AlertCircle, Utensils, Scale } from 'lucide-react';
 import { useOfflineStore, OfflineSale, OfflineCustomer, OfflineSaleItem } from '@/store/useOfflineStore';
 import { formatCurrency, parseCurrency } from '@/utils/formatters';
 
@@ -79,6 +79,95 @@ export default function PosPage() {
     ticketFooterMessage: ''
   });
   
+  // Scale Connection State
+  const [isScaleConnected, setIsScaleConnected] = useState(false);
+  const [scaleWeight, setScaleWeight] = useState<number>(0);
+  const scaleReaderRef = useRef<any>(null);
+  const scalePortRef = useRef<any>(null);
+
+  const connectScale = async () => {
+    try {
+      if (!('serial' in navigator)) {
+        alert('Web Serial API no está soportada en este navegador. Usa Chrome o Edge.');
+        return;
+      }
+      
+      const port = await (navigator as any).serial.requestPort();
+      await port.open({ baudRate: 9600 });
+      scalePortRef.current = port;
+      setIsScaleConnected(true);
+
+      const textDecoder = new TextDecoderStream();
+      port.readable.pipeTo(textDecoder.writable);
+      const reader = textDecoder.readable.getReader();
+      scaleReaderRef.current = reader;
+
+      readScaleLoop(reader);
+    } catch (error) {
+      console.error('Error connecting to scale:', error);
+      alert('Error conectando a la báscula: ' + error);
+      setIsScaleConnected(false);
+    }
+  };
+
+  const readScaleLoop = async (reader: any) => {
+    let buffer = '';
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        if (value) {
+          buffer += value;
+          if (buffer.includes('\n') || buffer.includes('\r')) {
+            const lines = buffer.split(/[\r\n]+/);
+            buffer = lines.pop() || ''; 
+            
+            for (const line of lines) {
+              const cleanedLine = line.replace(/[^\d.]/g, ''); 
+              if (cleanedLine) {
+                const weight = parseFloat(cleanedLine);
+                if (!isNaN(weight) && weight >= 0) {
+                  setScaleWeight(weight);
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error reading scale:', error);
+    } finally {
+      setIsScaleConnected(false);
+    }
+  };
+
+  const disconnectScale = async () => {
+    try {
+      if (scaleReaderRef.current) {
+        await scaleReaderRef.current.cancel();
+      }
+      if (scalePortRef.current) {
+        await scalePortRef.current.close();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsScaleConnected(false);
+      scaleReaderRef.current = null;
+      scalePortRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    // Si hay un peso válido de la báscula y un producto pesable seleccionado, actualizar su cantidad
+    if (scaleWeight > 0 && cart.length > 0 && posState === 'billing') {
+      const currentItem = cart[selectedCartIndex];
+      if (currentItem && currentItem.product.sellByWeight) {
+        updateQuantity(selectedCartIndex, scaleWeight);
+      }
+    }
+  }, [scaleWeight]);
+
   // Reference for scanner focus
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -669,7 +758,10 @@ export default function PosPage() {
           setPaymentMethod('efectivo');
           setTimeout(() => document.getElementById('cash-received-input')?.focus(), 100);
         }
-        if (e.key === '2' || e.key === 'ArrowRight' || e.key === 'ArrowDown') setPaymentMethod('credito');
+        if (e.key === '2' || e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          setPaymentMethod('credito');
+          setTimeout(() => document.getElementById('credit-customer-name')?.focus(), 100);
+        }
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
@@ -753,6 +845,17 @@ export default function PosPage() {
             <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{tenantData.name} • {tenantData.location}</p>
           </div>
           <div className="flex items-center gap-3">
+            {isScaleConnected ? (
+              <button onClick={disconnectScale} className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 transition-all hover:bg-emerald-100">
+                <Scale className="w-4 h-4 mr-1.5" />
+                {scaleWeight.toFixed(3)} kg
+              </button>
+            ) : (
+              <button onClick={connectScale} className="flex items-center text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-200 dark:hover:bg-slate-700">
+                <Scale className="w-4 h-4 mr-1.5" />
+                Conectar Báscula
+              </button>
+            )}
             {offlineStore.pendingSales.length > 0 && (
               <div className="flex items-center text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full animate-pulse">
                 <CloudSync className="w-4 h-4 mr-1.5" />
@@ -1102,6 +1205,7 @@ export default function PosPage() {
 
                       <input
                         type="text"
+                        id="credit-customer-name"
                         value={customerName}
                         onChange={(e) => {
                           setCustomerName(e.target.value);
