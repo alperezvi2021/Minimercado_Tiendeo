@@ -87,8 +87,34 @@ export default function PosPage() {
   const readerRef = useRef<any>(null);
   const stabilityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Limpieza automática al cambiar de módulo
+  // Limpieza y Auto-conexión automática
   useEffect(() => {
+    // 1. Intentar auto-conectar si ya hay permisos previos
+    const autoConnect = async () => {
+      if ('serial' in navigator) {
+        try {
+          const ports = await (navigator as any).serial.getPorts();
+          if (ports.length > 0) {
+            const port = ports[0];
+            await port.open({ baudRate: 9600 });
+            portRef.current = port;
+            setIsScaleConnected(true);
+
+            const textDecoder = new TextDecoderStream();
+            port.readable.pipeTo(textDecoder.writable);
+            const reader = textDecoder.readable.getReader();
+            readerRef.current = reader;
+
+            readScaleLoop(reader);
+          }
+        } catch (e) {
+          console.warn('Auto-reconexión fallida (posiblemente puerto ocupado):', e);
+        }
+      }
+    };
+
+    autoConnect();
+
     return () => {
       const disconnect = async () => {
         if (readerRef.current) {
