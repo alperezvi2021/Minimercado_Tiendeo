@@ -10,6 +10,7 @@ interface ScaleState {
   connectScale: () => Promise<void>;
   disconnectScale: () => Promise<void>;
   autoReconnect: () => Promise<void>;
+  readScaleLoop: (reader: any) => Promise<void>;
 }
 
 export const useScaleStore = create<ScaleState>((set, get) => ({
