@@ -210,9 +210,6 @@ export default function PosPage() {
     }
   };
 
-  // Referencia para el temporizador de estabilidad
-  const stabilityTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   useEffect(() => {
     // Sincronización inteligente con Auto-Bloqueo por estabilidad
     if (scaleWeight > 0.010 && cart.length > 0 && posState === 'billing') {
