@@ -2,6 +2,7 @@
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import SyncManager from '@/components/offline/SyncManager';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useScaleStore } from '@/store/useScaleStore';
 
