@@ -82,31 +82,53 @@ export default function PosPage() {
   // Scale Connection State
   const [isScaleConnected, setIsScaleConnected] = useState(false);
   const [scaleWeight, setScaleWeight] = useState<number>(0);
-  const scaleReaderRef = useRef<any>(null);
-  const scalePortRef = useRef<any>(null);
+  // Referencias para limpiar la conexión al salir del módulo
+  const portRef = useRef<any>(null);
+  const readerRef = useRef<any>(null);
+  const stabilityTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Limpieza automática al cambiar de módulo
+  useEffect(() => {
+    return () => {
+      const disconnect = async () => {
+        if (readerRef.current) {
+          try {
+            await readerRef.current.cancel();
+            readerRef.current.releaseLock();
+          } catch (e) {}
+        }
+        if (portRef.current) {
+          try {
+            await portRef.current.close();
+          } catch (e) {}
+        }
+      };
+      disconnect();
+      if (stabilityTimerRef.current) clearTimeout(stabilityTimerRef.current);
+    };
+  }, []);
 
   const connectScale = async () => {
+    if (!('serial' in navigator)) {
+      alert('Tu navegador no soporta la conexión con básculas. Usa Google Chrome o Microsoft Edge.');
+      return;
+    }
+
     try {
-      if (!('serial' in navigator)) {
-        alert('Web Serial API no está soportada en este navegador. Usa Chrome o Edge.');
-        return;
-      }
-      
       const port = await (navigator as any).serial.requestPort();
       await port.open({ baudRate: 9600 });
-      scalePortRef.current = port;
+      portRef.current = port;
       setIsScaleConnected(true);
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
       const reader = textDecoder.readable.getReader();
-      scaleReaderRef.current = reader;
+      readerRef.current = reader;
 
       readScaleLoop(reader);
     } catch (error) {
-      console.error('Error connecting to scale:', error);
-      alert('Error conectando a la báscula: ' + error);
-      setIsScaleConnected(false);
+      console.error('Error conectando a la báscula:', error);
+      alert('Error conectando a la báscula: ' + (error as any).message);
     }
   };
 
