@@ -195,18 +195,18 @@ export default function PosPage() {
 
   const disconnectScale = async () => {
     try {
-      if (scaleReaderRef.current) {
-        await scaleReaderRef.current.cancel();
+      if (readerRef.current) {
+        await readerRef.current.cancel();
       }
-      if (scalePortRef.current) {
-        await scalePortRef.current.close();
+      if (portRef.current) {
+        await portRef.current.close();
       }
     } catch (e) {
       console.error(e);
     } finally {
       setIsScaleConnected(false);
-      scaleReaderRef.current = null;
-      scalePortRef.current = null;
+      readerRef.current = null;
+      portRef.current = null;
     }
   };
 
