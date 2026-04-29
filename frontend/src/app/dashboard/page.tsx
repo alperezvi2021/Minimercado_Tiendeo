@@ -163,10 +163,14 @@ export default function PosPage() {
   };
 
   useEffect(() => {
-    // Si hay un peso válido de la báscula y un producto pesable seleccionado, actualizar su cantidad
+    // Sincronización inteligente: Solo actualiza si el peso es positivo 
+    // Y si el foco está en el input del item seleccionado.
     if (scaleWeight > 0 && cart.length > 0 && posState === 'billing') {
+      const activeElement = document.activeElement;
       const currentItem = cart[selectedCartIndex];
-      if (currentItem && currentItem.product.sellByWeight) {
+      
+      // Verificamos que el foco esté específicamente en el cuadro de peso del item actual
+      if (activeElement?.id === `cart-item-input-${selectedCartIndex}` && currentItem?.product.sellByWeight) {
         updateQuantity(selectedCartIndex, scaleWeight);
       }
     }
@@ -1041,7 +1045,16 @@ export default function PosPage() {
                           <Trash2 className="w-4 h-4" />
                         </button>
                         {item.product.sellByWeight && (
-                          <span className="text-[10px] font-black text-gray-400 uppercase">{item.product.unit}</span>
+                          <button 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              document.getElementById(`cart-item-input-${idx}`)?.focus(); 
+                            }}
+                            className="text-[10px] font-black text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-1 rounded transition-colors uppercase"
+                            title="Capturar peso actual"
+                          >
+                            {item.product.unit}
+                          </button>
                         )}
                       </div>
                     </div>
