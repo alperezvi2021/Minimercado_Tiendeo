@@ -484,8 +484,8 @@ export default function PosPage() {
 
   const calculateRoundedTotal = () => {
     const rawTotal = calculateTotal();
-    // Redondear ARRIBA al múltiplo de 50 más cercano
-    return Math.ceil(rawTotal / 50) * 50;
+    // Redondear al múltiplo de 50 más cercano (más justo)
+    return Math.round(rawTotal / 50) * 50;
   };
 
   const calculateRoundingAdjustment = () => {
