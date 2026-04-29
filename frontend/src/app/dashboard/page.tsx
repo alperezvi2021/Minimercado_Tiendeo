@@ -162,16 +162,27 @@ export default function PosPage() {
     }
   };
 
+  // Referencia para el temporizador de estabilidad
+  const stabilityTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    // Sincronización inteligente: Solo actualiza si el peso es positivo 
-    // Y si el foco está en el input del item seleccionado.
-    if (scaleWeight > 0 && cart.length > 0 && posState === 'billing') {
+    // Sincronización inteligente con Auto-Bloqueo por estabilidad
+    if (scaleWeight > 0.010 && cart.length > 0 && posState === 'billing') {
       const activeElement = document.activeElement;
       const currentItem = cart[selectedCartIndex];
       
-      // Verificamos que el foco esté específicamente en el cuadro de peso del item actual
       if (activeElement?.id === `cart-item-input-${selectedCartIndex}` && currentItem?.product.sellByWeight) {
+        // 1. Actualizar el peso en tiempo real mientras cambia
         updateQuantity(selectedCartIndex, scaleWeight);
+
+        // 2. Lógica de Estabilidad: Si el peso se mantiene quieto 800ms, bloqueamos
+        if (stabilityTimerRef.current) clearTimeout(stabilityTimerRef.current);
+        
+        stabilityTimerRef.current = setTimeout(() => {
+          // Si llegamos aquí, el peso es estable. Movemos el foco al buscador.
+          // Esto "congela" el peso del item actual automáticamente.
+          searchInputRef.current?.focus();
+        }, 800);
       }
     }
   }, [scaleWeight]);
