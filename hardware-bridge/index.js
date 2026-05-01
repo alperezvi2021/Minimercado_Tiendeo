@@ -4,60 +4,62 @@ const { WebSocketServer } = require('ws');
 const { exec } = require('child_process');
 
 /**
- * TIENDEO HARDWARE BRIDGE v1.0
- * Este agente permite la conexión estable y automática con básculas digitales
- * eliminando los bloqueos del navegador y permitiendo el auto-reset por software.
+ * TIENDEO HARDWARE BRIDGE v1.1 - MODO AUTO-DETECT
+ * Este agente detecta automáticamente la báscula y sirve los datos
+ * vía WebSocket para una conexión ultra-estable.
  */
 
-// CONFIGURACIÓN - Ajusta según tu puerto COM
-const COM_PORT = 'COM7'; 
-const BAUD_RATE = 9600;
 const WS_PORT = 8081;
-
 const wss = new WebSocketServer({ port: WS_PORT });
+
 console.log('=========================================');
-console.log('🚀 TIENDEO HARDWARE BRIDGE ACTIVO');
-console.log(`📡 WebSocket: ws://localhost:${WS_PORT}`);
-console.log(`🔌 Puerto Serial: ${COM_PORT}`);
+console.log('🚀 TIENDEO HARDWARE BRIDGE - INTELIGENTE');
+console.log(`📡 Servidor: ws://localhost:${WS_PORT}`);
 console.log('=========================================');
 
-let port;
-let isConnecting = false;
+async function findAndConnect() {
+    try {
+        const ports = await SerialPort.list();
+        
+        // Buscar puertos que coincidan con los drivers comunes de básculas
+        const target = ports.find(p => 
+            p.friendlyName?.toUpperCase().includes('CH340') || 
+            p.friendlyName?.toUpperCase().includes('USB-SERIAL') ||
+            p.pnpId?.toUpperCase().includes('CH340') ||
+            p.manufacturer?.toUpperCase().includes('CH340')
+        );
 
-function connectHardware() {
-    if (isConnecting) return;
-    isConnecting = true;
-
-    console.log(`[${new Date().toLocaleTimeString()}] Intentando conectar a ${COM_PORT}...`);
-    
-    port = new SerialPort({ path: COM_PORT, baudRate: BAUD_RATE }, (err) => {
-        if (err) {
-            console.log('❌ ERROR DE APERTURA:', err.message);
-            
-            if (err.message.includes('Access denied') || err.message.includes('File not found')) {
-                console.log('⚠️ PUERTO BLOQUEADO O NO ENCONTRADO. Ejecutando Maniobra de Reset...');
-                
-                // Maniobra de Reset mediante PowerShell (Tu investigación)
-                const psCommand = `powershell -Command "Disable-PnpDevice -InstanceId (Get-PnpDevice | Where-Object {$_.FriendlyName -like '*CH340*' or $_.FriendlyName -like '*USB2.0-Ser*'}).InstanceId -Confirm:$false; Start-Sleep -Seconds 2; Enable-PnpDevice -InstanceId (Get-PnpDevice | Where-Object {$_.FriendlyName -like '*CH340*' or $_.FriendlyName -like '*USB2.0-Ser*'}).InstanceId -Confirm:$false"`;
-                
-                exec(psCommand, (psErr) => {
-                    if (psErr) console.log('Info: No se pudo ejecutar el reset automático (se requiere permisos de Admin).');
-                    else console.log('✅ Reset de puerto enviado con éxito.');
-                });
-            }
-            
-            isConnecting = false;
-            setTimeout(connectHardware, 5000);
+        if (!target) {
+            console.log(`[${new Date().toLocaleTimeString()}] 🔎 Buscando báscula... (Asegúrate de que esté conectada)`);
+            setTimeout(findAndConnect, 4000);
             return;
         }
+
+        console.log(`✅ DISPOSITIVO DETECTADO: ${target.path}`);
+        console.log(`📝 Info: ${target.friendlyName || 'Genérico'}`);
         
-        console.log('✅ CONECTADO EXITOSAMENTE');
-        isConnecting = false;
-        
+        const port = new SerialPort({ path: target.path, baudRate: 9600 }, (err) => {
+            if (err) {
+                console.log('❌ Error al abrir:', err.message);
+                
+                // Si el puerto está bloqueado, intentamos el Reset de tu investigación
+                if (err.message.includes('Access denied')) {
+                    console.log('⚠️ Puerto bloqueado. Ejecutando reset de PowerShell...');
+                    const psCommand = `powershell -Command "Disable-PnpDevice -InstanceId '${target.pnpId}' -Confirm:$false; Start-Sleep -Seconds 2; Enable-PnpDevice -InstanceId '${target.pnpId}' -Confirm:$false"`;
+                    exec(psCommand, (psErr) => {
+                        if (psErr) console.log('Info: Ejecuta este programa como Administrador para usar el Auto-Reset.');
+                        else console.log('✅ Reset enviado.');
+                    });
+                }
+                
+                setTimeout(findAndConnect, 5000);
+                return;
+            }
+        });
+
         const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
         
         parser.on('data', (data) => {
-            // Enviar a todos los navegadores Tiendeo abiertos
             wss.clients.forEach(client => {
                 if (client.readyState === 1) {
                     client.send(data);
@@ -66,11 +68,19 @@ function connectHardware() {
         });
 
         port.on('close', () => {
-            console.log('🔌 Puerto cerrado. Reintentando...');
-            isConnecting = false;
-            setTimeout(connectHardware, 5000);
+            console.log('🔌 Conexión cerrada. Reiniciando búsqueda...');
+            setTimeout(findAndConnect, 3000);
         });
-    });
+
+        port.on('error', (err) => {
+            console.log('❌ Error en puerto:', err.message);
+        });
+
+    } catch (e) {
+        console.error('Error fatal:', e);
+        setTimeout(findAndConnect, 5000);
+    }
 }
 
-connectHardware();
+// Iniciar proceso
+findAndConnect();
