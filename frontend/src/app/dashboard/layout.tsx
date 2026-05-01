@@ -10,25 +10,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const { initGlobalListeners, disconnectScale } = useScaleStore();
-
-  useEffect(() => {
-    // Inicializar el sistema de conexión persistente (Zero-Touch)
-    initGlobalListeners();
-
-    // Manejador para cierre preventivo del puerto al cerrar pestaña/navegador
-    const handleBeforeUnload = () => {
-      disconnectScale();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      // Limpieza al desmontar el layout o cerrar el navegador
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      disconnectScale();
-    };
-  }, [initGlobalListeners, disconnectScale]);
 
   useEffect(() => {
     const accessToken = localStorage.getItem('access_token');

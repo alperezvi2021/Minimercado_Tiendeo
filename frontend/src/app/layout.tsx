@@ -26,6 +26,7 @@ export const viewport = {
 };
 
 import { ThemeProvider } from "@/components/ThemeProvider";
+import ScaleInitializer from "@/components/layout/ScaleInitializer";
 
 export default function RootLayout({
   children,
@@ -43,6 +44,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ScaleInitializer />
           {children}
         </ThemeProvider>
       </body>
