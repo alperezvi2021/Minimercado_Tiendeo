@@ -10,12 +10,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const { autoReconnect } = useScaleStore();
+  const { initGlobalListeners } = useScaleStore();
 
   useEffect(() => {
-    // Intentar auto-conectar la báscula al cargar el dashboard
-    autoReconnect();
-  }, [autoReconnect]);
+    // Inicializar el sistema de conexión persistente (Zero-Touch)
+    initGlobalListeners();
+  }, [initGlobalListeners]);
 
   useEffect(() => {
     const accessToken = localStorage.getItem('access_token');
