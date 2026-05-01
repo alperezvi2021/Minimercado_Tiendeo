@@ -30,7 +30,7 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     pendingPayments
   } = useOfflineStore();
 
-  const { isScaleConnected, connectScale, needsRevincular } = useScaleStore();
+  const { isScaleConnected, connectScale, needsRevincular, bridgeActive } = useScaleStore();
 
   const totalPending = pendingSales.length + pendingProducts.length + pendingCategories.length + pendingCustomers.length + pendingPayments.length;
   const [isSyncing, setIsSyncing] = useState(false);
@@ -160,7 +160,12 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
         {/* Scale Status Indicator */}
         <div className="flex items-center">
-          {isScaleConnected ? (
+          {bridgeActive ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-600 dark:text-indigo-400 text-[10px] font-black tracking-widest uppercase transition-all shadow-sm">
+               <Scale className="w-4 h-4" />
+               <span className="hidden lg:inline">Báscula Premium</span>
+            </div>
+          ) : isScaleConnected ? (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 dark:text-emerald-400 text-[10px] font-black tracking-widest uppercase transition-all shadow-sm">
                <Scale className="w-4 h-4" />
                <span className="hidden lg:inline">Báscula OK</span>

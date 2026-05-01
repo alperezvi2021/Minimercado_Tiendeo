@@ -3,12 +3,12 @@ import { create } from 'zustand';
 interface ScaleState {
   isScaleConnected: boolean;
   isConnecting: boolean;
+  bridgeActive: boolean; // Indica si estamos usando el Agente Premium
   scaleWeight: number;
   port: any | null;
   reader: any | null;
   reconnectInterval: NodeJS.Timeout | null;
   needsRevincular: boolean;
-  lastErrorTime: number;
   setScaleWeight: (weight: number) => void;
   setIsScaleConnected: (connected: boolean) => void;
   connectScale: () => Promise<void>;
@@ -17,26 +17,67 @@ interface ScaleState {
   readScaleLoop: (reader: any) => Promise<void>;
   initGlobalListeners: () => void;
   setupPort: (port: any, isAuto?: boolean) => Promise<void>;
+  initBridge: () => void; // Inicializa la conexión con el Agente local
 }
 
 let globalPort: any = null;
 let globalReader: any = null;
+let bridgeSocket: WebSocket | null = null;
 
 export const useScaleStore = create<ScaleState>((set, get) => ({
   isScaleConnected: false,
   isConnecting: false,
+  bridgeActive: false,
   scaleWeight: 0,
   port: null,
   reader: null,
   reconnectInterval: null,
   needsRevincular: false,
-  lastErrorTime: 0,
 
   setScaleWeight: (weight) => set({ scaleWeight: weight }),
   setIsScaleConnected: (connected) => set({ isScaleConnected: connected }),
 
+  initBridge: () => {
+    if (typeof window === 'undefined') return;
+    
+    // Intentar conectar con el Tiendeo Bridge (Agente Local)
+    if (bridgeSocket) bridgeSocket.close();
+
+    try {
+      bridgeSocket = new WebSocket('ws://localhost:8081');
+      
+      bridgeSocket.onopen = () => {
+        console.log('✅ Conectado al Agente de Hardware Tiendeo');
+        set({ bridgeActive: true, isScaleConnected: true, needsRevincular: false });
+      };
+
+      bridgeSocket.onmessage = (event) => {
+        const data = event.data.toString();
+        // Procesar el peso que envía el agente
+        const match = data.match(/(\d+\.\d+)/);
+        if (match) {
+          const weight = parseFloat(match[1]);
+          if (!isNaN(weight)) {
+            set({ scaleWeight: weight, isScaleConnected: true });
+          }
+        }
+      };
+
+      bridgeSocket.onclose = () => {
+        set({ bridgeActive: false });
+        // Si perdemos el agente, volvemos al modo normal después de 5 seg
+        setTimeout(() => get().initBridge(), 5000);
+      };
+
+    } catch (e) {
+      set({ bridgeActive: false });
+    }
+  },
+
   connectScale: async () => {
+    if (get().bridgeActive) return; // Si el agente está activo, no hace falta manual
     if (get().isConnecting) return;
+    
     try {
       const port = await (navigator as any).serial.requestPort();
       localStorage.setItem('has_authorized_scale', 'true');
@@ -50,21 +91,18 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   },
 
   setupPort: async (port: any, isAuto = false) => {
-    if (get().isConnecting) return;
+    if (get().bridgeActive || get().isConnecting) return;
     set({ isConnecting: true });
 
     try {
-      // Limpieza atómica antes de abrir
       if (globalReader) {
-        await globalReader.cancel();
-        globalReader.releaseLock();
+        try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
         globalReader = null;
       }
       
       await port.open({ baudRate: 9600 });
       globalPort = port;
       
-      // Espera de estabilización para el chip USB
       await new Promise(resolve => setTimeout(resolve, 800));
 
       const textDecoder = new TextDecoderStream();
@@ -75,16 +113,10 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
       get().readScaleLoop(reader);
     } catch (e: any) {
-      console.warn('Error de puerto:', e.message);
-      set({ isScaleConnected: false, lastErrorTime: Date.now() });
-      
-      // Intentar forzar liberación si falla
-      try {
-        if (port.forget) await port.forget();
-      } catch (err) {}
-
+      set({ isScaleConnected: false });
+      try { if (port.forget) await port.forget(); } catch (err) {}
       if (!isAuto) {
-        alert('¡BLOQUEO DE HARDWARE!\n\nWindows no permite liberar la báscula por software.\n\nPrueba desconectar y conectar el cable USB.');
+        alert('Windows no permite liberar la báscula.\n\nPrueba desconectar y conectar el cable USB o instala el Agente Tiendeo.');
       }
       set({ needsRevincular: true });
     } finally {
@@ -93,9 +125,8 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   },
 
   autoReconnect: async () => {
+    if (get().bridgeActive) return; // Prioridad al agente
     if (get().isConnecting || typeof window === 'undefined' || !('serial' in navigator)) return;
-    if (Date.now() - get().lastErrorTime < 15000) return;
-    if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
       const ports = await (navigator as any).serial.getPorts();
@@ -108,30 +139,36 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   },
 
   initGlobalListeners: () => {
-    if (typeof window === 'undefined' || !('serial' in navigator)) return;
+    if (typeof window === 'undefined') return;
+    
+    // 1. Iniciar conexión con el agente
+    get().initBridge();
+
     if ((window as any).__scaleListenersInitialized) return;
     (window as any).__scaleListenersInitialized = true;
 
-    (navigator as any).serial.addEventListener('connect', () => {
+    if ('serial' in navigator) {
+      (navigator as any).serial.addEventListener('connect', () => {
+        setTimeout(() => get().autoReconnect(), 4000);
+      });
+
+      (navigator as any).serial.addEventListener('disconnect', () => {
+        set({ isScaleConnected: false, port: null, reader: null, scaleWeight: 0 });
+        globalPort = null;
+        globalReader = null;
+      });
+
+      if (!get().reconnectInterval) {
+        const interval = setInterval(() => {
+          if (!get().isScaleConnected && !get().isConnecting && !get().bridgeActive) {
+            get().autoReconnect();
+          }
+        }, 15000);
+        set({ reconnectInterval: interval });
+      }
+      
       setTimeout(() => get().autoReconnect(), 5000);
-    });
-
-    (navigator as any).serial.addEventListener('disconnect', () => {
-      set({ isScaleConnected: false, port: null, reader: null, scaleWeight: 0 });
-      globalPort = null;
-      globalReader = null;
-    });
-
-    if (!get().reconnectInterval) {
-      const interval = setInterval(() => {
-        if (!get().isScaleConnected && !get().isConnecting) {
-          get().autoReconnect();
-        }
-      }, 15000);
-      set({ reconnectInterval: interval });
     }
-    
-    setTimeout(() => get().autoReconnect(), 4000);
   },
 
   disconnectScale: async () => {
@@ -165,7 +202,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
               const match = line.match(/(\d+\.\d+)/);
               if (match) {
                 const weight = parseFloat(match[1]);
-                if (!isNaN(weight) && weight >= 0 && weight < 500) {
+                if (!isNaN(weight)) {
                   set({ scaleWeight: weight, isScaleConnected: true });
                 }
               }
