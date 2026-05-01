@@ -8,7 +8,7 @@ interface ScaleState {
   reader: any | null;
   reconnectInterval: NodeJS.Timeout | null;
   needsRevincular: boolean;
-  lastErrorTime: number; // Para evitar bucles de error infinitos
+  lastErrorTime: number;
   setScaleWeight: (weight: number) => void;
   setIsScaleConnected: (connected: boolean) => void;
   connectScale: () => Promise<void>;
@@ -37,10 +37,6 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
   connectScale: async () => {
     if (get().isConnecting) return;
-    if (typeof window === 'undefined' || !('serial' in navigator)) {
-      alert('Tu navegador no soporta la conexión con básculas. Usa Google Chrome o Microsoft Edge.');
-      return;
-    }
     try {
       const port = await (navigator as any).serial.requestPort();
       localStorage.setItem('has_authorized_scale', 'true');
@@ -48,7 +44,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       await get().setupPort(port, false);
     } catch (error) {
       if ((error as any).name !== 'NotFoundError') {
-         alert('Error al seleccionar la báscula: ' + (error as any).message);
+         alert('Error: ' + (error as any).message);
       }
     }
   },
@@ -58,19 +54,18 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     set({ isConnecting: true });
 
     try {
-      // 1. LIMPIEZA PROFUNDA: Intentar cerrar todo lo que pueda estar abierto
+      // Limpieza atómica antes de abrir
       if (globalReader) {
-        try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
+        await globalReader.cancel();
+        globalReader.releaseLock();
         globalReader = null;
       }
       
-      // 2. Intentar abrir con calma
       await port.open({ baudRate: 9600 });
       globalPort = port;
       
-      // PAUSA DE ESTABILIZACIÓN EXTENDIDA (1 segundo)
-      // Crítico para adaptadores USB-Serial que se bloquean fácilmente
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Espera de estabilización para el chip USB
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
@@ -80,25 +75,17 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
       get().readScaleLoop(reader);
     } catch (e: any) {
-      console.warn('Error crítico de apertura:', e.message);
+      console.warn('Error de puerto:', e.message);
       set({ isScaleConnected: false, lastErrorTime: Date.now() });
       
-      // MANIOBRA DE EXPULSIÓN: Forzar al navegador a soltar el puerto
+      // Intentar forzar liberación si falla
       try {
-        if (port.forget) {
-          await port.forget();
-        }
-      } catch (forgetErr) {}
+        if (port.forget) await port.forget();
+      } catch (err) {}
 
       if (!isAuto) {
-        // Mensaje más descriptivo si el error persiste
-        if (e.message.includes('Failed to open serial port') || e.message.includes('Access denied')) {
-          alert('¡BLOQUEO DE HARDWARE DETECTADO!\n\nWindows ha bloqueado el chip USB de la báscula y el sistema no ha podido liberarlo por software.\n\nÚNICA SOLUCIÓN: Desconecta el cable USB de la computadora, espera 5 segundos y vuelve a conectarlo.');
-        } else {
-          alert('Error de conexión: ' + e.message);
-        }
+        alert('¡BLOQUEO DE HARDWARE!\n\nWindows no permite liberar la báscula por software.\n\nPrueba desconectar y conectar el cable USB.');
       }
-      
       set({ needsRevincular: true });
     } finally {
       set({ isConnecting: false });
@@ -107,10 +94,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
   autoReconnect: async () => {
     if (get().isConnecting || typeof window === 'undefined' || !('serial' in navigator)) return;
-    
-    // Si hubo un error hace menos de 20 segundos, no intentamos auto-conectar para no saturar
-    if (Date.now() - get().lastErrorTime < 20000) return;
-
+    if (Date.now() - get().lastErrorTime < 15000) return;
     if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
@@ -120,9 +104,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       } else if (localStorage.getItem('has_authorized_scale') === 'true') {
         set({ needsRevincular: true });
       }
-    } catch (e) {
-      // Silencioso
-    }
+    } catch (e) {}
   },
 
   initGlobalListeners: () => {
@@ -131,8 +113,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     (window as any).__scaleListenersInitialized = true;
 
     (navigator as any).serial.addEventListener('connect', () => {
-      // Al conectar el cable, damos tiempo generoso al driver
-      setTimeout(() => get().autoReconnect(), 6000);
+      setTimeout(() => get().autoReconnect(), 5000);
     });
 
     (navigator as any).serial.addEventListener('disconnect', () => {
@@ -146,11 +127,11 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         if (!get().isScaleConnected && !get().isConnecting) {
           get().autoReconnect();
         }
-      }, 15000); // Polling muy relajado
+      }, 15000);
       set({ reconnectInterval: interval });
     }
     
-    setTimeout(() => get().autoReconnect(), 5000);
+    setTimeout(() => get().autoReconnect(), 4000);
   },
 
   disconnectScale: async () => {
@@ -164,9 +145,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         await globalPort.close();
         globalPort = null;
       }
-    } catch (e) {
-      console.error('Error desconectando:', e);
-    } finally {
+    } catch (e) {} finally {
       set({ port: null, reader: null, isScaleConnected: false, scaleWeight: 0 });
     }
   },
@@ -194,9 +173,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
           }
         }
       }
-    } catch (error: any) {
-      // Silencioso
-    } finally {
+    } catch (error: any) {} finally {
       set({ isScaleConnected: false });
     }
   },
