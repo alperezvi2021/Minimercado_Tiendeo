@@ -1,8 +1,9 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { Search, Bell, LogOut, Sun, Moon, User, Menu, X, Wifi, WifiOff, CloudLightning, RefreshCcw, ClipboardCheck } from 'lucide-react';
+import { Search, Bell, LogOut, Sun, Moon, User, Menu, X, Wifi, WifiOff, CloudLightning, RefreshCcw, ClipboardCheck, Scale } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
+import { useScaleStore } from '@/store/useScaleStore';
 import { useState, useEffect } from 'react';
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
@@ -28,6 +29,8 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     pendingCustomers,
     pendingPayments
   } = useOfflineStore();
+
+  const { isScaleConnected, connectScale, needsRevincular } = useScaleStore();
 
   const totalPending = pendingSales.length + pendingProducts.length + pendingCategories.length + pendingCustomers.length + pendingPayments.length;
   const [isSyncing, setIsSyncing] = useState(false);
@@ -152,6 +155,34 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-500/50" />
               <span>en linea</span>
             </div>
+          )}
+        </div>
+
+        {/* Scale Status Indicator */}
+        <div className="flex items-center">
+          {isScaleConnected ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-600 dark:text-emerald-400 text-[10px] font-black tracking-widest uppercase transition-all shadow-sm">
+               <Scale className="w-4 h-4" />
+               <span className="hidden lg:inline">Báscula OK</span>
+            </div>
+          ) : needsRevincular ? (
+            <button 
+              onClick={connectScale}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-[10px] font-black tracking-widest uppercase transition-all animate-bounce shadow-lg shadow-orange-900/30"
+              title="El navegador perdió el permiso de la báscula. Haz clic para re-vincularla."
+            >
+               <Scale className="w-4 h-4 animate-spin" style={{ animationDuration: '3s' }} />
+               <span>Re-vincular Báscula</span>
+            </button>
+          ) : (
+            <button 
+              onClick={connectScale}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-gray-400 rounded-full text-[10px] font-black tracking-widest uppercase transition-all"
+              title="Conectar báscula digital"
+            >
+               <Scale className="w-4 h-4" />
+               <span className="hidden sm:inline">Conectar</span>
+            </button>
           )}
         </div>
 

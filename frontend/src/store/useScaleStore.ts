@@ -6,6 +6,7 @@ interface ScaleState {
   port: any | null;
   reader: any | null;
   reconnectInterval: NodeJS.Timeout | null;
+  needsRevincular: boolean; // Nuevo estado para avisar si el navegador perdió el permiso
   setScaleWeight: (weight: number) => void;
   setIsScaleConnected: (connected: boolean) => void;
   connectScale: () => Promise<void>;
@@ -25,6 +26,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   port: null,
   reader: null,
   reconnectInterval: null,
+  needsRevincular: false,
 
   setScaleWeight: (weight) => set({ scaleWeight: weight }),
   setIsScaleConnected: (connected) => set({ isScaleConnected: connected }),
@@ -36,6 +38,9 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     }
     try {
       const port = await (navigator as any).serial.requestPort();
+      // Guardar en localStorage que el usuario ya autorizó una vez
+      localStorage.setItem('has_authorized_scale', 'true');
+      set({ needsRevincular: false });
       await get().setupPort(port);
     } catch (error) {
       console.error('Error solicitando puerto:', error);
@@ -44,20 +49,20 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
   setupPort: async (port: any) => {
     try {
-      // 1. Limpieza preventiva
       if (globalReader) {
         try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
         globalReader = null;
       }
 
-      // 2. Intentar abrir el puerto
-      // Si ya está abierto (raro pero posible), no intentamos abrir de nuevo
-      if (!port.opened) {
-        await port.open({ baudRate: 9600 });
+      // La propiedad correcta para saber si está abierto es ver si tiene readable/writable
+      if (port.readable) {
+        set({ port, isScaleConnected: true, needsRevincular: false });
+        return;
       }
-      
+
+      await port.open({ baudRate: 9600 });
       globalPort = port;
-      set({ port, isScaleConnected: true });
+      set({ port, isScaleConnected: true, needsRevincular: false });
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
@@ -68,26 +73,28 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       get().readScaleLoop(reader);
     } catch (e: any) {
       console.warn('Error configurando puerto:', e.message);
-      
-      // Si el error es "already open", significa que ya lo tenemos
-      if (e.message.includes('already open') || e.message.includes('Access denied')) {
-        console.log('El puerto está ocupado o ya abierto. Reintentando en el próximo ciclo...');
+      if (e.message.includes('already open')) {
+        set({ isScaleConnected: true, needsRevincular: false });
+      } else {
+        set({ isScaleConnected: false });
       }
-      set({ isScaleConnected: false });
     }
   },
 
   autoReconnect: async () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
     
-    // Si ya hay algo fluyendo, no tocamos nada
     if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
       const ports = await (navigator as any).serial.getPorts();
       if (ports.length > 0) {
-        // Intentar conectar con una pequeña pausa para evitar colisiones de hilos
         await get().setupPort(ports[0]);
+      } else {
+        // Si no hay puertos pero el usuario dijo que tenía una, avisar que debe re-vincular
+        if (localStorage.getItem('has_authorized_scale') === 'true') {
+          set({ needsRevincular: true });
+        }
       }
     } catch (e) {
       console.warn('Auto-reconexión fallida:', e);
@@ -101,7 +108,6 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     (window as any).__scaleListenersInitialized = true;
 
     (navigator as any).serial.addEventListener('connect', () => {
-      // Cuando se conecta físicamente, esperamos 2 segundos a que el driver de Windows se asiente
       setTimeout(() => get().autoReconnect(), 2000);
     });
 
@@ -116,12 +122,11 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         if (!get().isScaleConnected) {
           get().autoReconnect();
         }
-      }, 4000); // Polling cada 4 segundos
+      }, 4000);
       set({ reconnectInterval: interval });
     }
     
-    // El primer intento al cargar la página será después de 3 segundos de "cortesía"
-    setTimeout(() => get().autoReconnect(), 3000);
+    setTimeout(() => get().autoReconnect(), 2000);
   },
 
   disconnectScale: async () => {
