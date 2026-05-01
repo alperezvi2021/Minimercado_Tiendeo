@@ -159,7 +159,11 @@ export default function ClosurePage() {
       });
 
       if (response.ok) {
-        window.location.reload();
+        // En lugar de recargar toda la página (que bloquea la báscula), refrescamos los datos
+        await fetchStatus();
+        await fetchSales();
+        await fetchPayments();
+        setOpeningAmount('');
       } else {
         alert('Error al abrir la caja');
       }
@@ -185,9 +189,11 @@ export default function ClosurePage() {
       });
 
       if (response.ok) {
-          // Generar PDF antes de recargar si es posible, o avisar
           alert('Cierre de caja realizado con éxito. El turno ha sido guardado.');
-          window.location.reload();
+          // Refrescamos los datos para que el UI cambie al estado de "Caja Cerrada"
+          await fetchStatus();
+          await fetchSales();
+          await fetchPayments();
       }
     } catch (error) {
       console.error('Error performing closure:', error);

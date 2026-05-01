@@ -16,6 +16,10 @@ interface ScaleState {
   setupPort: (port: any) => Promise<void>;
 }
 
+// Variable persistente fuera del store por si se reinicia el estado de Zustand
+let globalPort: any = null;
+let globalReader: any = null;
+
 export const useScaleStore = create<ScaleState>((set, get) => ({
   isScaleConnected: false,
   scaleWeight: 0,
@@ -42,47 +46,52 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
   setupPort: async (port: any) => {
     try {
-      // Si el puerto ya está abierto por otra instancia o similar, intentamos cerrarlo para limpiar
+      // 1. Limpieza radical antes de abrir
+      if (globalReader) {
+        try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
+        globalReader = null;
+      }
+      
+      // 2. Si el puerto ya está abierto en este objeto, intentamos reusar o cerrar
       if (port.readable) {
-         try { await port.close(); } catch(e) {}
+        // El puerto ya está abierto y fluyendo, no hacemos nada o refrescamos loop
+        set({ port, isScaleConnected: true });
+        return;
       }
 
       await port.open({ baudRate: 9600 });
+      globalPort = port;
       set({ port, isScaleConnected: true });
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
       const reader = textDecoder.readable.getReader();
+      globalReader = reader;
       set({ reader });
 
       get().readScaleLoop(reader);
-    } catch (e) {
-      console.warn('Error configurando puerto:', e);
-      set({ isScaleConnected: false });
+    } catch (e: any) {
+      console.warn('Error configurando puerto:', e.message);
+      // Si el error es "already open", intentamos marcarlo como conectado
+      if (e.message.includes('already open')) {
+        set({ port, isScaleConnected: true });
+      } else {
+        set({ isScaleConnected: false });
+      }
     }
   },
 
   autoReconnect: async () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
     
-    // Verificación de Salud: Si el estado dice conectado pero el puerto no tiene "readable", resetear
-    const { port, isScaleConnected } = get();
-    if (isScaleConnected && (!port || !port.readable)) {
-      set({ isScaleConnected: false });
-    }
-
-    if (get().isScaleConnected) return;
+    // Si ya estamos recibiendo datos (salud), no molestamos
+    if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
       const ports = await (navigator as any).serial.getPorts();
       if (ports.length > 0) {
-        // Buscamos un puerto que no esté bloqueado
-        for (const p of ports) {
-          if (!p.readable) {
-            await get().setupPort(p);
-            if (get().isScaleConnected) break;
-          }
-        }
+        // Intentar recuperar el puerto autorizado
+        await get().setupPort(ports[0]);
       }
     } catch (e) {
       console.warn('Fallo silencioso de auto-reconexión:', e);
@@ -92,23 +101,19 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   initGlobalListeners: () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
 
-    // Evitar duplicar listeners si ya existen
     if ((window as any).__scaleListenersInitialized) return;
     (window as any).__scaleListenersInitialized = true;
 
-    // 1. Escuchar cuando se conecta un dispositivo USB
-    (navigator as any).serial.addEventListener('connect', (e: any) => {
-      console.log('Báscula detectada físicamente. Intentando vincular...');
-      setTimeout(() => get().autoReconnect(), 1000); // Pequeño delay para que el OS reconozca el puerto
+    (navigator as any).serial.addEventListener('connect', () => {
+      setTimeout(() => get().autoReconnect(), 1000);
     });
 
-    // 2. Escuchar cuando se desconecta
-    (navigator as any).serial.addEventListener('disconnect', (e: any) => {
-      console.log('Báscula desconectada físicamente.');
+    (navigator as any).serial.addEventListener('disconnect', () => {
       set({ isScaleConnected: false, port: null, reader: null, scaleWeight: 0 });
+      globalPort = null;
+      globalReader = null;
     });
 
-    // 3. Sistema de "Polling" Agresivo (Reintento cada 3 segundos si no hay conexión)
     if (!get().reconnectInterval) {
       const interval = setInterval(() => {
         get().autoReconnect();
@@ -120,14 +125,15 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   },
 
   disconnectScale: async () => {
-    const { port, reader } = get();
     try {
-      if (reader) {
-        await reader.cancel();
-        reader.releaseLock();
+      if (globalReader) {
+        await globalReader.cancel();
+        globalReader.releaseLock();
+        globalReader = null;
       }
-      if (port) {
-        await port.close();
+      if (globalPort) {
+        await globalPort.close();
+        globalPort = null;
       }
     } catch (e) {
       console.error('Error desconectando:', e);
@@ -152,9 +158,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
               if (match) {
                 const weight = parseFloat(match[1]);
                 if (!isNaN(weight) && weight >= 0 && weight < 500) {
-                  set({ scaleWeight: weight });
-                  // Si estamos recibiendo peso, confirmamos que estamos conectados
-                  if (!get().isScaleConnected) set({ isScaleConnected: true });
+                  set({ scaleWeight: weight, isScaleConnected: true });
                 }
               }
             }
@@ -162,9 +166,9 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         }
       }
     } catch (error) {
-      console.error('Bucle de lectura interrumpido:', error);
+      console.error('Lectura finalizada:', error);
     } finally {
-      set({ isScaleConnected: false, reader: null });
+      set({ isScaleConnected: false });
     }
   },
 }));
