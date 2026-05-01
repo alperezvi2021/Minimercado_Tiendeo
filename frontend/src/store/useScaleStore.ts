@@ -6,7 +6,7 @@ interface ScaleState {
   port: any | null;
   reader: any | null;
   reconnectInterval: NodeJS.Timeout | null;
-  needsRevincular: boolean; // Nuevo estado para avisar si el navegador perdió el permiso
+  needsRevincular: boolean;
   setScaleWeight: (weight: number) => void;
   setIsScaleConnected: (connected: boolean) => void;
   connectScale: () => Promise<void>;
@@ -38,72 +38,75 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     }
     try {
       const port = await (navigator as any).serial.requestPort();
-      // Guardar en localStorage que el usuario ya autorizó una vez
       localStorage.setItem('has_authorized_scale', 'true');
       set({ needsRevincular: false });
       await get().setupPort(port);
     } catch (error) {
       console.error('Error solicitando puerto:', error);
+      // No alertar si el usuario simplemente canceló la ventana
+      if ((error as any).name !== 'NotFoundError') {
+         alert('Error al seleccionar la báscula: ' + (error as any).message);
+      }
     }
   },
 
   setupPort: async (port: any) => {
     try {
+      // 1. Limpieza radical de cualquier residuo anterior
       if (globalReader) {
         try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
         globalReader = null;
       }
-
-      // La propiedad correcta para saber si está abierto es ver si tiene readable/writable
-      if (port.readable) {
-        set({ port, isScaleConnected: true, needsRevincular: false });
-        return;
+      
+      // 2. Si el puerto ya está abierto (port.readable no es null), lo cerramos para reiniciar limpio
+      if (port.readable || port.writable) {
+         try { await port.close(); } catch(e) {}
       }
 
+      // 3. Abrir con parámetros estándar
       await port.open({ baudRate: 9600 });
       globalPort = port;
-      set({ port, isScaleConnected: true, needsRevincular: false });
+      
+      // PAUSA DE SEGURIDAD: Darle tiempo al hardware de estabilizar la conexión
+      await new Promise(resolve => setTimeout(resolve, 600));
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
       const reader = textDecoder.readable.getReader();
       globalReader = reader;
-      set({ reader });
+      set({ reader, port, isScaleConnected: true, needsRevincular: false });
 
       get().readScaleLoop(reader);
     } catch (e: any) {
       console.warn('Error configurando puerto:', e.message);
-      if (e.message.includes('already open')) {
-        set({ isScaleConnected: true, needsRevincular: false });
+      set({ isScaleConnected: false });
+      
+      if (e.message.includes('already open') || e.message.includes('Access denied')) {
+        alert('El puerto está bloqueado por Windows. Intenta desconectar y volver a conectar el cable USB de la báscula.');
       } else {
-        set({ isScaleConnected: false });
+        alert('Error de configuración: ' + e.message);
       }
     }
   },
 
   autoReconnect: async () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
-    
     if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
       const ports = await (navigator as any).serial.getPorts();
       if (ports.length > 0) {
         await get().setupPort(ports[0]);
-      } else {
-        // Si no hay puertos pero el usuario dijo que tenía una, avisar que debe re-vincular
-        if (localStorage.getItem('has_authorized_scale') === 'true') {
-          set({ needsRevincular: true });
-        }
+      } else if (localStorage.getItem('has_authorized_scale') === 'true') {
+        set({ needsRevincular: true });
       }
     } catch (e) {
-      console.warn('Auto-reconexión fallida:', e);
+      console.warn('Auto-reconexión fallida silenciosamente');
     }
   },
 
   initGlobalListeners: () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
-
     if ((window as any).__scaleListenersInitialized) return;
     (window as any).__scaleListenersInitialized = true;
 
@@ -122,11 +125,11 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         if (!get().isScaleConnected) {
           get().autoReconnect();
         }
-      }, 4000);
+      }, 5000);
       set({ reconnectInterval: interval });
     }
     
-    setTimeout(() => get().autoReconnect(), 2000);
+    setTimeout(() => get().autoReconnect(), 3000);
   },
 
   disconnectScale: async () => {
@@ -170,8 +173,12 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
           }
         }
       }
-    } catch (error) {
-      console.error('Cierre de bucle:', error);
+    } catch (error: any) {
+      console.error('Error de lectura:', error.message);
+      // Si el error es de desconexión física, limpiar todo
+      if (error.message.includes('device was disconnected')) {
+         set({ isScaleConnected: false, port: null, reader: null });
+      }
     } finally {
       set({ isScaleConnected: false });
     }
