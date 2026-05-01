@@ -40,11 +40,12 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     }
   },
 
-  // Nueva función interna para configurar el puerto consistentemente
   setupPort: async (port: any) => {
     try {
-      // Si ya está abierto, no hacemos nada
-      if (port.readable) return;
+      // Si el puerto ya está abierto por otra instancia o similar, intentamos cerrarlo para limpiar
+      if (port.readable) {
+         try { await port.close(); } catch(e) {}
+      }
 
       await port.open({ baudRate: 9600 });
       set({ port, isScaleConnected: true });
@@ -64,28 +65,41 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   autoReconnect: async () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
     
-    // Si ya estamos conectados, no hacemos nada
-    if (get().isScaleConnected && get().port?.readable) return;
+    // Verificación de Salud: Si el estado dice conectado pero el puerto no tiene "readable", resetear
+    const { port, isScaleConnected } = get();
+    if (isScaleConnected && (!port || !port.readable)) {
+      set({ isScaleConnected: false });
+    }
+
+    if (get().isScaleConnected) return;
 
     try {
       const ports = await (navigator as any).serial.getPorts();
       if (ports.length > 0) {
-        // Intentar conectar al primer puerto autorizado disponible
-        await get().setupPort(ports[0]);
+        // Buscamos un puerto que no esté bloqueado
+        for (const p of ports) {
+          if (!p.readable) {
+            await get().setupPort(p);
+            if (get().isScaleConnected) break;
+          }
+        }
       }
     } catch (e) {
       console.warn('Fallo silencioso de auto-reconexión:', e);
     }
   },
 
-  // Inicializar escuchas de eventos de hardware (USB Connect/Disconnect)
   initGlobalListeners: () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
+
+    // Evitar duplicar listeners si ya existen
+    if ((window as any).__scaleListenersInitialized) return;
+    (window as any).__scaleListenersInitialized = true;
 
     // 1. Escuchar cuando se conecta un dispositivo USB
     (navigator as any).serial.addEventListener('connect', (e: any) => {
       console.log('Báscula detectada físicamente. Intentando vincular...');
-      get().autoReconnect();
+      setTimeout(() => get().autoReconnect(), 1000); // Pequeño delay para que el OS reconozca el puerto
     });
 
     // 2. Escuchar cuando se desconecta
@@ -94,17 +108,14 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       set({ isScaleConnected: false, port: null, reader: null, scaleWeight: 0 });
     });
 
-    // 3. Sistema de "Polling" (Reintento cada 5 segundos si no hay conexión)
+    // 3. Sistema de "Polling" Agresivo (Reintento cada 3 segundos si no hay conexión)
     if (!get().reconnectInterval) {
       const interval = setInterval(() => {
-        if (!get().isScaleConnected) {
-          get().autoReconnect();
-        }
-      }, 5000);
+        get().autoReconnect();
+      }, 3000);
       set({ reconnectInterval: interval });
     }
     
-    // Ejecutar el primer intento de inmediato
     get().autoReconnect();
   },
 
@@ -142,6 +153,8 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
                 const weight = parseFloat(match[1]);
                 if (!isNaN(weight) && weight >= 0 && weight < 500) {
                   set({ scaleWeight: weight });
+                  // Si estamos recibiendo peso, confirmamos que estamos conectados
+                  if (!get().isScaleConnected) set({ isScaleConnected: true });
                 }
               }
             }
@@ -151,8 +164,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     } catch (error) {
       console.error('Bucle de lectura interrumpido:', error);
     } finally {
-      set({ isScaleConnected: false });
-      // Al romperse el bucle, el sistema de Polling intentará reconectar en el próximo ciclo
+      set({ isScaleConnected: false, reader: null });
     }
   },
 }));
