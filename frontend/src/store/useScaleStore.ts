@@ -13,6 +13,7 @@ interface ScaleState {
   autoReconnect: () => Promise<void>;
   readScaleLoop: (reader: any) => Promise<void>;
   initGlobalListeners: () => void;
+  setupPort: (port: any) => Promise<void>;
 }
 
 export const useScaleStore = create<ScaleState>((set, get) => ({
