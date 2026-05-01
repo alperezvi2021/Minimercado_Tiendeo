@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 interface ScaleState {
   isScaleConnected: boolean;
-  isConnecting: boolean; // Semáforo para evitar lentitud
+  isConnecting: boolean;
   scaleWeight: number;
   port: any | null;
   reader: any | null;
@@ -56,18 +56,15 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     set({ isConnecting: true });
 
     try {
-      // 1. Limpieza de seguridad
       if (globalReader) {
         try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
         globalReader = null;
       }
       
-      // 2. Intentar abrir. 
       await port.open({ baudRate: 9600 });
       globalPort = port;
       
-      // Pausa técnica breve y ligera
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 400));
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
@@ -78,11 +75,24 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       get().readScaleLoop(reader);
     } catch (e: any) {
       console.warn('Fallo al abrir puerto:', e.message);
-      set({ isScaleConnected: false });
       
-      // Si es manual y falla, avisar una sola vez sin reintentos pesados
-      if (!isAuto) {
-        alert('Windows no permite abrir el puerto de la báscula.\n\nPor favor, desconecta el cable USB de la computadora, espera 3 segundos y vuelve a conectarlo.');
+      // LA MANIOBRA MAESTRA: Si el puerto está bloqueado, forzamos al navegador a olvidarlo
+      // Esto libera el recurso sin necesidad de desconectar el cable físicamente.
+      if (e.message.includes('already open') || e.message.includes('Access denied') || e.message.includes('Failed to open')) {
+        console.log('Puerto bloqueado detectado. Forzando liberación por software...');
+        try {
+          if (port.forget) {
+            await port.forget(); // Esta es la clave para soltar el cable por software
+          }
+        } catch (forgetErr) {}
+        
+        set({ isScaleConnected: false, needsRevincular: true });
+        
+        if (!isAuto) {
+          alert('La conexión estaba bloqueada. El sistema ha liberado el puerto automáticamente.\n\nPor favor, haz clic ahora en "RE-VINCULAR BÁSCULA" para activarla de nuevo.');
+        }
+      } else {
+        set({ isScaleConnected: false });
       }
     } finally {
       set({ isConnecting: false });
@@ -111,8 +121,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     (window as any).__scaleListenersInitialized = true;
 
     (navigator as any).serial.addEventListener('connect', () => {
-      // Retardo largo al conectar físicamente para no bloquear el sistema
-      setTimeout(() => get().autoReconnect(), 5000);
+      setTimeout(() => get().autoReconnect(), 3000);
     });
 
     (navigator as any).serial.addEventListener('disconnect', () => {
@@ -122,16 +131,15 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     });
 
     if (!get().reconnectInterval) {
-      // Latido muy relajado (cada 12 segundos) para no afectar el rendimiento
       const interval = setInterval(() => {
         if (!get().isScaleConnected && !get().isConnecting) {
           get().autoReconnect();
         }
-      }, 12000);
+      }, 10000);
       set({ reconnectInterval: interval });
     }
     
-    setTimeout(() => get().autoReconnect(), 4000);
+    setTimeout(() => get().autoReconnect(), 3000);
   },
 
   disconnectScale: async () => {
