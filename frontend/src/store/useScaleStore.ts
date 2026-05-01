@@ -8,6 +8,7 @@ interface ScaleState {
   reader: any | null;
   reconnectInterval: NodeJS.Timeout | null;
   needsRevincular: boolean;
+  lastErrorTime: number; // Para evitar bucles de error infinitos
   setScaleWeight: (weight: number) => void;
   setIsScaleConnected: (connected: boolean) => void;
   connectScale: () => Promise<void>;
@@ -29,6 +30,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   reader: null,
   reconnectInterval: null,
   needsRevincular: false,
+  lastErrorTime: 0,
 
   setScaleWeight: (weight) => set({ scaleWeight: weight }),
   setIsScaleConnected: (connected) => set({ isScaleConnected: connected }),
@@ -56,15 +58,19 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     set({ isConnecting: true });
 
     try {
+      // 1. LIMPIEZA PROFUNDA: Intentar cerrar todo lo que pueda estar abierto
       if (globalReader) {
         try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
         globalReader = null;
       }
       
+      // 2. Intentar abrir con calma
       await port.open({ baudRate: 9600 });
       globalPort = port;
       
-      await new Promise(resolve => setTimeout(resolve, 400));
+      // PAUSA DE ESTABILIZACIÓN EXTENDIDA (1 segundo)
+      // Crítico para adaptadores USB-Serial que se bloquean fácilmente
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
@@ -74,26 +80,26 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
       get().readScaleLoop(reader);
     } catch (e: any) {
-      console.warn('Fallo al abrir puerto:', e.message);
+      console.warn('Error crítico de apertura:', e.message);
+      set({ isScaleConnected: false, lastErrorTime: Date.now() });
       
-      // LA MANIOBRA MAESTRA: Si el puerto está bloqueado, forzamos al navegador a olvidarlo
-      // Esto libera el recurso sin necesidad de desconectar el cable físicamente.
-      if (e.message.includes('already open') || e.message.includes('Access denied') || e.message.includes('Failed to open')) {
-        console.log('Puerto bloqueado detectado. Forzando liberación por software...');
-        try {
-          if (port.forget) {
-            await port.forget(); // Esta es la clave para soltar el cable por software
-          }
-        } catch (forgetErr) {}
-        
-        set({ isScaleConnected: false, needsRevincular: true });
-        
-        if (!isAuto) {
-          alert('La conexión estaba bloqueada. El sistema ha liberado el puerto automáticamente.\n\nPor favor, haz clic ahora en "RE-VINCULAR BÁSCULA" para activarla de nuevo.');
+      // MANIOBRA DE EXPULSIÓN: Forzar al navegador a soltar el puerto
+      try {
+        if (port.forget) {
+          await port.forget();
         }
-      } else {
-        set({ isScaleConnected: false });
+      } catch (forgetErr) {}
+
+      if (!isAuto) {
+        // Mensaje más descriptivo si el error persiste
+        if (e.message.includes('Failed to open serial port') || e.message.includes('Access denied')) {
+          alert('¡BLOQUEO DE HARDWARE DETECTADO!\n\nWindows ha bloqueado el chip USB de la báscula y el sistema no ha podido liberarlo por software.\n\nÚNICA SOLUCIÓN: Desconecta el cable USB de la computadora, espera 5 segundos y vuelve a conectarlo.');
+        } else {
+          alert('Error de conexión: ' + e.message);
+        }
       }
+      
+      set({ needsRevincular: true });
     } finally {
       set({ isConnecting: false });
     }
@@ -101,6 +107,10 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
   autoReconnect: async () => {
     if (get().isConnecting || typeof window === 'undefined' || !('serial' in navigator)) return;
+    
+    // Si hubo un error hace menos de 20 segundos, no intentamos auto-conectar para no saturar
+    if (Date.now() - get().lastErrorTime < 20000) return;
+
     if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
@@ -121,7 +131,8 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     (window as any).__scaleListenersInitialized = true;
 
     (navigator as any).serial.addEventListener('connect', () => {
-      setTimeout(() => get().autoReconnect(), 3000);
+      // Al conectar el cable, damos tiempo generoso al driver
+      setTimeout(() => get().autoReconnect(), 6000);
     });
 
     (navigator as any).serial.addEventListener('disconnect', () => {
@@ -135,11 +146,11 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         if (!get().isScaleConnected && !get().isConnecting) {
           get().autoReconnect();
         }
-      }, 10000);
+      }, 15000); // Polling muy relajado
       set({ reconnectInterval: interval });
     }
     
-    setTimeout(() => get().autoReconnect(), 3000);
+    setTimeout(() => get().autoReconnect(), 5000);
   },
 
   disconnectScale: async () => {
