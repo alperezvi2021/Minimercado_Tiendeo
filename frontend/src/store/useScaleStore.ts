@@ -16,7 +16,6 @@ interface ScaleState {
   setupPort: (port: any) => Promise<void>;
 }
 
-// Variable persistente fuera del store por si se reinicia el estado de Zustand
 let globalPort: any = null;
 let globalReader: any = null;
 
@@ -35,7 +34,6 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       alert('Tu navegador no soporta la conexión con básculas. Usa Google Chrome o Microsoft Edge.');
       return;
     }
-
     try {
       const port = await (navigator as any).serial.requestPort();
       await get().setupPort(port);
@@ -46,20 +44,18 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
   setupPort: async (port: any) => {
     try {
-      // 1. Limpieza radical antes de abrir
+      // 1. Limpieza preventiva
       if (globalReader) {
         try { await globalReader.cancel(); globalReader.releaseLock(); } catch(e) {}
         globalReader = null;
       }
-      
-      // 2. Si el puerto ya está abierto en este objeto, intentamos reusar o cerrar
-      if (port.readable) {
-        // El puerto ya está abierto y fluyendo, no hacemos nada o refrescamos loop
-        set({ port, isScaleConnected: true });
-        return;
-      }
 
-      await port.open({ baudRate: 9600 });
+      // 2. Intentar abrir el puerto
+      // Si ya está abierto (raro pero posible), no intentamos abrir de nuevo
+      if (!port.opened) {
+        await port.open({ baudRate: 9600 });
+      }
+      
       globalPort = port;
       set({ port, isScaleConnected: true });
 
@@ -72,29 +68,29 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       get().readScaleLoop(reader);
     } catch (e: any) {
       console.warn('Error configurando puerto:', e.message);
-      // Si el error es "already open", intentamos marcarlo como conectado
-      if (e.message.includes('already open')) {
-        set({ port, isScaleConnected: true });
-      } else {
-        set({ isScaleConnected: false });
+      
+      // Si el error es "already open", significa que ya lo tenemos
+      if (e.message.includes('already open') || e.message.includes('Access denied')) {
+        console.log('El puerto está ocupado o ya abierto. Reintentando en el próximo ciclo...');
       }
+      set({ isScaleConnected: false });
     }
   },
 
   autoReconnect: async () => {
     if (typeof window === 'undefined' || !('serial' in navigator)) return;
     
-    // Si ya estamos recibiendo datos (salud), no molestamos
+    // Si ya hay algo fluyendo, no tocamos nada
     if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
       const ports = await (navigator as any).serial.getPorts();
       if (ports.length > 0) {
-        // Intentar recuperar el puerto autorizado
+        // Intentar conectar con una pequeña pausa para evitar colisiones de hilos
         await get().setupPort(ports[0]);
       }
     } catch (e) {
-      console.warn('Fallo silencioso de auto-reconexión:', e);
+      console.warn('Auto-reconexión fallida:', e);
     }
   },
 
@@ -105,7 +101,8 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     (window as any).__scaleListenersInitialized = true;
 
     (navigator as any).serial.addEventListener('connect', () => {
-      setTimeout(() => get().autoReconnect(), 1000);
+      // Cuando se conecta físicamente, esperamos 2 segundos a que el driver de Windows se asiente
+      setTimeout(() => get().autoReconnect(), 2000);
     });
 
     (navigator as any).serial.addEventListener('disconnect', () => {
@@ -116,12 +113,15 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
     if (!get().reconnectInterval) {
       const interval = setInterval(() => {
-        get().autoReconnect();
-      }, 3000);
+        if (!get().isScaleConnected) {
+          get().autoReconnect();
+        }
+      }, 4000); // Polling cada 4 segundos
       set({ reconnectInterval: interval });
     }
     
-    get().autoReconnect();
+    // El primer intento al cargar la página será después de 3 segundos de "cortesía"
+    setTimeout(() => get().autoReconnect(), 3000);
   },
 
   disconnectScale: async () => {
@@ -166,7 +166,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         }
       }
     } catch (error) {
-      console.error('Lectura finalizada:', error);
+      console.error('Cierre de bucle:', error);
     } finally {
       set({ isScaleConnected: false });
     }

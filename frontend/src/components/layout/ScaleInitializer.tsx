@@ -4,27 +4,21 @@ import { useScaleStore } from '@/store/useScaleStore';
 
 /**
  * Componente que inicializa la báscula a nivel de toda la aplicación.
- * Al estar aquí, la conexión persiste incluso en el Login.
+ * Ahora es más pasivo para permitir que el sistema operativo libere los puertos.
  */
 export default function ScaleInitializer() {
-  const { initGlobalListeners, disconnectScale } = useScaleStore();
+  const { initGlobalListeners } = useScaleStore();
 
   useEffect(() => {
-    // 1. Iniciar los escuchas globales (USB y Polling)
+    // Solo iniciamos los escuchas globales.
+    // La lógica de "Cortesía" de 3 segundos está dentro del Store.
     initGlobalListeners();
 
-    // 2. Blindar contra cierres de pestaña para evitar bloqueos del puerto
-    const handleBeforeUnload = () => {
-      disconnectScale();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      // NO desconectamos aquí para que la báscula sobreviva a la navegación interna
-    };
-  }, [initGlobalListeners, disconnectScale]);
+    // HEMOS ELIMINADO beforeunload: 
+    // Forzar el cierre asíncrono del puerto justo antes de cerrar la pestaña
+    // a veces causa que el puerto quede bloqueado en el Sistema Operativo.
+    // Es mejor dejar que el navegador lo limpie a su ritmo.
+  }, [initGlobalListeners]);
 
   return null;
 }
