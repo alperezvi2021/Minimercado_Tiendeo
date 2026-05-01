@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 interface ScaleState {
   isScaleConnected: boolean;
+  isConnecting: boolean; // Semáforo para evitar lentitud
   scaleWeight: number;
   port: any | null;
   reader: any | null;
@@ -14,7 +15,7 @@ interface ScaleState {
   autoReconnect: () => Promise<void>;
   readScaleLoop: (reader: any) => Promise<void>;
   initGlobalListeners: () => void;
-  setupPort: (port: any, isAuto?: boolean, retryCount?: number) => Promise<void>;
+  setupPort: (port: any, isAuto?: boolean) => Promise<void>;
 }
 
 let globalPort: any = null;
@@ -22,6 +23,7 @@ let globalReader: any = null;
 
 export const useScaleStore = create<ScaleState>((set, get) => ({
   isScaleConnected: false,
+  isConnecting: false,
   scaleWeight: 0,
   port: null,
   reader: null,
@@ -32,6 +34,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
   setIsScaleConnected: (connected) => set({ isScaleConnected: connected }),
 
   connectScale: async () => {
+    if (get().isConnecting) return;
     if (typeof window === 'undefined' || !('serial' in navigator)) {
       alert('Tu navegador no soporta la conexión con básculas. Usa Google Chrome o Microsoft Edge.');
       return;
@@ -40,7 +43,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
       const port = await (navigator as any).serial.requestPort();
       localStorage.setItem('has_authorized_scale', 'true');
       set({ needsRevincular: false });
-      await get().setupPort(port, false); // No es auto-conectar, mostrar errores
+      await get().setupPort(port, false);
     } catch (error) {
       if ((error as any).name !== 'NotFoundError') {
          alert('Error al seleccionar la báscula: ' + (error as any).message);
@@ -48,7 +51,10 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     }
   },
 
-  setupPort: async (port: any, isAuto = false, retryCount = 0) => {
+  setupPort: async (port: any, isAuto = false) => {
+    if (get().isConnecting) return;
+    set({ isConnecting: true });
+
     try {
       // 1. Limpieza de seguridad
       if (globalReader) {
@@ -56,12 +62,12 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         globalReader = null;
       }
       
-      // 2. Intentar abrir. Si falla, entrará al catch para reintentar
+      // 2. Intentar abrir. 
       await port.open({ baudRate: 9600 });
       globalPort = port;
       
-      // Pausa técnica tras apertura
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Pausa técnica breve y ligera
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const textDecoder = new TextDecoderStream();
       port.readable.pipeTo(textDecoder.writable);
@@ -71,30 +77,25 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
 
       get().readScaleLoop(reader);
     } catch (e: any) {
-      console.warn(`Intento ${retryCount + 1} fallido: ${e.message}`);
-      
-      // Lógica de reintento progresivo (máximo 3 veces con 2 segundos entre cada uno)
-      if (retryCount < 3) {
-        setTimeout(() => get().setupPort(port, isAuto, retryCount + 1), 2000);
-        return;
-      }
-
-      // Si después de 3 intentos falla y NO es auto-conectar, avisar al usuario
+      console.warn('Fallo al abrir puerto:', e.message);
       set({ isScaleConnected: false });
+      
+      // Si es manual y falla, avisar una sola vez sin reintentos pesados
       if (!isAuto) {
-        alert('Windows no permite abrir el puerto. Posibles causas:\n1. El driver aún se está instalando.\n2. Otra pestaña tiene la báscula abierta.\n3. El cable USB está fallando.\n\nPrueba desconectar y volver a conectar el cable.');
+        alert('Windows no permite abrir el puerto de la báscula.\n\nPor favor, desconecta el cable USB de la computadora, espera 3 segundos y vuelve a conectarlo.');
       }
+    } finally {
+      set({ isConnecting: false });
     }
   },
 
   autoReconnect: async () => {
-    if (typeof window === 'undefined' || !('serial' in navigator)) return;
+    if (get().isConnecting || typeof window === 'undefined' || !('serial' in navigator)) return;
     if (get().isScaleConnected && globalPort?.readable) return;
 
     try {
       const ports = await (navigator as any).serial.getPorts();
       if (ports.length > 0) {
-        // En auto-reconexión pasamos true para que no salgan alertas intrusivas
         await get().setupPort(ports[0], true);
       } else if (localStorage.getItem('has_authorized_scale') === 'true') {
         set({ needsRevincular: true });
@@ -110,8 +111,8 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     (window as any).__scaleListenersInitialized = true;
 
     (navigator as any).serial.addEventListener('connect', () => {
-      // Cuando conectas el cable, esperamos 4 segundos (más tiempo para el driver)
-      setTimeout(() => get().autoReconnect(), 4000);
+      // Retardo largo al conectar físicamente para no bloquear el sistema
+      setTimeout(() => get().autoReconnect(), 5000);
     });
 
     (navigator as any).serial.addEventListener('disconnect', () => {
@@ -121,15 +122,16 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
     });
 
     if (!get().reconnectInterval) {
+      // Latido muy relajado (cada 12 segundos) para no afectar el rendimiento
       const interval = setInterval(() => {
-        if (!get().isScaleConnected) {
+        if (!get().isScaleConnected && !get().isConnecting) {
           get().autoReconnect();
         }
-      }, 8000); // Polling más relajado para evitar saturar el puerto
+      }, 12000);
       set({ reconnectInterval: interval });
     }
     
-    setTimeout(() => get().autoReconnect(), 3000);
+    setTimeout(() => get().autoReconnect(), 4000);
   },
 
   disconnectScale: async () => {
@@ -174,9 +176,7 @@ export const useScaleStore = create<ScaleState>((set, get) => ({
         }
       }
     } catch (error: any) {
-      if (error.message.includes('disconnected')) {
-         set({ isScaleConnected: false, port: null, reader: null });
-      }
+      // Silencioso
     } finally {
       set({ isScaleConnected: false });
     }
