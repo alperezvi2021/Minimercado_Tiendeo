@@ -172,9 +172,14 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             </div>
           ) : needsRevincular ? (
             <button 
-              onClick={connectScale}
+              onClick={() => {
+                // Intentamos abrir el agente local mediante el protocolo personalizado
+                window.location.href = 'tiendeo://abrir';
+                // Esperamos un segundo y tratamos de conectar
+                setTimeout(connectScale, 1500);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-[10px] font-black tracking-widest uppercase transition-all animate-bounce shadow-lg shadow-orange-900/30"
-              title="El navegador perdió el permiso de la báscula. Haz clic para re-vincularla."
+              title="Click para intentar abrir el Agente Premium automáticamente"
             >
                <Scale className="w-4 h-4 animate-spin" style={{ animationDuration: '3s' }} />
                <span>Re-vincular Báscula</span>
