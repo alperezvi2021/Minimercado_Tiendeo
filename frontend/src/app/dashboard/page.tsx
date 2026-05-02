@@ -790,7 +790,13 @@ export default function PosPage() {
             <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{tenantData.name} • {tenantData.location}</p>
           </div>
           <div className="flex items-center gap-3">
-            {!bridgeActive && (
+            {bridgeActive ? (
+              /* En modo Premium, el peso siempre se muestra pero el botón está desactivado */
+              <div className="flex items-center text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-3 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-800 shadow-sm">
+                <Scale className="w-4 h-4 mr-1.5" />
+                {scaleWeight.toFixed(3)} kg
+              </div>
+            ) : (
               <>
                 {isScaleConnected ? (
                   <button onClick={disconnectScale} className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 transition-all hover:bg-emerald-100">
