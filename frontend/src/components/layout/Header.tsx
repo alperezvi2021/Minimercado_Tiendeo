@@ -173,10 +173,8 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           ) : needsRevincular ? (
             <button 
               onClick={() => {
-                // Intentamos abrir el agente local mediante el protocolo personalizado
+                // Abrimos el agente local mediante el protocolo personalizado
                 window.location.href = 'tiendeo://abrir';
-                // Esperamos un segundo y tratamos de conectar
-                setTimeout(connectScale, 1500);
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-[10px] font-black tracking-widest uppercase transition-all animate-bounce shadow-lg shadow-orange-900/30"
               title="Click para intentar abrir el Agente Premium automáticamente"
