@@ -85,7 +85,8 @@ export default function PosPage() {
     isScaleConnected, 
     scaleWeight, 
     connectScale, 
-    disconnectScale 
+    disconnectScale,
+    bridgeActive 
   } = useScaleStore();
 
   const stabilityTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -789,16 +790,20 @@ export default function PosPage() {
             <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-0.5">{tenantData.name} • {tenantData.location}</p>
           </div>
           <div className="flex items-center gap-3">
-            {isScaleConnected ? (
-              <button onClick={disconnectScale} className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 transition-all hover:bg-emerald-100">
-                <Scale className="w-4 h-4 mr-1.5" />
-                {scaleWeight.toFixed(3)} kg
-              </button>
-            ) : (
-              <button onClick={connectScale} className="flex items-center text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-200 dark:hover:bg-slate-700">
-                <Scale className="w-4 h-4 mr-1.5" />
-                Conectar Báscula
-              </button>
+            {!bridgeActive && (
+              <>
+                {isScaleConnected ? (
+                  <button onClick={disconnectScale} className="flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800 transition-all hover:bg-emerald-100">
+                    <Scale className="w-4 h-4 mr-1.5" />
+                    {scaleWeight.toFixed(3)} kg
+                  </button>
+                ) : (
+                  <button onClick={connectScale} className="flex items-center text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 transition-all hover:bg-slate-200 dark:hover:bg-slate-700">
+                    <Scale className="w-4 h-4 mr-1.5" />
+                    Conectar Báscula
+                  </button>
+                )}
+              </>
             )}
             {offlineStore.pendingSales.length > 0 && (
               <div className="flex items-center text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full animate-pulse">
