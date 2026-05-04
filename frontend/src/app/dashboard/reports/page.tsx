@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, Calendar, CreditCard, Banknote, Receipt, Tag, FileText, Download, ArrowUpRight } from 'lucide-react';
+import { BarChart3, TrendingUp, Calendar, CreditCard, Banknote, Receipt, Tag, FileText, Download, ArrowUpRight, Search } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { utils, writeFile } from 'xlsx';
@@ -32,6 +32,7 @@ export default function ReportsPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Sale | 'user'; direction: 'asc' | 'desc' } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchSales();
@@ -83,6 +84,20 @@ export default function ReportsPage() {
     if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
     if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
+  });
+
+  const filteredAndSortedSales = sortedSales.filter(sale => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      (sale.invoiceNumber?.toLowerCase().includes(query)) ||
+      (sale.sellerName?.toLowerCase().includes(query)) ||
+      (sale.user?.name?.toLowerCase().includes(query)) ||
+      (sale.paymentMethod?.toLowerCase().includes(query)) ||
+      (sale.customerName?.toLowerCase().includes(query)) ||
+      (sale.items.some(i => i.productName.toLowerCase().includes(query))) ||
+      (sale.totalAmount.toString().includes(query))
+    );
   });
 
   const totalRevenue = sales.reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
@@ -220,9 +235,21 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-10 mb-4 flex items-center">
-        <Calendar className="w-5 h-5 mr-2 text-gray-500" /> Historial de Transacciones
-      </h3>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-10 mb-4 gap-4">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center m-0">
+          <Calendar className="w-5 h-5 mr-2 text-gray-500" /> Historial de Transacciones
+        </h3>
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input 
+            type="text" 
+            placeholder="Buscar por factura, vendedor, cliente o producto..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500/50 text-gray-900 dark:text-white transition-all shadow-sm"
+          />
+        </div>
+      </div>
       
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden text-left">
         {sales.length === 0 ? (
@@ -266,7 +293,7 @@ export default function ReportsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-100 dark:divide-slate-800">
-                {sortedSales.map((sale) => (
+                {filteredAndSortedSales.map((sale) => (
                   <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-3 py-3 whitespace-nowrap text-[10px] font-black text-blue-600 dark:text-blue-400">
                       {sale.invoiceNumber || 'S/N'}

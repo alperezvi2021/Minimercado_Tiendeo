@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X, ToggleRight, ToggleLeft, Power } from 'lucide-react';
+import { Shield, Users, Store, Search, Key, LogOut, ExternalLink, Activity, Plus, Database, ArrowLeft, Trash2, AlertTriangle, Check, RefreshCcw, Menu, X, ToggleRight, ToggleLeft, Power, Eye, EyeOff } from 'lucide-react';
 import BackupsManager from '@/components/admin/BackupsManager';
 
 interface Tenant {
@@ -46,6 +46,7 @@ export default function SuperAdminPage() {
   const [isCleaningData, setIsCleaningData] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [isModulesModalOpen, setIsModulesModalOpen] = useState(false);
   const [selectedTenantForModules, setSelectedTenantForModules] = useState<Tenant | null>(null);
   const [editingModules, setEditingModules] = useState<string[]>([]);
@@ -568,13 +569,22 @@ export default function SuperAdminPage() {
             <div className="space-y-6">
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3">Nueva Contraseña Temporal</label>
-                <input 
-                  type="password" 
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Ej. Pass2024!"
-                  className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-blue-500/50 text-white font-bold transition-all"
-                />
+                <div className="relative">
+                  <input 
+                    type={showNewPassword ? "text" : "password"} 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Ej. Pass2024!"
+                    className="w-full bg-white/5 border border-white/5 rounded-2xl pl-6 pr-12 py-4 focus:ring-2 focus:ring-blue-500/50 text-white font-bold transition-all"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-500 transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
             </div>
 
