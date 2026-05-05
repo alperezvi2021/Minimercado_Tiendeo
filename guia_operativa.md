@@ -34,15 +34,28 @@ El comando `git pull` es el que trae los cambios desde la nube a tu servidor.
 
 Una vez que has validado en el Laboratorio que todo está perfecto, sigue estos pasos para llevar los cambios a tus clientes:
 
-1.  **Entrar a la carpeta de Producción:**
+1.  **Respaldo de Seguridad (MANDATORIO):**
+    Antes de hacer cambios, genera un archivo `.sql` con toda la información actual:
+    ```bash
+    # Crear carpeta de backups si no existe
+    mkdir -p ~/backups_tiendeo
+    
+    # Realizar el dump de la base de datos de producción
+    docker exec -t tiendeo-pro-db pg_dump -U postgres tiendeo > ~/backups_tiendeo/backup_pro_$(date +%F_%H%M).sql
+    
+    # Verificar que el archivo se creó (debe pesar más de 0 KB)
+    ls -lh ~/backups_tiendeo
+    ```
+
+2.  **Entrar a la carpeta de Producción:**
     ```bash
     cd /opt/Minimercado_Tiendeo
     ```
-2.  **Sincronizar el código:**
+3.  **Sincronizar el código:**
     ```bash
     git pull origin main
     ```
-3.  **Reconstruir y Reiniciar:**
+4.  **Reconstruir y Reiniciar:**
     ```bash
     docker compose up -d --build
     ```
