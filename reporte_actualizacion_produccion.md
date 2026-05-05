@@ -1,6 +1,31 @@
 # Reporte de Cambios y Despliegue (Laboratorio -> Producción)
-**Fecha de Preparación:** 27 de Abril, 2026
-**Fecha de Despliegue a Producción:** 28 de Abril, 2026 — ✅ **COMPLETADO EXITOSAMENTE**
+**Fecha de Despliegue:** 5 de Mayo, 2026 — ✅ **COMPLETADO EXITOSAMENTE**
+
+Este documento resume los avances y correcciones de seguridad, operaciones financieras y mejoras de experiencia de usuario implementados y desplegados hoy en los ambientes de Laboratorio y Producción.
+
+---
+
+## 1. Módulo de Clientes y Pagos (Prevención de Errores)
+- **Sistema Anti-Doble Cobro:** Al registrar un pago o abono, la ventana de edición se reemplaza automáticamente por el recibo de pago, haciendo imposible que el cajero haga doble clic accidental en procesar.
+- **Botón de Guardar Inteligente:** El botón principal "Guardar Información" ahora detecta si el usuario llenó un abono y seleccionó facturas, procesando el pago en lugar de solo guardar el perfil, lo que previene confusiones.
+- **Deuda Activa Visible:** La cabecera del modal del cliente ahora muestra el total de la "Deuda Activa" de manera inmediata sin necesidad de navegar el historial.
+- **Recibo de Pago Detallado:** Al finalizar el pago, se muestra un modal tipo "Documento POS" listo para imprimir. Este recibo desglosa cada factura afectada y el monto exacto inyectado a ella. Solo si se pagan más de 20 facturas en un solo abono, el recibo las agrupa para ahorrar papel.
+- **Limpieza de Sesión:** Los campos de abonos y selecciones se limpian de manera profunda al cambiar de cliente.
+
+## 2. Seguridad y Permisos
+- **Protección contra Borrado (Backend y Frontend):** Se restringió definitivamente la eliminación de clientes. Los usuarios con perfil `CASHIER` verán el botón de la papelera inhabilitado y el backend rechazará cualquier comando de eliminación no autorizado. El Cajero conserva privilegios completos de creación, actualización y cobro.
+- **Visibilidad de Contraseñas (Ojito):** En el panel global del `SUPERADMIN`, se habilitó un botón interactivo para mostrar u ocultar la contraseña al momento de asignarla o resetearla.
+
+## 3. Reportes e Historial
+- **Buscador Dinámico:** Se integró una barra de búsqueda en tiempo real dentro de la tabla del módulo de Reportes, permitiendo filtrar ventas pasadas por número de factura, cliente, vendedor o método de pago de manera instantánea.
+
+## 4. Estructura Operativa
+- **Estandarización de Backups:** Se actualizó la `Guía Operativa` para establecer el comando `pg_dump` como el método oficial, único y seguro de realizar copias de la base de datos de producción antes de cada despliegue, generando archivos `.sql` limpios.
+
+---
+
+# Historial Anterior
+**Fecha de Despliegue:** 28 de Abril, 2026 — ✅ **COMPLETADO EXITOSAMENTE**
 
 Este documento resume los avances y correcciones realizados en el ambiente de **Laboratorio** durante los últimos 3 días, y registra el despliegue exitoso a **Producción**.
 
