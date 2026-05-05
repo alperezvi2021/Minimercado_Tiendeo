@@ -101,7 +101,10 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         setCompletedPayment({
           amount: debtObj ? debtObj.remainingAmount : 0,
           customerName: customer?.name || 'Cliente',
-          invoiceNumber: debtObj?.sale?.invoiceNumber || 'Varias',
+          invoices: [{
+            number: debtObj?.sale?.invoiceNumber || 'S/N',
+            amount: debtObj ? debtObj.remainingAmount : 0
+          }],
           date: new Date().toISOString()
         });
         fetchCustomerDebts();
@@ -138,11 +141,17 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
           const d = debts.find(x => x.id === id);
           return sum + (d ? Number(d.remainingAmount) : 0);
         }, 0);
-        const invoiceNumbers = selectedDebts.map(id => debts.find(x => x.id === id)?.sale?.invoiceNumber || 'S/N').join(', ');
+        const invoiceDetails = selectedDebts.map(id => {
+          const debt = debts.find(x => x.id === id);
+          return {
+            number: debt?.sale?.invoiceNumber || 'S/N',
+            amount: debt ? Number(debt.remainingAmount) : 0
+          };
+        });
         setCompletedPayment({
           amount: amount,
           customerName: customer?.name || 'Cliente',
-          invoiceNumber: invoiceNumbers.length > 30 ? `${selectedDebts.length} Facturas` : invoiceNumbers,
+          invoices: invoiceDetails,
           date: new Date().toISOString()
         });
         setSelectedDebts([]);
@@ -226,12 +235,18 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
           alert(`Abonos procesados. RECUERDA ENTREGAR EL CAMBIO: $${formatCurrency(distribution.remaining)}`);
         }
         
-        const invoiceNumbers = payments.map(p => debts.find(d => d.id === p.creditId)?.sale?.invoiceNumber || 'S/N').join(', ');
+        const invoiceDetails = payments.map(p => {
+          const debt = debts.find(d => d.id === p.creditId);
+          return {
+            number: debt?.sale?.invoiceNumber || 'S/N',
+            amount: p.amount
+          };
+        });
         
         setCompletedPayment({
           amount: amount - distribution.remaining,
           customerName: customer?.name || 'Cliente',
-          invoiceNumber: invoiceNumbers.length > 30 ? `${payments.length} Facturas` : invoiceNumbers,
+          invoices: invoiceDetails,
           date: new Date().toISOString()
         });
         
@@ -365,7 +380,9 @@ Cliente:
 ${completedPayment.customerName.substring(0,24)}
 
 Factura(s):
-${completedPayment.invoiceNumber}
+${completedPayment.invoices.length > 20 
+  ? `${completedPayment.invoices.length} Facturas` 
+  : completedPayment.invoices.map((inv: any) => `${inv.number.padEnd(14)} $${formatCurrency(inv.amount)}`).join('\n')}
 
 ------------------------
 TOTAL PAGO: $${formatCurrency(completedPayment.amount)}
