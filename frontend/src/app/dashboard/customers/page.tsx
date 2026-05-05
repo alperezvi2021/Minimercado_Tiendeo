@@ -37,6 +37,7 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'ascending' | 'descending' } | null>(null);
+  const [userRole, setUserRole] = useState('CASHIER');
 
   const requestSort = (key: string) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -47,6 +48,9 @@ export default function CustomersPage() {
   };
 
   useEffect(() => {
+    const role = localStorage.getItem('user_role');
+    if (role) setUserRole(role);
+
     if (isOnline) {
       fetchCustomers();
     } else {
@@ -346,9 +350,13 @@ export default function CustomersPage() {
                       </button>
                       <button 
                         onClick={() => handleDelete(c.id)}
-                        className="p-3 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-rose-600 hover:text-white rounded-xl transition-all shadow-sm"
-                        title="Eliminar"
-                        disabled={c.totalDebt > 0}
+                        className={`p-3 rounded-xl transition-all shadow-sm ${
+                          c.totalDebt > 0 || userRole === 'CASHIER'
+                            ? 'bg-gray-50 dark:bg-slate-800/50 text-gray-300 dark:text-slate-600 cursor-not-allowed'
+                            : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-rose-600 hover:text-white'
+                        }`}
+                        title={userRole === 'CASHIER' ? 'No tienes permisos para eliminar clientes' : 'Eliminar'}
+                        disabled={c.totalDebt > 0 || userRole === 'CASHIER'}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>

@@ -22,7 +22,7 @@ export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
   @Post()
-  @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.CASHIER)
   create(@Request() req, @Body() createCustomerDto: any) {
     return this.customersService.create(
       req.user.tenantId,
@@ -43,7 +43,7 @@ export class CustomersController {
   }
 
   @Patch(':id')
-  @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN, Role.CASHIER)
   update(
     @Request() req,
     @Param('id') id: string,
