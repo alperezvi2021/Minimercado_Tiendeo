@@ -49,6 +49,9 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         address: customer.address || '',
         initialDebt: '',
       });
+      setTotalAbono('');
+      setSelectedDebts([]);
+      setCompletedPayment(null);
       if (isOpen) fetchCustomerDebts();
     } else {
       setFormData({
@@ -135,10 +138,11 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
           const d = debts.find(x => x.id === id);
           return sum + (d ? Number(d.remainingAmount) : 0);
         }, 0);
+        const invoiceNumbers = selectedDebts.map(id => debts.find(x => x.id === id)?.sale?.invoiceNumber || 'S/N').join(', ');
         setCompletedPayment({
           amount: amount,
           customerName: customer?.name || 'Cliente',
-          invoiceNumber: `${selectedDebts.length} Facturas`,
+          invoiceNumber: invoiceNumbers.length > 30 ? `${selectedDebts.length} Facturas` : invoiceNumbers,
           date: new Date().toISOString()
         });
         setSelectedDebts([]);
@@ -222,10 +226,12 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
           alert(`Abonos procesados. RECUERDA ENTREGAR EL CAMBIO: $${formatCurrency(distribution.remaining)}`);
         }
         
+        const invoiceNumbers = payments.map(p => debts.find(d => d.id === p.creditId)?.sale?.invoiceNumber || 'S/N').join(', ');
+        
         setCompletedPayment({
           amount: amount - distribution.remaining,
           customerName: customer?.name || 'Cliente',
-          invoiceNumber: `${payments.length} Facturas`,
+          invoiceNumber: invoiceNumbers.length > 30 ? `${payments.length} Facturas` : invoiceNumbers,
           date: new Date().toISOString()
         });
         
@@ -263,6 +269,22 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // SMART SUBMIT: Prevent confusion if user filled an Abono and clicked Guardar
+    const amountToPay = parseCurrency(totalAbono);
+    if (amountToPay > 0 && selectedDebts.length > 0) {
+      // Trigger the total debt payment instead of saving the customer
+      await handlePayTotalDebt();
+      return;
+    } else if (amountToPay > 0 && selectedDebts.length === 0) {
+      alert('Para registrar el abono, primero selecciona las facturas a pagar de la lista y luego presiona "Abonar".');
+      return;
+    } else if (selectedDebts.length > 0) {
+      // User selected debts but didn't fill totalAbono
+      alert('Tienes facturas seleccionadas. Si deseas saldarlas, presiona el botón azul "Pagar Seleccionados".');
+      return;
+    }
+
     setLoading(true);
     try {
       if (!isOnline && !customer) {
