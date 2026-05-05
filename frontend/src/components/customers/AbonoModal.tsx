@@ -19,11 +19,13 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [completedPayment, setCompletedPayment] = useState<any>(null);
 
   useEffect(() => {
     if (isOpen && credit) {
       setAmount('');
       setNotes('');
+      setCompletedPayment(null);
       fetchHistory();
     }
   }, [isOpen, credit]);
@@ -101,8 +103,14 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
       });
 
       if (res.ok) {
+        setCompletedPayment({
+          amount: amountVal,
+          customerName: credit.customerName || 'Cliente',
+          invoiceNumber: credit.sale?.invoiceNumber || 'S/N',
+          date: new Date().toISOString()
+        });
         onSave();
-        onClose();
+        // Removed onClose() to show the receipt first
       } else {
         const err = await res.json();
         alert('Error: ' + (err.message || 'No se pudo registrar el abono'));
@@ -118,6 +126,61 @@ export default function AbonoModal({ isOpen, onClose, onSave, credit }: AbonoMod
   if (!isOpen || !credit) return null;
 
   const remaining = Number(credit.remainingAmount || credit.amount);
+
+  if (completedPayment) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-emerald-600 text-white p-4 text-center print:hidden">
+            <h3 className="text-lg font-black uppercase tracking-wider">¡Abono Exitoso!</h3>
+            <p className="text-xs opacity-90 font-bold">Registrado correctamente</p>
+          </div>
+          
+          <div className="bg-white p-4" style={{ margin: '0 auto', width: '58mm' }}>
+            <pre 
+              id="printable-receipt" 
+              className="bg-white text-black font-mono font-bold leading-tight whitespace-pre text-left print:p-0 print:m-0"
+              style={{ fontSize: '10px', width: '100%', color: '#000000', fontWeight: 900 }}
+            >
+{`------------------------
+      RECIBO DE ABONO     
+------------------------
+Fecha: ${new Date(completedPayment.date).toLocaleDateString('es-CO')}
+Hora:  ${new Date(completedPayment.date).toLocaleTimeString('es-CO')}
+
+Cliente:
+${completedPayment.customerName.substring(0,24)}
+
+Factura Afectada:
+${completedPayment.invoiceNumber}
+
+------------------------
+ABONO:      $${formatCurrency(completedPayment.amount)}
+------------------------
+
+¡Gracias por su pago!
+`}
+            </pre>
+          </div>
+
+          <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3 print:hidden">
+            <button 
+              onClick={onClose} 
+              className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+            >
+              Cerrar
+            </button>
+            <button 
+              onClick={() => window.print()} 
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors"
+            >
+              🖨️ Imprimir
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300">

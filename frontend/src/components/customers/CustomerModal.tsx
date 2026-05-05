@@ -35,6 +35,9 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
   const [totalAbono, setTotalAbono] = useState('');
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
   const [isProcessingTotalDebt, setIsProcessingTotalDebt] = useState(false);
+  const [completedPayment, setCompletedPayment] = useState<any>(null);
+
+  const totalDebt = debts.reduce((sum, d) => sum + Number(d.remainingAmount || 0), 0);
 
   useEffect(() => {
     if (customer) {
@@ -91,7 +94,13 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       });
 
       if (res.ok) {
-        alert('Pago registrado correctamente.');
+        const debtObj = debts.find(d => d.id === creditId);
+        setCompletedPayment({
+          amount: debtObj ? debtObj.remainingAmount : 0,
+          customerName: customer?.name || 'Cliente',
+          invoiceNumber: debtObj?.sale?.invoiceNumber || 'Varias',
+          date: new Date().toISOString()
+        });
         fetchCustomerDebts();
         onSave(); // Refrescar lista principal también
       } else {
@@ -122,7 +131,16 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       });
 
       if (res.ok) {
-        alert('Pagos procesados correctamente');
+        const amount = selectedDebts.reduce((sum, id) => {
+          const d = debts.find(x => x.id === id);
+          return sum + (d ? Number(d.remainingAmount) : 0);
+        }, 0);
+        setCompletedPayment({
+          amount: amount,
+          customerName: customer?.name || 'Cliente',
+          invoiceNumber: `${selectedDebts.length} Facturas`,
+          date: new Date().toISOString()
+        });
         setSelectedDebts([]);
         fetchCustomerDebts();
         onSave();
@@ -202,9 +220,15 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       if (res.ok) {
         if (distribution.isAllSelectedCovered && distribution.remaining > 0) {
           alert(`Abonos procesados. RECUERDA ENTREGAR EL CAMBIO: $${formatCurrency(distribution.remaining)}`);
-        } else {
-          alert('Abonos procesados correctamente');
         }
+        
+        setCompletedPayment({
+          amount: amount - distribution.remaining,
+          customerName: customer?.name || 'Cliente',
+          invoiceNumber: `${payments.length} Facturas`,
+          date: new Date().toISOString()
+        });
+        
         setTotalAbono('');
         setSelectedDebts([]);
         fetchCustomerDebts();
@@ -294,6 +318,61 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
 
   if (!isOpen) return null;
 
+  if (completedPayment) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-emerald-600 text-white p-4 text-center print:hidden">
+            <h3 className="text-lg font-black uppercase tracking-wider">¡Pago Registrado!</h3>
+            <p className="text-xs opacity-90 font-bold">La transacción fue exitosa</p>
+          </div>
+          
+          <div className="bg-white p-4" style={{ margin: '0 auto', width: '58mm' }}>
+            <pre 
+              id="printable-receipt" 
+              className="bg-white text-black font-mono font-bold leading-tight whitespace-pre text-left print:p-0 print:m-0"
+              style={{ fontSize: '10px', width: '100%', color: '#000000', fontWeight: 900 }}
+            >
+{`------------------------
+      RECIBO DE PAGO      
+------------------------
+Fecha: ${new Date(completedPayment.date).toLocaleDateString('es-CO')}
+Hora:  ${new Date(completedPayment.date).toLocaleTimeString('es-CO')}
+
+Cliente:
+${completedPayment.customerName.substring(0,24)}
+
+Factura(s):
+${completedPayment.invoiceNumber}
+
+------------------------
+TOTAL PAGO: $${formatCurrency(completedPayment.amount)}
+------------------------
+
+¡Gracias por su pago!
+`}
+            </pre>
+          </div>
+
+          <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3 print:hidden">
+            <button 
+              onClick={() => { setCompletedPayment(null); onClose(); }} 
+              className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+            >
+              Cerrar
+            </button>
+            <button 
+              onClick={() => window.print()} 
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors"
+            >
+              🖨️ Imprimir
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[95vh] flex flex-col">
@@ -302,7 +381,14 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
             <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20">
               <User className="w-5 h-5 text-white" />
             </div>
-            {customer ? 'Editar Cliente' : 'Nuevo Cliente'}
+            <div className="flex items-center flex-wrap gap-3">
+              <span>{customer ? 'Editar Cliente' : 'Nuevo Cliente'}</span>
+              {customer && totalDebt > 0 && (
+                <span className="px-3 py-1 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg text-sm font-black uppercase tracking-widest shadow-sm border border-rose-200 dark:border-rose-800">
+                  Deuda Activa: ${formatCurrency(totalDebt)}
+                </span>
+              )}
+            </div>
           </h3>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors">
             <X className="w-6 h-6 text-gray-400" />
