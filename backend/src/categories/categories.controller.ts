@@ -21,7 +21,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.OWNER)
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   create(@Body() createCategoryDto: any, @Request() req: any) {
     return this.categoriesService.create(createCategoryDto, req.user.tenantId);
   }
@@ -38,7 +38,7 @@ export class CategoriesController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.OWNER)
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: any,

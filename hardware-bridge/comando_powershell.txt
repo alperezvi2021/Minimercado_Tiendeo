@@ -1,0 +1,35 @@
+# ============================================================================
+# GUÍA DE INSTALACIÓN Y CONFIGURACIÓN: PUENTE DE HARDWARE Y N8N-MCP
+# ============================================================================
+
+# 1. INSTALACIÓN DE NODE.JS (REQUISITO FUNDAMENTAL)
+# Ejecuta este comando en PowerShell como Administrador:
+winget install OpenJS.NodeJS.LTS
+
+# Después de instalar, cierra y abre una nueva terminal de PowerShell para verificar:
+node -v
+npm -v
+
+# 2. CONFIGURACIÓN DE POLÍTICAS DE EJECUCIÓN
+# Esto permite que los scripts de Node y PowerShell funcionen correctamente:
+Set-ExecutionPolicy Bypass -Scope Process -Force
+
+# 3. INSTALACIÓN DE DEPENDENCIAS DEL PUENTE DE BÁSCULA
+# Entra en la carpeta del proyecto (hardware-bridge) y ejecuta:
+npm install
+
+# 4. INSTALACIÓN DE N8N-MCP (MODEL CONTEXT PROTOCOL)
+# Para permitir que la IA interactúe con tus flujos de n8n:
+npm install -g @n8n/mcp-server
+
+# 5. CÓMO INICIAR LOS SERVICIOS
+# --- Iniciar el Puente de la Báscula: ---
+# node index.js
+
+# --- Iniciar el Servidor MCP de n8n: ---
+# npx @n8n/mcp-server
+
+# ============================================================================
+# NOTA: Para que la báscula funcione, asegúrate de que el puerto serial
+# esté configurado correctamente en el archivo index.js.
+# ============================================================================

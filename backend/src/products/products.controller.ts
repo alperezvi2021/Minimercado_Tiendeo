@@ -23,14 +23,14 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.OWNER)
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   create(@Request() req, @Body() createProductDto: CreateProductDto) {
     const tenantId = req.user.tenantId;
     return this.productsService.create(tenantId, createProductDto);
   }
 
   @Post('bulk')
-  @Roles(Role.ADMIN, Role.OWNER)
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   createBulk(@Request() req, @Body() productsDto: CreateProductDto[]) {
     const tenantId = req.user.tenantId;
     return this.productsService.createMany(tenantId, productsDto);
@@ -50,7 +50,7 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.OWNER)
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   update(
     @Request() req,
     @Param('id') id: string,

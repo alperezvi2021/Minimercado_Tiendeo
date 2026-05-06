@@ -136,7 +136,7 @@ export class SalesController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.OWNER)
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   findAll(@Request() req) {
     const tenantId = req.user.tenantId;
     // Only return PAID/CANCELLED sales (exclude OPEN restaurant tables)
@@ -226,7 +226,7 @@ export class SalesController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.OWNER)
+  @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   findOne(@Request() req, @Param('id') id: string) {
     const tenantId = req.user.tenantId;
     return this.salesService.findOne(tenantId, id);
