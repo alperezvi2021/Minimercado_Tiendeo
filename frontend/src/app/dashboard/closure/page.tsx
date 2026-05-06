@@ -53,6 +53,7 @@ export default function ClosurePage() {
   const [opening, setOpening] = useState(false);
   const [sortKey, setSortKey] = useState<string>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -63,7 +64,17 @@ export default function ClosurePage() {
     }
   };
 
-  const sortedSales = [...sales].sort((a: any, b: any) => {
+  const filteredSales = sales.filter(sale => {
+    const term = searchTerm.toLowerCase();
+    return (
+      sale.id.toLowerCase().includes(term) ||
+      (sale.customerName?.toLowerCase() || '').includes(term) ||
+      sale.paymentMethod.toLowerCase().includes(term) ||
+      sale.totalAmount.toString().includes(term)
+    );
+  });
+
+  const sortedSales = [...filteredSales].sort((a: any, b: any) => {
     let av = a[sortKey];
     let bv = b[sortKey];
     if (sortKey === 'totalAmount') { av = Number(av); bv = Number(bv); }
@@ -421,13 +432,26 @@ export default function ClosurePage() {
 
       {/* Sales Table */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-        <div className="px-8 py-6 border-b border-slate-800 bg-slate-950/50 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            Ventas del Turno Actual
-          </h2>
-          <span className="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-full uppercase tracking-tighter">
-            En Tiempo Real
-          </span>
+        <div className="px-8 py-6 border-b border-slate-800 bg-slate-950/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              Ventas del Turno Actual
+            </h2>
+            <span className="text-xs font-bold text-slate-500 bg-slate-800 px-3 py-1 rounded-full uppercase tracking-tighter">
+              En Tiempo Real
+            </span>
+          </div>
+
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Buscar por ID, cliente, método o monto..."
+              className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-11 pr-4 py-2.5 text-xs font-bold text-white focus:border-blue-500 outline-none transition-all placeholder:text-slate-600"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
           <div className="overflow-x-auto">
           <table className="w-full text-left">
