@@ -35,13 +35,21 @@ export default function RefundsPage() {
       if (!res.ok) throw new Error('Error al buscar ventas');
       const data = await res.json();
       
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase().trim();
+      const cleanQuery = query.replace(/[#$. ,]/g, ''); // Eliminar símbolos comunes para búsqueda por ID o Monto
+
       const filteredSales = data.filter((s: any) => {
         const invMatch = s.invoiceNumber ? s.invoiceNumber.toLowerCase().includes(query) : false;
-        const idMatch = s.id.toLowerCase().includes(query);
+        
+        // Búsqueda por ID (quitando el # si el usuario lo puso)
+        const idMatch = s.id.toLowerCase().includes(cleanQuery);
+        
         const customerMatch = (s.customerName?.toLowerCase() || '').includes(query);
         const methodMatch = (s.paymentMethod?.toLowerCase() || '').includes(query);
-        const amountMatch = s.totalAmount.toString().includes(query);
+        
+        // Búsqueda por Monto (quitando $ y puntos/comas si el usuario los puso)
+        const amountMatch = s.totalAmount.toString().includes(cleanQuery);
+        
         const productMatch = s.items?.some((item: any) => 
           item.productName && item.productName.toLowerCase().includes(query)
         );
