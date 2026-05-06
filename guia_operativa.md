@@ -55,11 +55,15 @@ Una vez que has validado en el Laboratorio que todo está perfecto, sigue estos 
     ```bash
     git pull origin main
     ```
-4.  **Reconstruir y Reiniciar:**
+4.  **Reconstruir y Reiniciar (Comandos Recomendados):**
     ```bash
-    docker compose up -d --build
+    # Detener y limpiar contenedores antiguos
+    docker-compose down && docker-compose rm -f
+    
+    # Construir nuevas imágenes y levantar el sistema
+    docker-compose build && docker-compose up -d
     ```
-    *El uso de `--build` asegura que Docker compile las nuevas versiones del Frontend y Backend.*
+    *Esta secuencia asegura que cualquier cambio en el código sea compilado desde cero y se eliminen residuos de versiones anteriores.*
 
 ---
 
