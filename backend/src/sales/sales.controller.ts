@@ -43,8 +43,10 @@ export class SalesController {
   @Post('closure/close')
   @Roles(Role.ADMIN, Role.OWNER, Role.CASHIER)
   performClosure(@Request() req) {
-    const { tenantId, userId } = req.user;
-    return this.salesService.performClosure(tenantId, userId);
+    const { tenantId, userId, role } = req.user;
+    const searchUserId =
+      role === Role.ADMIN || role === Role.OWNER ? undefined : userId;
+    return this.salesService.performClosure(tenantId, searchUserId);
   }
 
   @Post('closure/open')
