@@ -2,7 +2,6 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
@@ -26,7 +25,7 @@ export class CashClosure {
   @Column({ name: 'user_name' })
   userName: string;
 
-  @CreateDateColumn({ name: 'opened_at' })
+  @Column({ name: 'opened_at', type: 'timestamp', default: () => 'NOW()' })
   openedAt: Date;
 
   @Column('decimal', {

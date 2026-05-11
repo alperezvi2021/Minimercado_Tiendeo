@@ -205,9 +205,19 @@ export default function ClosurePage() {
           await fetchStatus();
           await fetchSales();
           await fetchPayments();
+      } else {
+        // Leer el mensaje de error real del servidor para poder diagnosticar
+        let errorMsg = `Error ${response.status}: No se pudo realizar el cierre.`;
+        try {
+          const errData = await response.json();
+          errorMsg = errData.message || JSON.stringify(errData);
+        } catch {}
+        console.error('[Closure] Backend error:', errorMsg);
+        alert(`❌ Error al finalizar turno:\n${errorMsg}`);
       }
     } catch (error) {
       console.error('Error performing closure:', error);
+      alert('❌ Error de conexión al intentar finalizar el turno. Verifique su conexión e intente nuevamente.');
     } finally {
       setClosing(false);
     }
@@ -233,7 +243,7 @@ export default function ClosurePage() {
     
     const summaryData = [
       ['Cajero:', status.closure.userName],
-      ['Apertura:', new Date().toLocaleString('es-CO')],
+      ['Apertura:', new Date(status.closure.openedAt).toLocaleString('es-CO')],
       ['Cierre (Generado):', new Date().toLocaleString('es-CO')],
       ['Base de Caja:', `$${formatCurrency(status.openingAmount)}`],
       ['Ventas Efectivo:', `$${formatCurrency(status.totalCash)}`],
