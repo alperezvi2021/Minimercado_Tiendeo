@@ -118,7 +118,7 @@ export class CustomersService {
       );
     }
 
-    return this.findOne(tenantId, id);
+    return this.findOne(tenantId, id, userRole);
   }
 
   async remove(tenantId: string, id: string, userRole?: string) {

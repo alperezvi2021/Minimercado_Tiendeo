@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { X, User, Phone, Mail, MapPin, CreditCard, Loader2, Banknote, ArrowDownCircle, CheckSquare, Square, DollarSign, ClipboardCheck } from 'lucide-react';
+import { X, User, Phone, Mail, MapPin, CreditCard, Loader2, Banknote, ArrowDownCircle, CheckSquare, Square, DollarSign, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import { useOfflineStore } from '@/store/useOfflineStore';
 import AbonoModal from './AbonoModal';
 import { formatCurrency, parseCurrency } from '@/utils/formatters';
@@ -584,9 +584,17 @@ TOTAL PAGO: $${formatCurrency(completedPayment.amount)}
               </div>
 
               <div className="relative bg-rose-50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/20">
-                <div className="flex items-center gap-2 mb-2 text-rose-600 dark:text-rose-400">
-                  <CreditCard className="w-4 h-4" />
-                  <span className="text-xs font-black uppercase tracking-widest">Añadir Saldo Pendiente (Opcional)</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                    <CreditCard className="w-4 h-4" />
+                    <span className="text-xs font-black uppercase tracking-widest">Añadir Saldo Pendiente (Opcional)</span>
+                  </div>
+                  {Number(formData.initialDebt) > 0 && !formData.description && (
+                     <div className="flex items-center gap-1.5 bg-rose-600 text-white px-2 py-1 rounded-lg animate-bounce shadow-lg">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span className="text-[9px] font-black uppercase">¡Falta Detalle!</span>
+                     </div>
+                  )}
                 </div>
                 <input
                   type="text"
@@ -597,16 +605,24 @@ TOTAL PAGO: $${formatCurrency(completedPayment.amount)}
                 />
                 
                 {Number(formData.initialDebt) > 0 && (
-                  <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
-                    <p className="text-[10px] font-black text-rose-600 uppercase mb-1 ml-1">Descripción del saldo a añadir (Obligatorio)</p>
+                  <div className="mt-4 p-4 bg-rose-50/50 dark:bg-rose-900/10 rounded-2xl border-2 border-rose-200 dark:border-rose-900/30 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="bg-rose-600 text-white p-1 rounded-lg">
+                        <AlertTriangle className="w-3 h-3" />
+                      </div>
+                      <p className="text-[11px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">Descripción del saldo a añadir (Obligatorio)</p>
+                    </div>
                     <textarea
                       required
-                      placeholder="Indique el motivo o detalle de esta deuda..."
-                      className="w-full bg-white dark:bg-slate-900 text-black dark:text-white border-2 border-rose-200 dark:border-rose-900/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-rose-500/50 outline-none transition-all font-bold text-sm resize-none"
+                      placeholder="Indique el motivo o detalle de esta deuda... Ejemplo: 'Venta de cerveza y shampoo del domingo'"
+                      className="w-full bg-white dark:bg-slate-900 text-black dark:text-white border border-rose-200 dark:border-rose-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-rose-500/50 outline-none transition-all font-bold text-sm resize-none placeholder:text-gray-400"
                       rows={2}
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     />
+                    <p className="text-[9px] text-rose-500 font-bold mt-2 italic px-1">
+                      * Este detalle aparecerá en el recibo y en el estado de cuenta del cliente.
+                    </p>
                   </div>
                 )}
                 
