@@ -351,12 +351,12 @@ export default function CustomersPage() {
                       <button 
                         onClick={() => handleDelete(c.id)}
                         className={`p-3 rounded-xl transition-all shadow-sm ${
-                          c.totalDebt > 0 || userRole === 'CASHIER'
+                          userRole === 'CASHIER'
                             ? 'bg-gray-50 dark:bg-slate-800/50 text-gray-300 dark:text-slate-600 cursor-not-allowed'
                             : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-rose-600 hover:text-white'
                         }`}
                         title={userRole === 'CASHIER' ? 'No tienes permisos para eliminar clientes' : 'Eliminar'}
-                        disabled={c.totalDebt > 0 || userRole === 'CASHIER'}
+                        disabled={userRole === 'CASHIER'}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>

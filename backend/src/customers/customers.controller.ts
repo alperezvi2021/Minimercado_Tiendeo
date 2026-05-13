@@ -34,12 +34,12 @@ export class CustomersController {
 
   @Get()
   findAll(@Request() req, @Query('full') full?: string) {
-    return this.customersService.findAll(req.user.tenantId, full === 'true');
+    return this.customersService.findAll(req.user.tenantId, full === 'true', req.user.role);
   }
 
   @Get(':id')
   findOne(@Request() req, @Param('id') id: string) {
-    return this.customersService.findOne(req.user.tenantId, id);
+    return this.customersService.findOne(req.user.tenantId, id, req.user.role);
   }
 
   @Patch(':id')
@@ -55,12 +55,13 @@ export class CustomersController {
       req.user.name,
       id,
       updateCustomerDto,
+      req.user.role,
     );
   }
 
   @Delete(':id')
   @Roles(Role.OWNER, Role.ADMIN, Role.SUPER_ADMIN)
   remove(@Request() req, @Param('id') id: string) {
-    return this.customersService.remove(req.user.tenantId, id);
+    return this.customersService.remove(req.user.tenantId, id, req.user.role);
   }
 }

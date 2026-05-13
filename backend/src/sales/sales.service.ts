@@ -1127,6 +1127,7 @@ export class SalesService {
     userName: string,
     customerId: string,
     amount: number,
+    description?: string,
   ): Promise<CreditSale> {
     const closure = await this.getOpenClosure(tenantId, userId);
     if (!closure) throw new BadRequestException('Debe abrir la caja primero');
@@ -1148,7 +1149,14 @@ export class SalesService {
           paymentMethod: 'credito',
           invoiceNumber: `LEGACY-${Date.now().toString().slice(-6)}`,
           customerName: customer.name,
-          items: [], // Sin items específicos, solo el total
+          items: [
+            transactionalEntityManager.create(SaleItem, {
+              productName: description || 'SALDO INICIAL / CUADERNO',
+              quantity: 1,
+              unitPrice: amount,
+              subtotal: amount,
+            }),
+          ],
         });
 
         const savedSale = await transactionalEntityManager.save<Sale>(sale);

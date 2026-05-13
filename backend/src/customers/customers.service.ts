@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
 import { CreditSale } from '../sales/entities/credit-sale.entity';
 import { SalesService } from '../sales/sales.service';
+import { Role } from '../auth/enums/role.enum';
 
 @Injectable()
 export class CustomersService {
@@ -32,15 +33,21 @@ export class CustomersService {
         userName,
         savedCustomer.id,
         initialDebt,
+        data.description,
       );
     }
 
     return savedCustomer;
   }
 
-  async findAll(tenantId: string, full = false) {
+  async findAll(tenantId: string, full = false, userRole?: string) {
+    const where: any = {};
+    if (userRole !== Role.SUPER_ADMIN && userRole !== Role.ADMIN) {
+      where.tenantId = tenantId;
+    }
+
     const customers = await this.customersRepository.find({
-      where: { tenantId },
+      where,
       relations: full
         ? ['creditSales', 'creditSales.sale', 'creditSales.payments']
         : ['creditSales'],
@@ -68,9 +75,15 @@ export class CustomersService {
     });
   }
 
-  async findOne(tenantId: string, id: string) {
+  async findOne(tenantId: string, id: string, userRole?: string) {
+    const where: any = { id };
+    // Los administradores globales pueden ver cualquier cliente
+    if (userRole !== Role.SUPER_ADMIN && userRole !== Role.ADMIN) {
+      where.tenantId = tenantId;
+    }
+
     const customer = await this.customersRepository.findOne({
-      where: { id, tenantId },
+      where,
       relations: ['creditSales', 'creditSales.sale', 'creditSales.payments'],
       order: {
         creditSales: {
@@ -88,9 +101,10 @@ export class CustomersService {
     userName: string,
     id: string,
     data: any,
+    userRole?: string,
   ) {
-    const { initialDebt, ...customerData } = data;
-    await this.findOne(tenantId, id);
+    const { initialDebt, description, ...customerData } = data;
+    await this.findOne(tenantId, id, userRole);
     await this.customersRepository.update(id, customerData);
 
     if (initialDebt && initialDebt > 0) {
@@ -100,14 +114,15 @@ export class CustomersService {
         userName,
         id,
         initialDebt,
+        description,
       );
     }
 
     return this.findOne(tenantId, id);
   }
 
-  async remove(tenantId: string, id: string) {
-    const customer = await this.findOne(tenantId, id);
+  async remove(tenantId: string, id: string, userRole?: string) {
+    const customer = await this.findOne(tenantId, id, userRole);
 
     // Eliminar relaciones manualmente para asegurar que el botón de la UI funcione siempre
     await this.creditSalesRepository.delete({ customerId: id });

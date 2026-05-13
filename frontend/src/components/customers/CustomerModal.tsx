@@ -22,7 +22,9 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
     email: '',
     address: '',
     initialDebt: '',
+    description: '',
   });
+  const [completedDebt, setCompletedDebt] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [debts, setDebts] = useState<any[]>([]);
   const [loadingDebts, setLoadingDebts] = useState(false);
@@ -300,6 +302,11 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       return;
     }
 
+    if (Number(formData.initialDebt) > 0 && !formData.description) {
+      alert('Debe ingresar una descripción para el saldo adicionado.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (!isOnline && !customer) {
@@ -315,8 +322,18 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
           pendingInvoices: 0
         };
         addPendingCustomer(newCustomer);
-        onSave();
-        onClose();
+        
+        if (newCustomer.initialDebt > 0) {
+          setCompletedDebt({
+            amount: newCustomer.initialDebt,
+            description: formData.description,
+            customerName: formData.name,
+            date: new Date().toISOString()
+          });
+        } else {
+          onSave();
+          onClose();
+        }
         return;
       }
 
@@ -340,8 +357,18 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
       });
 
       if (res.ok) {
-        onSave();
-        onClose();
+        if (Number(formData.initialDebt) > 0) {
+          setCompletedDebt({
+            amount: Number(formData.initialDebt),
+            description: formData.description,
+            customerName: formData.name || customer?.name,
+            date: new Date().toISOString()
+          });
+          onSave();
+        } else {
+          onSave();
+          onClose();
+        }
       } else {
         alert('Error al guardar el cliente');
       }
@@ -354,6 +381,66 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
   };
 
   if (!isOpen) return null;
+
+  if (completedDebt) {
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-300">
+        <div className="bg-white rounded-xl w-full max-w-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-rose-600 text-white p-4 text-center print:hidden">
+            <h3 className="text-lg font-black uppercase tracking-wider">¡Saldo Adicionado!</h3>
+            <p className="text-xs opacity-90 font-bold">Se ha registrado la nueva deuda</p>
+          </div>
+          
+          <div className="bg-white p-4" style={{ margin: '0 auto', width: '58mm' }}>
+            <pre 
+              id="printable-debt-receipt" 
+              className="bg-white text-black font-mono font-bold leading-tight whitespace-pre text-left print:p-0 print:m-0"
+              style={{ fontSize: '10px', width: '100%', color: '#000000', fontWeight: 900 }}
+            >
+{`------------------------
+      COMPROBANTE      
+     DEUDA EXTERNA      
+------------------------
+Fecha: ${new Date(completedDebt.date).toLocaleDateString('es-CO')}
+Hora:  ${new Date(completedDebt.date).toLocaleTimeString('es-CO')}
+
+Cliente:
+${completedDebt.customerName.substring(0,24)}
+
+Detalle:
+${completedDebt.description.substring(0,48)}
+
+------------------------
+VALOR ADICIONADO:
+$${formatCurrency(completedDebt.amount)}
+------------------------
+
+Firma Cliente:
+
+
+________________________
+`}
+            </pre>
+          </div>
+
+          <div className="p-4 bg-gray-50 border-t border-gray-200 flex gap-3 print:hidden">
+            <button 
+              onClick={() => { setCompletedDebt(null); onClose(); }} 
+              className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+            >
+              Cerrar
+            </button>
+            <button 
+              onClick={() => window.print()} 
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors"
+            >
+              🖨️ Imprimir
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (completedPayment) {
     return (
@@ -506,6 +593,21 @@ TOTAL PAGO: $${formatCurrency(completedPayment.amount)}
                   value={formatCurrency(formData.initialDebt)}
                   onChange={(e) => setFormData({ ...formData, initialDebt: parseCurrency(e.target.value).toString() })}
                 />
+                
+                {Number(formData.initialDebt) > 0 && (
+                  <div className="mt-3 animate-in slide-in-from-top-2 duration-300">
+                    <p className="text-[10px] font-black text-rose-600 uppercase mb-1 ml-1">Descripción del saldo a añadir (Obligatorio)</p>
+                    <textarea
+                      required
+                      placeholder="Indique el motivo o detalle de esta deuda..."
+                      className="w-full bg-white dark:bg-slate-900 text-black dark:text-white border-2 border-rose-200 dark:border-rose-900/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-rose-500/50 outline-none transition-all font-bold text-sm resize-none"
+                      rows={2}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                )}
+                
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 italic">* Use este campo para registrar deudas de cuadernos externos.</p>
               </div>
             </div>
