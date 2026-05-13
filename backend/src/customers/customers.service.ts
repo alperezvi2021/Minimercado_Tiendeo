@@ -16,7 +16,7 @@ export class CustomersService {
     private salesService: SalesService,
   ) {}
 
-  async create(tenantId: string, userId: string, userName: string, data: any) {
+  async create(tenantId: string, userId: string, userName: string, data: any, userRole?: string) {
     const { initialDebt, ...customerData } = data;
     const customer = this.customersRepository.create({
       ...customerData,
@@ -34,6 +34,7 @@ export class CustomersService {
         savedCustomer.id,
         initialDebt,
         data.description,
+        userRole,
       );
     }
 
@@ -115,6 +116,7 @@ export class CustomersService {
         id,
         initialDebt,
         description,
+        userRole,
       );
     }
 

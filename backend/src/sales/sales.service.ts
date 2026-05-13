@@ -41,9 +41,10 @@ export class SalesService {
   async getOpenClosure(
     tenantId: string,
     userId?: string,
+    forceAny = false,
   ): Promise<CashClosure> {
     const where: any = { tenantId, status: 'OPEN' };
-    if (userId) where.userId = userId;
+    if (userId && !forceAny) where.userId = userId;
 
     return await this.cashClosureRepository.findOne({
       where,
@@ -1128,8 +1129,11 @@ export class SalesService {
     customerId: string,
     amount: number,
     description?: string,
+    userRole?: string,
   ): Promise<CreditSale> {
-    const closure = await this.getOpenClosure(tenantId, userId);
+    // Si es ADMIN o OWNER, puede usar cualquier turno abierto del negocio
+    const forceAny = userRole !== 'CASHIER';
+    const closure = await this.getOpenClosure(tenantId, userId, forceAny);
     if (!closure) throw new BadRequestException('Debe abrir la caja primero');
     const customer = await this.customerRepository.findOne({
       where: { id: customerId, tenantId },

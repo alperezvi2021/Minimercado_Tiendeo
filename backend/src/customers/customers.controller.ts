@@ -29,6 +29,7 @@ export class CustomersController {
       req.user.id,
       req.user.name,
       createCustomerDto,
+      req.user.role,
     );
   }
 
