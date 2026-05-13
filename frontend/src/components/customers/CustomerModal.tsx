@@ -372,7 +372,8 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
           onClose();
         }
       } else {
-        alert('Error al guardar el cliente');
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Error al guardar el cliente: ${errorData.message || 'Error desconocido'}`);
       }
     } catch (error) {
       console.error(error);

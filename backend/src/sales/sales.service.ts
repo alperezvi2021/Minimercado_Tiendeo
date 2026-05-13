@@ -1155,6 +1155,7 @@ export class SalesService {
           customerName: customer.name,
           items: [
             transactionalEntityManager.create(SaleItem, {
+              productId: '00000000-0000-0000-0000-000000000000', // Nil UUID para identificar saldos manuales
               productName: description || 'SALDO INICIAL / CUADERNO',
               quantity: 1,
               unitPrice: amount,
