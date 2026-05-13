@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Customer } from './entities/customer.entity';
@@ -18,6 +18,17 @@ export class CustomersService {
 
   async create(tenantId: string, userId: string, userName: string, data: any, userRole?: string) {
     const { initialDebt, ...customerData } = data;
+
+    // Evitar duplicados por teléfono
+    if (customerData.phone) {
+      const existing = await this.customersRepository.findOne({
+        where: { tenantId, phone: customerData.phone }
+      });
+      if (existing) {
+        throw new BadRequestException(`Ya existe un cliente con el número ${customerData.phone} (${existing.name})`);
+      }
+    }
+
     const customer = this.customersRepository.create({
       ...customerData,
       tenantId,

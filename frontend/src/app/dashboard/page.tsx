@@ -467,6 +467,14 @@ export default function PosPage() {
       return;
     }
 
+    // VALIDACIÓN: Cliente nuevo sin datos completos
+    if (paymentMethod === 'credito' && isNewCustomer) {
+      if (!customerName || !newCustomerPhone) {
+        alert('Para registrar un cliente nuevo, el nombre y el teléfono son OBLIGATORIOS.');
+        return;
+      }
+    }
+
     setIsProcessing(true);
     const finalCustomerId = selectedCustomerId;
     const finalCustomerName = customerName || (selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : undefined);
@@ -1144,8 +1152,8 @@ export default function PosPage() {
                         type="text"
                         value={newCustomerPhone}
                         onChange={(e) => setNewCustomerPhone(e.target.value)}
-                        placeholder="Teléfono (Opcional)"
-                        className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/30 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
+                        placeholder="Teléfono (Obligatorio)"
+                        className="w-full bg-white dark:bg-slate-950 border-2 border-orange-500/50 rounded-2xl px-6 py-4 text-gray-900 dark:text-white font-black focus:ring-4 focus:ring-orange-500/20 transition-all outline-none"
                       />
                     </div>
                   ) : (

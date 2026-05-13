@@ -289,6 +289,12 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // VALIDACIÓN: Nombre y Teléfono obligatorios
+    if (!formData.name || !formData.phone) {
+      alert('El Nombre y el Teléfono son OBLIGATORIOS para registrar un cliente.');
+      return;
+    }
+
     // SMART SUBMIT: Prevent confusion if user filled an Abono and clicked Guardar
     const amountToPay = parseCurrency(totalAbono);
     if (amountToPay > 0 && selectedDebts.length > 0) {
@@ -554,9 +560,10 @@ TOTAL PAGO: $${formatCurrency(completedPayment.amount)}
                   <Phone className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
                   <input
                     type="tel"
-                    placeholder="Teléfono"
-                    className="w-full bg-white dark:bg-slate-800 text-black dark:text-white border border-gray-200 dark:border-slate-700 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-bold"
+                    placeholder="Teléfono (Obligatorio)"
+                    className="w-full bg-white dark:bg-slate-800 text-black dark:text-white border-2 border-blue-500/30 dark:border-blue-500/20 rounded-2xl pl-12 pr-4 py-3.5 focus:ring-4 focus:ring-blue-500/20 outline-none transition-all font-bold"
                     value={formData.phone}
+                    required
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
