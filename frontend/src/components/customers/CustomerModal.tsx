@@ -50,6 +50,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         email: customer.email || '',
         address: customer.address || '',
         initialDebt: '',
+        description: '',
       });
       setTotalAbono('');
       setSelectedDebts([]);
