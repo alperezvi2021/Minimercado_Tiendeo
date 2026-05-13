@@ -64,6 +64,7 @@ export default function CustomerModal({ isOpen, onClose, onSave, customer }: Cus
         email: '',
         address: '',
         initialDebt: '',
+        description: '',
       });
       setDebts([]);
     }
