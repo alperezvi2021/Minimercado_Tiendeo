@@ -28,7 +28,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const role = localStorage.getItem('user_role');
     const restrictedRoutes = [
-      '/dashboard/reports',
       '/dashboard/suppliers',
       '/dashboard/accounting',
       '/dashboard/settings',
