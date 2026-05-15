@@ -61,6 +61,7 @@ export default function SuppliersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [userRole, setUserRole] = useState<string>('');
 
   // Modales
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
@@ -98,6 +99,8 @@ export default function SuppliersPage() {
 
   useEffect(() => {
     fetchData();
+    const role = localStorage.getItem('user_role');
+    if (role) setUserRole(role);
   }, [activeTab]);
 
   const fetchData = async () => {
@@ -428,6 +431,98 @@ export default function SuppliersPage() {
     XLSX.writeFile(wb, `Reporte_Proveedores_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  const handleMonthlyClosure = () => {
+    const doc = new jsPDF();
+    const now = new Date();
+    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const currentMonth = monthNames[now.getMonth()];
+    
+    doc.setFontSize(22);
+    doc.setTextColor(37, 99, 235);
+    doc.text('CIERRE MENSUAL DE PROVEEDORES', 14, 25);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(`Período: ${currentMonth} ${now.getFullYear()}`, 14, 35);
+    doc.text(`Fecha de Generación: ${now.toLocaleString()}`, 14, 42);
+
+    // Filter data for current month
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const monthInvoices = invoices.filter(inv => {
+      const d = new Date(inv.date);
+      return d >= firstDay && d <= lastDay;
+    });
+
+    const monthExpenses = expenses.filter(exp => {
+      const d = new Date(exp.date);
+      return d >= firstDay && d <= lastDay;
+    });
+
+    const totalPurchases = monthInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+    const totalExpenses = monthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+
+    doc.setFillColor(248, 250, 252);
+    doc.rect(14, 50, 182, 40, 'F');
+    
+    doc.setFontSize(14);
+    doc.setTextColor(51, 65, 85);
+    doc.text('RESUMEN FINANCIERO', 20, 62);
+    
+    doc.setFontSize(11);
+    doc.text(`Total Compras a Proveedores:`, 20, 72);
+    doc.setTextColor(37, 99, 235);
+    doc.text(`$${formatCurrency(totalPurchases)}`, 140, 72, { align: 'right' });
+    
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Total Gastos Operativos:`, 20, 82);
+    doc.setTextColor(234, 88, 12);
+    doc.text(`$${formatCurrency(totalExpenses)}`, 140, 82, { align: 'right' });
+
+    // Invoices Table
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59);
+    doc.text('DETALLE DE FACTURAS DEL MES', 14, 105);
+
+    const invoiceRows = monthInvoices.map(inv => [
+      inv.invoiceNumber,
+      new Date(inv.date).toLocaleDateString(),
+      inv.supplier?.name || 'N/A',
+      `$${formatCurrency(inv.totalAmount)}`,
+      inv.isPaid ? 'PAGADO' : 'PENDIENTE'
+    ]);
+
+    autoTable(doc, {
+      startY: 110,
+      head: [['Factura', 'Fecha', 'Proveedor', 'Total', 'Estado']],
+      body: invoiceRows,
+      headStyles: { fillColor: [37, 99, 235] },
+      theme: 'striped'
+    });
+
+    // Expenses Table
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+    doc.text('DETALLE DE GASTOS DEL MES', 14, finalY);
+
+    const expenseRows = monthExpenses.map(exp => [
+      new Date(exp.date).toLocaleDateString(),
+      exp.description,
+      `$${formatCurrency(exp.amount)}`
+    ]);
+
+    autoTable(doc, {
+      startY: finalY + 5,
+      head: [['Fecha', 'Descripción', 'Valor']],
+      body: expenseRows,
+      headStyles: { fillColor: [234, 88, 12] },
+      theme: 'striped'
+    });
+
+    doc.save(`Cierre_Mensual_${currentMonth}_${now.getFullYear()}.pdf`);
+    alert(`Cierre de ${currentMonth} generado con éxito.`);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -471,6 +566,16 @@ export default function SuppliersPage() {
           >
             Informe
           </button>
+          
+          {(userRole === 'OWNER' || userRole === 'SUPER_ADMIN') && (
+            <button 
+              onClick={handleMonthlyClosure}
+              className="ml-2 px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-lg text-sm font-black hover:bg-black dark:hover:bg-blue-500 transition-all shadow-lg flex items-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              Cierre Fin de Mes
+            </button>
+          )}
         </div>
       </div>
 

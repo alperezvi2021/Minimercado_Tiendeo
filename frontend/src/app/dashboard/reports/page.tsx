@@ -33,6 +33,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Sale | 'user'; direction: 'asc' | 'desc' } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     fetchSales();
@@ -87,6 +89,20 @@ export default function ReportsPage() {
   });
 
   const filteredAndSortedSales = sortedSales.filter(sale => {
+    const saleDate = new Date(sale.createdAt);
+    
+    // Date range filter
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      if (saleDate < start) return false;
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      if (saleDate > end) return false;
+    }
+
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -96,13 +112,14 @@ export default function ReportsPage() {
       (sale.paymentMethod?.toLowerCase().includes(query)) ||
       (sale.customerName?.toLowerCase().includes(query)) ||
       (sale.items.some(i => i.productName.toLowerCase().includes(query))) ||
-      (sale.totalAmount.toString().includes(query))
+      (sale.totalAmount.toString().includes(query)) ||
+      (new Date(sale.createdAt).toLocaleString('es-CO').toLowerCase().includes(query))
     );
   });
 
-  const totalRevenue = sales.reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
-  const totalCredit = sales.filter(s => s.paymentMethod === 'credito').reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
-  const totalItemsSold = sales.reduce((acc, sale) => acc + sale.items.reduce((sum, item) => sum + item.quantity, 0), 0);
+  const totalRevenue = filteredAndSortedSales.reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
+  const totalCredit = filteredAndSortedSales.filter(s => s.paymentMethod === 'credito').reduce((acc, sale) => acc + Number(sale.totalAmount), 0);
+  const totalItemsSold = filteredAndSortedSales.reduce((acc, sale) => acc + sale.items.reduce((sum, item) => sum + item.quantity, 0), 0);
 
   const formatCurrency = (amount: number) => `$${formatCurrencyUtil(amount)}`;
 
@@ -248,6 +265,33 @@ export default function ReportsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 focus:ring-2 focus:ring-blue-500/50 text-gray-900 dark:text-white transition-all shadow-sm"
           />
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto bg-white dark:bg-slate-900 p-1 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
+           <div className="flex items-center px-3 gap-2">
+             <Calendar className="w-4 h-4 text-slate-400" />
+             <input 
+               type="date" 
+               value={startDate}
+               onChange={(e) => setStartDate(e.target.value)}
+               className="bg-transparent border-none text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-0"
+             />
+             <span className="text-slate-300">|</span>
+             <input 
+               type="date" 
+               value={endDate}
+               onChange={(e) => setEndDate(e.target.value)}
+               className="bg-transparent border-none text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:ring-0"
+             />
+           </div>
+           {(startDate || endDate || searchQuery) && (
+             <button 
+               onClick={() => { setStartDate(''); setEndDate(''); setSearchQuery(''); }}
+               className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-rose-500 rounded-xl text-[10px] font-black transition-all"
+             >
+               LIMPIAR
+             </button>
+           )}
         </div>
       </div>
       
