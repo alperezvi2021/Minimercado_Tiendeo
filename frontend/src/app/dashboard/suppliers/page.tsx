@@ -68,6 +68,8 @@ export default function SuppliersPage() {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isScheduledModalOpen, setIsScheduledModalOpen] = useState(false);
+  const [isClosurePreviewOpen, setIsClosurePreviewOpen] = useState(false);
+  const [closureSummary, setClosureSummary] = useState<{ month: string; purchases: number; expenses: number; invoiceCount: number; expenseCount: number } | null>(null);
 
   // Form Proveedor
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -432,20 +434,10 @@ export default function SuppliersPage() {
   };
 
   const handleMonthlyClosure = () => {
-    const doc = new jsPDF();
     const now = new Date();
     const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
     const currentMonth = monthNames[now.getMonth()];
     
-    doc.setFontSize(22);
-    doc.setTextColor(37, 99, 235);
-    doc.text('CIERRE MENSUAL DE PROVEEDORES', 14, 25);
-    
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text(`Período: ${currentMonth} ${now.getFullYear()}`, 14, 35);
-    doc.text(`Fecha de Generación: ${now.toLocaleString()}`, 14, 42);
-
     // Filter data for current month
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -463,6 +455,44 @@ export default function SuppliersPage() {
     const totalPurchases = monthInvoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
     const totalExpenses = monthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
+    setClosureSummary({
+      month: currentMonth,
+      purchases: totalPurchases,
+      expenses: totalExpenses,
+      invoiceCount: monthInvoices.length,
+      expenseCount: monthExpenses.length
+    });
+    setIsClosurePreviewOpen(true);
+  };
+
+  const generateClosurePDF = () => {
+    if (!closureSummary) return;
+    
+    const doc = new jsPDF();
+    const now = new Date();
+    const currentMonth = closureSummary.month;
+    
+    doc.setFontSize(22);
+    doc.setTextColor(37, 99, 235);
+    doc.text('CIERRE MENSUAL DE PROVEEDORES', 14, 25);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text(`Período: ${currentMonth} ${now.getFullYear()}`, 14, 35);
+    doc.text(`Fecha de Generación: ${now.toLocaleString()}`, 14, 42);
+
+    // Filter data for current month (re-filter for PDF content)
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const monthInvoices = invoices.filter(inv => {
+      const d = new Date(inv.date);
+      return d >= firstDay && d <= lastDay;
+    });
+    const monthExpenses = expenses.filter(exp => {
+      const d = new Date(exp.date);
+      return d >= firstDay && d <= lastDay;
+    });
+
     doc.setFillColor(248, 250, 252);
     doc.rect(14, 50, 182, 40, 'F');
     
@@ -473,12 +503,12 @@ export default function SuppliersPage() {
     doc.setFontSize(11);
     doc.text(`Total Compras a Proveedores:`, 20, 72);
     doc.setTextColor(37, 99, 235);
-    doc.text(`$${formatCurrency(totalPurchases)}`, 140, 72, { align: 'right' });
+    doc.text(`$${formatCurrency(closureSummary.purchases)}`, 140, 72, { align: 'right' });
     
     doc.setTextColor(51, 65, 85);
     doc.text(`Total Gastos Operativos:`, 20, 82);
     doc.setTextColor(234, 88, 12);
-    doc.text(`$${formatCurrency(totalExpenses)}`, 140, 82, { align: 'right' });
+    doc.text(`$${formatCurrency(closureSummary.expenses)}`, 140, 82, { align: 'right' });
 
     // Invoices Table
     doc.setFontSize(14);
@@ -520,7 +550,7 @@ export default function SuppliersPage() {
     });
 
     doc.save(`Cierre_Mensual_${currentMonth}_${now.getFullYear()}.pdf`);
-    alert(`Cierre de ${currentMonth} generado con éxito.`);
+    setIsClosurePreviewOpen(false);
   };
 
   return (
@@ -1142,6 +1172,60 @@ export default function SuppliersPage() {
                 <button type="submit" className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all uppercase">Programar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Cierre Mensual Preview */}
+      {isClosurePreviewOpen && closureSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in duration-300">
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800">
+               <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                 <Calendar className="w-8 h-8 text-blue-600" /> Cierre de {closureSummary.month}
+               </h3>
+               <p className="text-slate-500 text-sm mt-1">Revisa el resumen antes de generar el reporte oficial.</p>
+            </div>
+            
+            <div className="p-8 space-y-8">
+               <div className="grid grid-cols-2 gap-6">
+                  <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-3xl border border-blue-100 dark:border-blue-800/50">
+                    <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">Total en Compras</p>
+                    <p className="text-3xl font-black text-slate-900 dark:text-white">${formatCurrency(closureSummary.purchases)}</p>
+                    <p className="text-xs text-slate-500 mt-1">{closureSummary.invoiceCount} facturas procesadas</p>
+                  </div>
+                  <div className="p-6 bg-orange-50 dark:bg-orange-900/20 rounded-3xl border border-orange-100 dark:border-orange-800/50">
+                    <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest mb-2">Total en Gastos</p>
+                    <p className="text-3xl font-black text-slate-900 dark:text-white">${formatCurrency(closureSummary.expenses)}</p>
+                    <p className="text-xs text-slate-500 mt-1">{closureSummary.expenseCount} gastos registrados</p>
+                  </div>
+               </div>
+
+               <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
+                  <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Balance Operativo</h4>
+                  <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700">
+                     <span className="text-sm font-bold text-slate-600 dark:text-slate-400">Total Salidas de Dinero:</span>
+                     <span className="text-xl font-black text-rose-600">${formatCurrency(closureSummary.purchases + closureSummary.expenses)}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-4 leading-relaxed italic">
+                    * Este reporte consolidará todas las facturas y gastos operativos registrados desde el primer hasta el último día de {closureSummary.month}.
+                  </p>
+               </div>
+            </div>
+
+            <div className="p-8 bg-slate-50 dark:bg-slate-800/50 rounded-b-3xl border-t border-slate-100 dark:border-slate-800 flex gap-4">
+               <button 
+                 onClick={() => setIsClosurePreviewOpen(false)}
+                 className="flex-1 px-6 py-4 rounded-2xl bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all"
+               >
+                 Cancelar
+               </button>
+               <button 
+                 onClick={generateClosurePDF}
+                 className="flex-1 px-6 py-4 rounded-2xl bg-blue-600 text-white font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
+               >
+                 <Download className="w-5 h-5" /> Generar Informe PDF
+               </button>
+            </div>
           </div>
         </div>
       )}
