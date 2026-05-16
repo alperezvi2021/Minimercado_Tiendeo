@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'react-router-dom'; // Note: using next/navigation instead if possible
+import { useRouter } from 'next/navigation';
 import { Building2, ChevronRight, X, Loader2 } from 'lucide-react';
 
 interface Tenant {
