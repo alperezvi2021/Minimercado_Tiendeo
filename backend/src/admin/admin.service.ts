@@ -89,4 +89,27 @@ export class AdminService {
     await this.tenantsRepository.update(tenantId, { isActive });
     return this.tenantsRepository.findOne({ where: { id: tenantId } });
   }
+
+  async associateUserToTenant(tenantId: string, email: string): Promise<User> {
+    const existingUser = await this.usersRepository.findOne({ where: { email } });
+    if (!existingUser) {
+      throw new Error('No se encontró ningún usuario con ese correo electrónico para copiar los datos de acceso.');
+    }
+
+    const alreadyInTenant = await this.usersRepository.findOne({ where: { email, tenantId } });
+    if (alreadyInTenant) {
+      throw new Error('El usuario ya está asociado a este negocio.');
+    }
+
+    const newUser = this.usersRepository.create({
+      tenantId,
+      email: existingUser.email,
+      name: existingUser.name,
+      passwordHash: existingUser.passwordHash,
+      role: 'OWNER',
+      modules: existingUser.modules,
+    });
+
+    return this.usersRepository.save(newUser);
+  }
 }

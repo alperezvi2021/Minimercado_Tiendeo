@@ -53,6 +53,10 @@ export default function SuperAdminPage() {
   const [isSavingModules, setIsSavingModules] = useState(false);
   const [isUserModulesMode, setIsUserModulesMode] = useState(false);
   const [selectedUserForModules, setSelectedUserForModules] = useState<AdminUser | null>(null);
+  const [isAssociationModalOpen, setIsAssociationModalOpen] = useState(false);
+  const [selectedTenantForAssociation, setSelectedTenantForAssociation] = useState<Tenant | null>(null);
+  const [associationEmail, setAssociationEmail] = useState('');
+  const [isAssociating, setIsAssociating] = useState(false);
 
   const ALL_MODULES = [
     { id: 'POS', name: 'Caja Registradora (POS)' },
@@ -279,6 +283,36 @@ export default function SuperAdminPage() {
     }
   };
 
+  const handleAssociateUser = async () => {
+    if (!associationEmail || !selectedTenantForAssociation) return;
+    setIsAssociating(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/admin/tenants/${selectedTenantForAssociation.id}/associate-user`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ email: associationEmail })
+      });
+
+      if (res.ok) {
+        alert('Dueño asociado correctamente al negocio.');
+        setIsAssociationModalOpen(false);
+        setAssociationEmail('');
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo realizar la asociación'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión');
+    } finally {
+      setIsAssociating(false);
+    }
+  };
+
   const logout = () => {
     localStorage.clear();
     router.push('/login');
@@ -488,6 +522,13 @@ export default function SuperAdminPage() {
                           title="Mantenimiento / Limpieza de Datos"
                         >
                           <RefreshCcw className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => { setSelectedTenantForAssociation(t); setIsAssociationModalOpen(true); }}
+                          className="text-purple-500 hover:text-purple-400 transition-all p-2 hover:bg-purple-500/10 rounded-lg" 
+                          title="Asociar Dueño Existente"
+                        >
+                          <Users className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -806,6 +847,55 @@ export default function SuperAdminPage() {
         </div>
       )}
 
+      {/* Association Modal */}
+      {isAssociationModalOpen && selectedTenantForAssociation && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0a0a1a] border border-white/10 w-full max-w-md rounded-[40px] p-10 shadow-3xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-purple-500" />
+              </div>
+              <div>
+                <h3 className="text-3xl font-black text-white">Asociar Dueño</h3>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Negocio: <span className="text-purple-500">{selectedTenantForAssociation.name}</span></p>
+              </div>
+            </div>
+            
+            <p className="text-gray-500 text-sm font-medium mb-8 leading-relaxed">
+              Ingresa el correo electrónico de un usuario dueño que ya exista en el sistema. Esto le permitirá administrar este negocio desde su Panel Central sin cambiar de cuenta.
+            </p>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-3 ml-2">Correo Electrónico del Dueño</label>
+                <input 
+                  type="email" 
+                  value={associationEmail}
+                  onChange={(e) => setAssociationEmail(e.target.value)}
+                  placeholder="ejemplo@correo.com"
+                  className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 focus:ring-2 focus:ring-purple-500/50 text-white font-bold transition-all placeholder:text-gray-700"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-10">
+              <button 
+                onClick={() => setIsAssociationModalOpen(false)}
+                className="flex-1 px-6 py-4 rounded-2xl font-black text-gray-500 hover:bg-white/5 transition-all text-sm uppercase tracking-widest"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleAssociateUser}
+                disabled={isAssociating || !associationEmail}
+                className="flex-[2] bg-purple-600 hover:bg-purple-700 text-white px-6 py-4 rounded-2xl font-black shadow-xl shadow-purple-500/20 transition-all text-sm uppercase tracking-widest disabled:opacity-50 disabled:bg-gray-800"
+              >
+                {isAssociating ? 'Asociando...' : 'Unificar Cuentas'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

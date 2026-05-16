@@ -63,4 +63,12 @@ export class AdminController {
   ) {
     return this.adminService.updateUserModules(id, modules);
   }
+
+  @Post('tenants/:tenantId/associate-user')
+  associateUser(
+    @Param('tenantId') tenantId: string,
+    @Body('email') email: string,
+  ) {
+    return this.adminService.associateUserToTenant(tenantId, email);
+  }
 }
