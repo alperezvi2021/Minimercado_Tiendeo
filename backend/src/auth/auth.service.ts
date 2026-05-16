@@ -13,15 +13,34 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
-    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
-      if (user.tenant && user.tenant.isActive === false) {
+    const users = await this.usersService.findManyByEmail(email);
+    if (users.length === 0) return null;
+
+    let authenticatedUser = null;
+    for (const u of users) {
+      if (await bcrypt.compare(pass, u.passwordHash)) {
+        authenticatedUser = u;
+        break;
+      }
+    }
+
+    if (authenticatedUser) {
+      if (authenticatedUser.tenant && authenticatedUser.tenant.isActive === false) {
         throw new UnauthorizedException(
           'Lo sentimos, su cuenta ha sido suspendida. Contacte al administrador',
         );
       }
-      const { passwordHash, ...result } = user;
-      return result;
+      const { passwordHash, ...result } = authenticatedUser;
+      // Add all associated tenants to the result
+      return { 
+        ...result, 
+        availableTenants: users.map(u => ({ 
+          userId: u.id, 
+          tenantId: u.tenantId, 
+          tenantName: u.tenant?.name, 
+          role: u.role 
+        })) 
+      };
     }
     return null;
   }
@@ -41,6 +60,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
+        availableTenants: user.availableTenants || [],
         tenant_modules:
           user.tenant?.modules && user.tenant.modules.length > 0
             ? user.tenant.modules
@@ -60,10 +80,8 @@ export class AuthService {
   }
 
   async register(registerDto: Record<string, any>) {
-    const existing = await this.usersService.findByEmail(registerDto.email);
-    if (existing) {
-      throw new Error('El correo electrónico ya está registrado');
-    }
+    // If existing, we just continue to create a new Tenant and link the same email to it.
+    // This supports the multi-tenant switching feature.
     // 1. Create Tenant
     const tenant = await this.tenantsService.create(
       registerDto.storeName,
@@ -85,5 +103,29 @@ export class AuthService {
 
     // 4. Return Login Token
     return this.login(user);
+  }
+
+  async validateSwitch(email: string, tenantId: string): Promise<any> {
+    const users = await this.usersService.findManyByEmail(email);
+    const user = users.find((u) => u.tenantId === tenantId);
+
+    if (user) {
+      if (user.tenant && user.tenant.isActive === false) {
+        throw new UnauthorizedException(
+          'Lo sentimos, este negocio ha sido suspendido.',
+        );
+      }
+      const { passwordHash, ...result } = user;
+      return {
+        ...result,
+        availableTenants: users.map((u) => ({
+          userId: u.id,
+          tenantId: u.tenantId,
+          tenantName: u.tenant?.name,
+          role: u.role,
+        })),
+      };
+    }
+    return null;
   }
 }

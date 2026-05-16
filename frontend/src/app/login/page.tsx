@@ -29,20 +29,19 @@ export default function LoginPage() {
       }
 
       const data = await res.json();
-      // Temporary storage for MVP.
       localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('user_email', email);
       
-      // Decodificar el token o usar los datos del usuario si el backend los envía
-      // En nuestro login actual, el backend podría enviar datos básicos del usuario
       if (data.user) {
         localStorage.setItem('user_role', data.user.role);
         localStorage.setItem('user_name', data.user.name);
         localStorage.setItem('tenant_modules', JSON.stringify(data.user.tenant_modules || []));
+        localStorage.setItem('available_tenants', JSON.stringify(data.user.availableTenants || []));
       } else {
-        // Fallback: Si no vienen en data.user, intentamos sacarlos de data directamente
         localStorage.setItem('user_role', data.role || 'CASHIER');
         localStorage.setItem('user_name', data.name || 'Usuario');
         localStorage.setItem('tenant_modules', JSON.stringify(data.tenant_modules || []));
+        localStorage.setItem('available_tenants', JSON.stringify(data.availableTenants || []));
       }
 
       router.push('/dashboard');

@@ -6,10 +6,12 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { Tenant } from '../../tenants/entities/tenant.entity';
 
 @Entity('users')
+@Unique(['email', 'tenantId'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -24,7 +26,7 @@ export class User {
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column()
   email: string;
 
   @Column()

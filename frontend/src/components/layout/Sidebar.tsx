@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft, Database, RotateCcw, Utensils, Users, LogOut } from 'lucide-react';
+import { ShoppingCart, Package, BarChart3, Settings, User, Truck, Receipt, ClipboardCheck, ArrowRightLeft, Database, RotateCcw, Utensils, Users, LogOut, Building2 } from 'lucide-react';
+import TenantSwitcher from './TenantSwitcher';
 import { useState, useEffect } from 'react';
 
 const navItems = [
@@ -27,6 +28,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
   const [userName, setUserName] = useState('Usuario');
   const [waiterAliasSingular, setWaiterAliasSingular] = useState('Mesero');
   const [waiterAliasPlural, setWaiterAliasPlural] = useState('Meseros');
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  const [hasMultipleTenants, setHasMultipleTenants] = useState(false);
 
   useEffect(() => {
     const role = localStorage.getItem('user_role');
@@ -55,6 +58,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
     const aliasPlural = localStorage.getItem('waiter_alias_plural');
     if (aliasSingular) setWaiterAliasSingular(aliasSingular);
     if (aliasPlural) setWaiterAliasPlural(aliasPlural);
+
+    const availableTenants = localStorage.getItem('available_tenants');
+    if (availableTenants) {
+      try {
+        const parsed = JSON.parse(availableTenants);
+        setHasMultipleTenants(parsed.length > 1);
+      } catch (e) {
+        setHasMultipleTenants(false);
+      }
+    }
   }, []);
 
   const dynamicNavItems = navItems.map(item => {
@@ -139,6 +152,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
               )}
               {userRole === 'CASHIER' ? 'Mi Perfil' : 'Configuración'}
             </Link>
+
+            {hasMultipleTenants && (
+              <button
+                onClick={() => setIsSwitcherOpen(true)}
+                className="w-full group flex items-center px-4 py-3 text-sm font-bold rounded-xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all border border-blue-200/50 dark:border-blue-800/50 mt-2"
+              >
+                <Building2 className="w-5 h-5 mr-3" />
+                Panel Central
+              </button>
+            )}
         </div>
 
         {/* Profile Summary at Bottom */}
@@ -165,6 +188,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean, onClose
           </div>
         </div>
       </div>
+      <TenantSwitcher isOpen={isSwitcherOpen} onClose={() => setIsSwitcherOpen(false)} />
     </aside>
   );
 }

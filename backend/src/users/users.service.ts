@@ -18,22 +18,18 @@ export class UsersService {
       relations: ['tenant'],
     });
 
-    // Ensure backward compatibility: if tenant exists but modules is null, set defaults
     if (user?.tenant && !user.tenant.modules) {
-      user.tenant.modules = [
-        'POS',
-        'CLOSURE',
-        'INVENTORY',
-        'REPORTS',
-        'SUPPLIERS',
-        'CUSTOMERS',
-        'CREDITS',
-        'REFUNDS',
-        'ACCOUNTING',
-      ];
+      user.tenant.modules = ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING'];
     }
 
     return user;
+  }
+
+  async findManyByEmail(email: string): Promise<User[]> {
+    return this.usersRepository.find({
+      where: { email },
+      relations: ['tenant'],
+    });
   }
 
   async findOne(id: string, tenantId?: string): Promise<User | null> {

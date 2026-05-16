@@ -7,6 +7,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UseGuards, Request } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
@@ -32,5 +34,15 @@ export class AuthController {
     } catch (error: any) {
       throw new UnauthorizedException(error.message);
     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('switch')
+  async switchTenant(@Request() req, @Body() body: { tenantId: string }) {
+    const user = await this.authService.validateSwitch(req.user.email, body.tenantId);
+    if (!user) {
+      throw new UnauthorizedException('Access to business denied');
+    }
+    return this.authService.login(user);
   }
 }
