@@ -106,8 +106,10 @@ export class AdminService {
       email: existingUser.email,
       name: existingUser.name,
       passwordHash: existingUser.passwordHash,
-      role: 'OWNER',
-      modules: existingUser.modules,
+      role: existingUser.role, // Respeta el rol original (Cajero o Dueño)
+      modules: existingUser.modules && existingUser.modules.length > 0 
+        ? existingUser.modules 
+        : ['POS', 'CLOSURE', 'INVENTORY', 'REPORTS', 'SUPPLIERS', 'CUSTOMERS', 'CREDITS', 'REFUNDS', 'ACCOUNTING', 'CASHIER_MONITOR'],
     });
 
     return this.usersRepository.save(newUser);

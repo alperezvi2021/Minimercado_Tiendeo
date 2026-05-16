@@ -62,7 +62,9 @@ export class AuthService {
         role: user.role,
         availableTenants: user.availableTenants || [],
         tenant_modules:
-          user.tenant?.modules && user.tenant.modules.length > 0
+          user.modules && user.modules.length > 0
+            ? user.modules
+            : user.tenant?.modules && user.tenant.modules.length > 0
             ? user.tenant.modules
             : [
                 'POS',
