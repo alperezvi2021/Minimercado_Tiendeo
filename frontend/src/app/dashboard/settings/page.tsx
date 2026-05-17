@@ -71,6 +71,11 @@ interface SettingsUser {
   const [isResetting, setIsResetting] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
 
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
     const savedRole = localStorage.getItem('user_role');
@@ -331,6 +336,38 @@ interface SettingsUser {
     }
   };
 
+  const handleUpdatePassword = async () => {
+    if (!currentPassword || !newPassword) {
+      alert('Por favor complete ambos campos');
+      return;
+    }
+    setIsUpdatingPassword(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/users/me/password`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+
+      if (res.ok) {
+        alert('Contraseña actualizada correctamente');
+        setCurrentPassword('');
+        setNewPassword('');
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.message || 'No se pudo actualizar la contraseña'}`);
+      }
+    } catch (error) {
+      alert('Error de conexión al actualizar contraseña');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row gap-8">
@@ -580,20 +617,28 @@ interface SettingsUser {
                     <input 
                       type="password" 
                       placeholder="Contraseña Actual"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                     <input 
                       type="password" 
                       placeholder="Nueva Contraseña"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="pt-4">
-                  <button className="flex items-center gap-2 bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-6 py-3 rounded-xl font-bold transition-all">
+                  <button 
+                    onClick={handleUpdatePassword}
+                    disabled={isUpdatingPassword}
+                    className="flex items-center gap-2 bg-gray-900 dark:bg-white dark:text-gray-900 text-white px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
+                  >
                     <Key className="w-5 h-5" />
-                    Actualizar Contraseña
+                    {isUpdatingPassword ? 'Actualizando...' : 'Actualizar Contraseña'}
                   </button>
                 </div>
               </div>

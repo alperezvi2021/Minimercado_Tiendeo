@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Delete,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -33,6 +34,27 @@ export class UsersController {
       ...createUserDto,
       tenantId: req.user.tenantId,
     });
+  }
+
+  @Patch('me/password')
+  async updateMyPassword(@Request() req, @Body() body: any) {
+    const { currentPassword, newPassword } = body;
+    if (!newPassword || !currentPassword) {
+      throw new BadRequestException('Se requiere la contraseña actual y la nueva contraseña');
+    }
+
+    const user = await this.usersService.findOne(req.user.userId);
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    const bcrypt = require('bcrypt');
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new BadRequestException('La contraseña actual es incorrecta');
+    }
+
+    return this.usersService.update(req.user.userId, { passwordHash: newPassword });
   }
 
   @Get(':id')
