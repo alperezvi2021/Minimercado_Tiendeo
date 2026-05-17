@@ -75,6 +75,8 @@ interface SettingsUser {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   useEffect(() => {
     const savedName = localStorage.getItem('user_name');
@@ -614,20 +616,38 @@ interface SettingsUser {
                 <div>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Cambiar Contraseña</label>
                   <div className="space-y-3">
-                    <input 
-                      type="password" 
-                      placeholder="Contraseña Actual"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                    />
-                    <input 
-                      type="password" 
-                      placeholder="Nueva Contraseña"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 transition-all"
-                    />
+                    <div className="relative">
+                      <input 
+                        type={showCurrentPassword ? "text" : "password"} 
+                        placeholder="Contraseña Actual"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 pr-12 focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-3.5 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input 
+                        type={showNewPassword ? "text" : "password"} 
+                        placeholder="Nueva Contraseña"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-slate-800 border-0 rounded-xl px-4 py-3 pr-12 focus:ring-2 focus:ring-blue-500 transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-3.5 text-gray-400 hover:text-blue-600 transition-colors"
+                      >
+                        {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
